@@ -45,7 +45,6 @@ namespace Rdr
         private DelegateCommandAsync refreshAllFeedsAsyncCommand = null;
         private DelegateCommandAsync refreshFeedAsyncCommand = null;
         private DelegateCommandAsync markAllItemsAsReadCommand = null;
-        private DelegateCommand markItemAsReadCommand = null;
         private DelegateCommand goToFeedCommand = null;
         private DelegateCommand goToItemCommand = null;
         private DelegateCommand moveItemsToViewCommand = null;
@@ -55,7 +54,6 @@ namespace Rdr
         public DelegateCommandAsync RefreshAllFeedsAsyncCommand { get { return refreshAllFeedsAsyncCommand; } }
         public DelegateCommandAsync RefreshFeedAsyncCommand { get { return refreshFeedAsyncCommand; } }
         public DelegateCommandAsync MarkAllItemsAsReadCommand { get { return markAllItemsAsReadCommand; } }
-        public DelegateCommand MarkItemAsReadCommand { get { return markItemAsReadCommand; } }
         public DelegateCommand GoToFeedCommand { get { return goToFeedCommand; } }
         public DelegateCommand GoToItemCommand { get { return goToItemCommand; } }
         public DelegateCommand MoveItemsToViewCommand { get { return moveItemsToViewCommand; } }
@@ -106,14 +104,13 @@ namespace Rdr
                 this.InitializeMembers();
                 areMembersInitialized = true;
             }
-        }
+        } // locked
 
         private void InitializeMembers()
         {
             refreshAllFeedsAsyncCommand = new DelegateCommandAsync(new Func<object, Task>(RefreshAllFeedsAsync), canExecuteCommand);
             refreshFeedAsyncCommand = new DelegateCommandAsync(new Func<object, Task>(RefreshFeedAsync), canExecuteCommand);
             markAllItemsAsReadCommand = new DelegateCommandAsync(new Func<object, Task>(MarkAllItemsAsReadAsync), canExecuteCommand);
-            markItemAsReadCommand = new DelegateCommand(MarkItemAsRead, canExecuteCommand);
             goToFeedCommand = new DelegateCommand(GoToFeed, canExecuteGoToCommand);
             goToItemCommand = new DelegateCommand(GoToItem, canExecuteGoToCommand);
             moveItemsToViewCommand = new DelegateCommand(MoveItemsToView, canExecuteCommand);
@@ -124,17 +121,15 @@ namespace Rdr
             this.Items = new ObservableCollection<FeedItem>();
             this.UnreadItems = new ObservableCollection<FeedItem>();
 
-            this.updateAllTimer.Tick += updateAllTimer_Tick;
+            this.updateAllTimer.Tick += async (sender, e) =>
+                {
+                    if (this.Activity == false)
+                    {
+                        await this.RefreshAllFeedsAsync(null);
+                    }
+                };
             this.updateAllTimer.Interval = new TimeSpan(0, 20, 0);
             this.updateAllTimer.IsEnabled = true;
-        }
-
-        private async void updateAllTimer_Tick(object sender, EventArgs e)
-        {
-            if (this.Activity == false)
-            {
-                await this.RefreshAllFeedsAsync(null);
-            }
         }
 
         private void UIToggle()
@@ -142,6 +137,7 @@ namespace Rdr
             this.RefreshAllFeedsAsyncCommand.RaiseCanExecuteChanged();
             this.RefreshFeedAsyncCommand.RaiseCanExecuteChanged();
             this.MarkAllItemsAsReadCommand.RaiseCanExecuteChanged();
+            this.moveUnreadItemsToViewCommand.RaiseCanExecuteChanged();
         }
 
         public async Task LoadAsync()
@@ -162,7 +158,7 @@ namespace Rdr
 
             this.Status = string.Format("{0} feeds loaded", this.Feeds.Count);
             this.Activity = false;
-        }
+        } // locked
 
         private async Task LoadXmlUrlsFromFileAsync()
         {
@@ -193,7 +189,7 @@ namespace Rdr
                     }
                 }
             }
-        }
+        } // locked
 
         private async Task WriteBasicFeedsFileAsync()
         {
@@ -207,7 +203,7 @@ namespace Rdr
             {
                 await sw.WriteAsync(sb.ToString());
             }
-        }
+        } // locked
 
         public async Task RefreshAllFeedsAsync(object parameter)
         {
@@ -221,6 +217,7 @@ namespace Rdr
                 }
             }
 
+            this.Status = string.Format("{0} new items", this.UnreadItems.Count);
             this.Activity = false;
         }
 
@@ -296,7 +293,7 @@ namespace Rdr
             req.UserAgent = @"Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko";
 
             return req;
-        }
+        } // locked
 
         private XmlReader BuildXmlReader(Stream stream)
         {
@@ -310,7 +307,7 @@ namespace Rdr
             };
 
             return XmlReader.Create(stream, readerSettings);
-        }
+        } // locked
 
         private Task<SyndicationFeed> RetrieveFeedFromServer(XmlReader reader)
         {
@@ -319,7 +316,7 @@ namespace Rdr
                 SyndicationFeed feed = SyndicationFeed.Load(reader);
                 return feed;
             });
-        }
+        } // locked
 
         private void ProcessReturnedXml(SyndicationFeed xmlFeed, Feed feed)
         {
@@ -333,11 +330,6 @@ namespace Rdr
             {
                 itemsToAdd = feed.Load(xmlFeed);
             }
-
-            //foreach (FeedItem feedItem in itemsToAdd)
-            //{
-            //    this.Items.Add(feedItem);
-            //}
 
             foreach (FeedItem feedItem in itemsToAdd)
             {
@@ -359,13 +351,6 @@ namespace Rdr
             this.Activity = false;
         }
 
-        private void MarkItemAsRead(object parameter)
-        {
-            FeedItem feedItem = parameter as FeedItem;
-
-            feedItem.Unread = false;
-        }
-
         private void GoToItem(object parameter)
         {
             FeedItem feedItem = parameter as FeedItem;
@@ -382,14 +367,14 @@ namespace Rdr
             {
                 MessageBox.Show("Cannot go to this item.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-        }
+        } // locked
 
         private void GoToFeed(object parameter)
         {
             Feed feed = parameter as Feed;
 
             Misc.OpenUrlInBrowser(feed.XmlUrl.AbsoluteUri);
-        }
+        } // locked
 
         private void MoveItemsToView(object parameter)
         {
@@ -400,34 +385,15 @@ namespace Rdr
             Feed feed = parameter as Feed;
             List<FeedItem> allItems = feed.FeedItems;
 
-            if (allItems != null)
+            if (allItems.Count > 0)
             {
-                if (allItems.Count > 0)
+                foreach (FeedItem item in allItems)
                 {
-                    foreach (FeedItem item in allItems)
-                    {
-                        this.Items.Add(item);
-                    }
+                    this.Items.Add(item);
                 }
             }
 
             this.OnItemsCollectionSwitched(new ItemsCollectionSwitchedEventArgs(this.Items));
-
-            //this.Items.Clear();
-
-            //Feed feed = parameter as Feed;
-            //List<FeedItem> allItems = feed.FeedItems;
-
-            //if (allItems != null)
-            //{
-            //    if (allItems.Count > 0)
-            //    {
-            //        foreach (FeedItem item in allItems)
-            //        {
-            //            this.Items.Add(item);
-            //        }
-            //    }
-            //}
 
             this.Activity = false;
         }
@@ -437,26 +403,6 @@ namespace Rdr
             this.Activity = true;
 
             this.OnItemsCollectionSwitched(new ItemsCollectionSwitchedEventArgs(this.UnreadItems));
-
-            //this.Items.Clear();
-
-            //foreach (Feed feed in this.Feeds)
-            //{
-            //    foreach (FeedItem feedItem in feed.FeedItems)
-            //    {
-            //        if (feedItem.Unread)
-            //        {
-            //            this.Items.Add(feedItem);
-            //        }
-            //    }
-            //}
-
-            //this.Items.Clear();
-
-            //foreach (FeedItem feedItem in this.unreadItems)
-            //{
-            //    this.Items.Add(feedItem);
-            //}
 
             this.Activity = false;
         }
@@ -471,12 +417,12 @@ namespace Rdr
             {
                 return true;
             }
-        }
+        } // locked
 
         private bool canExecuteGoToCommand(object parameter)
         {
             return true;
-        }
+        } // locked
 
         private void Debug(object parameter)
         {
@@ -497,6 +443,6 @@ namespace Rdr
             sb.AppendLine(string.Format("Items: {0}", this.Items.Count));
 
             return sb.ToString();
-        }
+        } // locked
     }
 }

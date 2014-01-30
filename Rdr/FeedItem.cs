@@ -70,6 +70,23 @@ namespace Rdr
             return string.Empty;
         }
 
+        public override bool Equals(object obj)
+        {
+            if (this.GetHashCode() == obj.GetHashCode())
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        } // locked
+
+        public override int GetHashCode()
+        {
+            return this.FeedItemTitle.GetHashCode();
+        } // locked
+
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
@@ -81,6 +98,6 @@ namespace Rdr
             sb.AppendLine(this.Unread.ToString());
 
             return sb.ToString();
-        }
+        } // locked
     }
 }

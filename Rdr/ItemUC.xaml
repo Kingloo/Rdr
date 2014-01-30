@@ -39,7 +39,6 @@
         <Label Grid.Column="1"
                FontWeight="SemiBold"
                FontSize="18"
-               ToolTip="{Binding Path=Link, Mode=OneWay}"
                Content="{Binding Path=FeedItemTitle, Mode=OneWay}" />
         
         <Label Grid.Column="2"

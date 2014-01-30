@@ -37,7 +37,7 @@ namespace Rdr
             this.XmlUrl = xmlurl;
             this.FeedItems = new List<FeedItem>();
             this.IsFirstLoad = true;
-        }
+        } // locked
 
         public Feed(string message)
         {
@@ -52,13 +52,12 @@ namespace Rdr
             {
                 throw new ArgumentException(string.Format("Feed URL is not valid: {0}", message));
             }
-        }
+        } // locked
 
         public List<FeedItem> FirstLoad(SyndicationFeed xmlFeed, int max)
         {
             this.FeedTitle = DetermineFeedTitle(xmlFeed.Title);
 
-            // add every item from the feed to FeedItems
             foreach (SyndicationItem item in xmlFeed.Items)
             {
                 FeedItem feedItem = new FeedItem(item, FeedTitle);
@@ -68,9 +67,9 @@ namespace Rdr
 
             List<FeedItem> toReturn = new List<FeedItem>();
 
+            // evalute (max > this.FeedItems.Count) -> if true use this.FeedItems.Count, if false use max
             int range = (max > this.FeedItems.Count) ? this.FeedItems.Count : max;
 
-            // build a list of the number of items to return to the UI
             for (int i = 0; i < range; i++)
             {
                 toReturn.Add(this.FeedItems[i]);
@@ -105,9 +104,9 @@ namespace Rdr
 
         private bool FeedItemsContains(FeedItem test)
         {
-            foreach (FeedItem feedItem in this.FeedItems)
+            foreach (FeedItem each in this.FeedItems)
             {
-                if (test.FeedItemTitle.Equals(feedItem.FeedItemTitle, StringComparison.InvariantCultureIgnoreCase))
+                if (test.Equals(each))
                 {
                     return true;
                 }
@@ -126,7 +125,7 @@ namespace Rdr
             {
                 return this.XmlUrl.AbsoluteUri;
             }
-        }
+        } // locked
 
         public Task MarkAllItemsAsReadAsync()
         {
@@ -153,7 +152,7 @@ namespace Rdr
             }
 
             return count;
-        }
+        } // locked
 
         public override string ToString()
         {
@@ -165,6 +164,6 @@ namespace Rdr
             sb.AppendLine(string.Format("Feed Items: {0}", this.FeedItems.Count));
 
             return sb.ToString();
-        }
+        } // locked
     }
 }
