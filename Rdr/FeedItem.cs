@@ -9,7 +9,7 @@ namespace Rdr
     class FeedItem : RdrBase
     {
         #region Visible
-        public string Title { get; private set; }
+        public string FeedItemTitle { get; private set; }
         public string TitleOfFeed { get; private set; }
         public DateTime Published { get; private set; }
         public string Link { get; private set; }
@@ -27,7 +27,7 @@ namespace Rdr
 
         public FeedItem(SyndicationItem item, string feedTitle)
         {
-            this.Title = DetermineItemTitle(item);
+            this.FeedItemTitle = DetermineItemTitle(item);
             this.TitleOfFeed = feedTitle;
             this.Published = item.PublishDate.LocalDateTime;
             this.Link = DetermineItemLink(item);
@@ -74,7 +74,7 @@ namespace Rdr
         {
             StringBuilder sb = new StringBuilder();
 
-            sb.AppendLine(this.Title);
+            sb.AppendLine(this.FeedItemTitle);
             sb.AppendLine(this.TitleOfFeed);
             sb.AppendLine(this.Published.ToString());
             sb.AppendLine(this.Link);

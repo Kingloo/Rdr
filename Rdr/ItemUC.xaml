@@ -9,20 +9,22 @@
              d:DesignHeight="100" d:DesignWidth="500">
     <UserControl.Resources>
         
-        <Style TargetType="{x:Type Grid}" x:Key="grid">
+        <Style TargetType="{x:Type Grid}">
             <Setter Property="Background" Value="AliceBlue" />
             <Setter Property="Margin" Value="10,20,10,0" />
         </Style>
         
-        <Style TargetType="{x:Type Label}" x:Key="label">
+        <Style TargetType="{x:Type Label}">
             <Setter Property="FontSize" Value="17" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
         </Style>
         
         <this:ShortTitleConverter x:Key="shortTitleConverter" />
         
     </UserControl.Resources>
     
-    <Grid Style="{StaticResource grid}">
+    <Grid>
         
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="300" />
@@ -31,23 +33,17 @@
         </Grid.ColumnDefinitions>
         
         <Label Grid.Column="0"
-               Style="{StaticResource label}"
-               HorizontalContentAlignment="Left"
-               VerticalContentAlignment="Center"
-               Content="{Binding Path=TitleOfFeed, Converter={StaticResource shortTitleConverter}}" />
+               ToolTip="{Binding Path=TitleOfFeed, Mode=OneWay}"
+               Content="{Binding Path=TitleOfFeed, Mode=OneWay, Converter={StaticResource shortTitleConverter}}" />
         
         <Label Grid.Column="1"
-               Style="{StaticResource label}"
-               HorizontalContentAlignment="Left"
-               VerticalContentAlignment="Center"
                FontWeight="SemiBold"
                FontSize="18"
-               Content="{Binding Path=Title}" />
+               ToolTip="{Binding Path=Link, Mode=OneWay}"
+               Content="{Binding Path=FeedItemTitle, Mode=OneWay}" />
         
         <Label Grid.Column="2"
-               Style="{StaticResource label}"
                HorizontalContentAlignment="Right"
-               VerticalContentAlignment="Center"
-               Content="{Binding Path=Published}" />
+               Content="{Binding Path=Published, Mode=OneWay}" />
     </Grid>
 </UserControl>

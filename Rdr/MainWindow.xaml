@@ -12,7 +12,7 @@
     <Window.Resources>
 
         <DataTemplate DataType="{x:Type this:Feed}">
-            <Label Content="{Binding Path=Title}">
+            <Label Content="{Binding Path=FeedTitle, Mode=OneWay}">
                 <Label.InputBindings>
                     <MouseBinding MouseAction="LeftDoubleClick"
                                               Command="{Binding Path=RefreshFeedAsyncCommand, ElementName=feedManager}"
@@ -48,15 +48,7 @@
                               x:Key="sortFeedsAlphabetically"
                               IsLiveSortingRequested="True">
             <CollectionViewSource.SortDescriptions>
-                <scm:SortDescription PropertyName="Title" Direction="Ascending" />
-            </CollectionViewSource.SortDescriptions>
-        </CollectionViewSource>
-        
-        <CollectionViewSource Source="{Binding Path=Items}"
-                              x:Key="sortItemsByPubDate"
-                              IsLiveSortingRequested="True">
-            <CollectionViewSource.SortDescriptions>
-                <scm:SortDescription PropertyName="Published" Direction="Descending" />
+                <scm:SortDescription PropertyName="FeedTitle" Direction="Ascending" />
             </CollectionViewSource.SortDescriptions>
         </CollectionViewSource>
         
@@ -133,8 +125,8 @@
 
             </ItemsControl>
 
-            <ItemsControl Grid.Column="1" 
-                         ItemsSource="{Binding Source={StaticResource sortItemsByPubDate}}">
+            <ItemsControl Grid.Column="1"
+                          Name="ic_Items">
 
                 <ItemsControl.Template>
                     <ControlTemplate>

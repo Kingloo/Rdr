@@ -2,20 +2,21 @@
 using System.Collections.Generic;
 using System.ServiceModel.Syndication;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Rdr
 {
     class Feed : RdrBase
     {
         #region Visible
-        private string _title = string.Empty;
-        public string Title
+        private string _feedTitle = string.Empty;
+        public string FeedTitle
         {
-            get { return this._title; }
+            get { return this._feedTitle; }
             set
             {
-                this._title = value;
-                OnPropertyChanged("Title");
+                this._feedTitle = value;
+                OnPropertyChanged("FeedTitle");
             }
         }
         public Uri XmlUrl { get; private set; }
@@ -32,7 +33,7 @@ namespace Rdr
 
         public Feed(Uri xmlurl)
         {
-            this.Title = xmlurl.AbsoluteUri;
+            this.FeedTitle = xmlurl.AbsoluteUri;
             this.XmlUrl = xmlurl;
             this.FeedItems = new List<FeedItem>();
             this.IsFirstLoad = true;
@@ -40,23 +41,30 @@ namespace Rdr
 
         public Feed(string message)
         {
-            this.Title = message;
-            this.XmlUrl = new Uri(message);
+            this.FeedTitle = message;
+
+            Uri uri = null;
+            if (Uri.TryCreate(message, UriKind.Absolute, out uri))
+            {
+                this.XmlUrl = uri;
+            }
+            else
+            {
+                throw new ArgumentException(string.Format("Feed URL is not valid: {0}", message));
+            }
         }
 
         public List<FeedItem> FirstLoad(SyndicationFeed xmlFeed, int max)
         {
-            this.Title = DetermineFeedTitle(xmlFeed.Title);
+            this.FeedTitle = DetermineFeedTitle(xmlFeed.Title);
 
             // add every item from the feed to FeedItems
             foreach (SyndicationItem item in xmlFeed.Items)
             {
-                FeedItem feedItem = new FeedItem(item, xmlFeed.Title.Text);
+                FeedItem feedItem = new FeedItem(item, FeedTitle);
 
                 this.FeedItems.Add(feedItem);
             }
-
-            this.FeedItems.Sort(sortFeedItemsByDate);
 
             List<FeedItem> toReturn = new List<FeedItem>();
 
@@ -70,22 +78,6 @@ namespace Rdr
 
             this.IsFirstLoad = false;
             return toReturn;
-        }
-
-        private int sortFeedItemsByDate(FeedItem x, FeedItem y)
-        {
-            if (x.Published > y.Published)
-            {
-                return -1;
-            }
-            else if (y.Published > x.Published)
-            {
-                return 1;
-            }
-            else
-            {
-                return 0;
-            }
         }
 
         public List<FeedItem> Load(SyndicationFeed xmlFeed)
@@ -115,7 +107,7 @@ namespace Rdr
         {
             foreach (FeedItem feedItem in this.FeedItems)
             {
-                if (test.Title.Equals(feedItem.Title, StringComparison.InvariantCultureIgnoreCase))
+                if (test.FeedItemTitle.Equals(feedItem.FeedItemTitle, StringComparison.InvariantCultureIgnoreCase))
                 {
                     return true;
                 }
@@ -136,15 +128,16 @@ namespace Rdr
             }
         }
 
-        public void MarkAllItemsAsRead()
+        public Task MarkAllItemsAsReadAsync()
         {
-            lock (this.FeedItems)
-            {
-                foreach (FeedItem feedItem in this.FeedItems)
+            return Task.Factory.StartNew(new Action(
+                delegate()
                 {
-                    feedItem.Unread = false;
-                }
-            }
+                    foreach (FeedItem feedItem in this.FeedItems)
+                    {
+                        feedItem.Unread = false;
+                    }
+                }));
         }
 
         private int UnreadItemsCount()
@@ -166,7 +159,7 @@ namespace Rdr
         {
             StringBuilder sb = new StringBuilder();
 
-            sb.AppendLine(this.Title);
+            sb.AppendLine(this.FeedTitle);
             sb.AppendLine(this.XmlUrl.AbsoluteUri);
             sb.AppendLine(this.IsFirstLoad.ToString());
             sb.AppendLine(string.Format("Feed Items: {0}", this.FeedItems.Count));

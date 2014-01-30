@@ -17,12 +17,34 @@ using System.Xml.Linq;
 
 namespace Rdr
 {
+    class ItemsCollectionSwitchedEventArgs : EventArgs
+    {
+        public object Obj { get; private set; }
+
+        public ItemsCollectionSwitchedEventArgs(object obj)
+        {
+            this.Obj = obj;
+        }
+    }
+
     class FeedManager : RdrBase
     {
+        #region Events
+        public event EventHandler<ItemsCollectionSwitchedEventArgs> ItemsCollectionSwitched;
+        protected virtual void OnItemsCollectionSwitched(ItemsCollectionSwitchedEventArgs icsea)
+        {
+            EventHandler<ItemsCollectionSwitchedEventArgs> handler = this.ItemsCollectionSwitched;
+            if (handler != null)
+            {
+                handler(this, icsea);
+            }
+        }
+        #endregion
+
         #region Commands
         private DelegateCommandAsync refreshAllFeedsAsyncCommand = null;
         private DelegateCommandAsync refreshFeedAsyncCommand = null;
-        private DelegateCommand markAllItemsAsReadCommand = null;
+        private DelegateCommandAsync markAllItemsAsReadCommand = null;
         private DelegateCommand markItemAsReadCommand = null;
         private DelegateCommand goToFeedCommand = null;
         private DelegateCommand goToItemCommand = null;
@@ -30,127 +52,32 @@ namespace Rdr
         private DelegateCommand moveUnreadItemsToViewCommand = null;
         private DelegateCommand debugCommand = null;
 
-        public DelegateCommandAsync RefreshAllFeedsAsyncCommand
-        {
-            get
-            {
-                if (refreshAllFeedsAsyncCommand != null)
-                {
-                    return refreshAllFeedsAsyncCommand;
-                }
-
-                refreshAllFeedsAsyncCommand = new DelegateCommandAsync(RefreshAllFeedsAsyncAction, canExecuteCommand);
-                return refreshAllFeedsAsyncCommand;
-            }
-        }
-        public DelegateCommandAsync RefreshFeedAsyncCommand
-        {
-            get
-            {
-                if (refreshFeedAsyncCommand != null)
-                {
-                    return refreshFeedAsyncCommand;
-                }
-
-                refreshFeedAsyncCommand = new DelegateCommandAsync(RefreshFeedAsyncAction, canExecuteCommand);
-                return refreshFeedAsyncCommand;
-            }
-        }
-        public DelegateCommand MarkAllItemsAsReadCommand
-        {
-            get
-            {
-                if (markAllItemsAsReadCommand != null)
-                {
-                    return markAllItemsAsReadCommand;
-                }
-
-                markAllItemsAsReadCommand = new DelegateCommand(MarkAllItemsAsRead, canExecuteCommand);
-                return markAllItemsAsReadCommand;
-            }
-        }
-        public DelegateCommand MarkItemAsReadCommand
-        {
-            get
-            {
-                if (markItemAsReadCommand != null)
-                {
-                    return markItemAsReadCommand;
-                }
-
-                markItemAsReadCommand = new DelegateCommand(MarkItemAsRead, canExecuteCommand);
-                return markItemAsReadCommand;
-            }
-        }
-        public DelegateCommand GoToFeedCommand
-        {
-            get
-            {
-                if (goToFeedCommand != null)
-                {
-                    return goToFeedCommand;
-                }
-
-                goToFeedCommand = new DelegateCommand(GoToFeed, canExecuteGoToCommand);
-                return goToFeedCommand;
-            }
-        }
-        public DelegateCommand GoToItemCommand
-        {
-            get
-            {
-                if (goToItemCommand != null)
-                {
-                    return goToItemCommand;
-                }
-
-                goToItemCommand = new DelegateCommand(GoToItem, canExecuteGoToCommand);
-                return goToItemCommand;
-            }
-        }
-        public DelegateCommand MoveItemsToViewCommand
-        {
-            get
-            {
-                if (moveItemsToViewCommand != null)
-                {
-                    return moveItemsToViewCommand;
-                }
-
-                moveItemsToViewCommand = new DelegateCommand(MoveItemsToView, canExecuteCommand);
-                return moveItemsToViewCommand;
-            }
-        }
-        public DelegateCommand MoveUnreadItemsToViewCommand
-        {
-            get
-            {
-                if (moveUnreadItemsToViewCommand != null)
-                {
-                    return moveUnreadItemsToViewCommand;
-                }
-
-                moveUnreadItemsToViewCommand = new DelegateCommand(MoveUnreadItemsToView, canExecuteCommand);
-                return moveUnreadItemsToViewCommand;
-            }
-        }
-        public DelegateCommand DebugCommand
-        {
-            get
-            {
-                if (debugCommand != null)
-                {
-                    return debugCommand;
-                }
-
-                debugCommand = new DelegateCommand(Debug, canExecuteDebug);
-                return debugCommand;
-            }
-        }
+        public DelegateCommandAsync RefreshAllFeedsAsyncCommand { get { return refreshAllFeedsAsyncCommand; } }
+        public DelegateCommandAsync RefreshFeedAsyncCommand { get { return refreshFeedAsyncCommand; } }
+        public DelegateCommandAsync MarkAllItemsAsReadCommand { get { return markAllItemsAsReadCommand; } }
+        public DelegateCommand MarkItemAsReadCommand { get { return markItemAsReadCommand; } }
+        public DelegateCommand GoToFeedCommand { get { return goToFeedCommand; } }
+        public DelegateCommand GoToItemCommand { get { return goToItemCommand; } }
+        public DelegateCommand MoveItemsToViewCommand { get { return moveItemsToViewCommand; } }
+        public DelegateCommand MoveUnreadItemsToViewCommand { get { return moveUnreadItemsToViewCommand; } }
+        public DelegateCommand DebugCommand { get { return debugCommand; } }
         #endregion
 
         #region Hidden
-        private bool inactive = true;
+        private bool areMembersInitialized = false;
+        private bool activity = false;
+        private bool Activity
+        {
+            get
+            {
+                return this.activity;
+            }
+            set
+            {
+                this.activity = value;
+                this.UIToggle();
+            }
+        }
         private readonly string feedsFile = string.Format(@"C:\Users\{0}\Documents\rssfeeds.xml", Environment.UserName);
         private readonly DispatcherTimer updateAllTimer = new DispatcherTimer();
         #endregion
@@ -166,14 +93,36 @@ namespace Rdr
                 OnPropertyChanged("Status");
             }
         }
+        
         public ObservableCollection<Feed> Feeds { get; private set; }
         public ObservableCollection<FeedItem> Items { get; private set; }
+        public ObservableCollection<FeedItem> UnreadItems { get; private set; }
         #endregion
 
         public FeedManager()
         {
+            if (areMembersInitialized == false)
+            {
+                this.InitializeMembers();
+                areMembersInitialized = true;
+            }
+        }
+
+        private void InitializeMembers()
+        {
+            refreshAllFeedsAsyncCommand = new DelegateCommandAsync(new Func<object, Task>(RefreshAllFeedsAsync), canExecuteCommand);
+            refreshFeedAsyncCommand = new DelegateCommandAsync(new Func<object, Task>(RefreshFeedAsync), canExecuteCommand);
+            markAllItemsAsReadCommand = new DelegateCommandAsync(new Func<object, Task>(MarkAllItemsAsReadAsync), canExecuteCommand);
+            markItemAsReadCommand = new DelegateCommand(MarkItemAsRead, canExecuteCommand);
+            goToFeedCommand = new DelegateCommand(GoToFeed, canExecuteGoToCommand);
+            goToItemCommand = new DelegateCommand(GoToItem, canExecuteGoToCommand);
+            moveItemsToViewCommand = new DelegateCommand(MoveItemsToView, canExecuteCommand);
+            moveUnreadItemsToViewCommand = new DelegateCommand(MoveUnreadItemsToView, canExecuteCommand);
+            debugCommand = new DelegateCommand(Debug, canExecuteDebug);
+
             this.Feeds = new ObservableCollection<Feed>();
             this.Items = new ObservableCollection<FeedItem>();
+            this.UnreadItems = new ObservableCollection<FeedItem>();
 
             this.updateAllTimer.Tick += updateAllTimer_Tick;
             this.updateAllTimer.Interval = new TimeSpan(0, 20, 0);
@@ -182,84 +131,71 @@ namespace Rdr
 
         private async void updateAllTimer_Tick(object sender, EventArgs e)
         {
-            if (this.inactive)
+            if (this.Activity == false)
             {
-                await this.RefreshAllFeedsAsync();
+                await this.RefreshAllFeedsAsync(null);
             }
         }
 
-        private void UIToggle(bool turningUIOn)
+        private void UIToggle()
         {
-            if (turningUIOn)
+            this.RefreshAllFeedsAsyncCommand.RaiseCanExecuteChanged();
+            this.RefreshFeedAsyncCommand.RaiseCanExecuteChanged();
+            this.MarkAllItemsAsReadCommand.RaiseCanExecuteChanged();
+        }
+
+        public async Task LoadAsync()
+        {
+            this.Activity = true;
+            this.Status = "loading feeds ...";
+
+            if (File.Exists(this.feedsFile))
             {
-                this.inactive = true;
+                await LoadXmlUrlsFromFileAsync();
             }
             else
             {
-                this.inactive = false;
+                await WriteBasicFeedsFileAsync();
             }
 
-            Disp.Invoke(new Action(
-                delegate()
-                {
-                    CommandManager.InvalidateRequerySuggested();
-                }));
+            this.OnItemsCollectionSwitched(new ItemsCollectionSwitchedEventArgs(this.UnreadItems));
+
+            this.Status = string.Format("{0} feeds loaded", this.Feeds.Count);
+            this.Activity = false;
         }
 
-        public Task LoadAsync()
-        {
-            this.UIToggle(false);
-
-            this.Status = "loading feeds ...";
-
-            return Task.Factory.StartNew(new Action(
-                delegate()
-                {
-                    if (File.Exists(this.feedsFile))
-                    {
-                        LoadXmlUrlsFromFile();
-                    }
-                    else
-                    {
-                        WriteBasicFeedsFile();
-                    }
-
-                    this.Status = string.Format("{0} feeds loaded", this.Feeds.Count);
-
-                    this.UIToggle(true);
-                }));
-        }
-
-        private void LoadXmlUrlsFromFile()
+        private async Task LoadXmlUrlsFromFileAsync()
         {
             XDocument xDoc = null;
+            string feedsFileAsString = string.Empty;
 
             using (StreamReader sr = new StreamReader(this.feedsFile))
             {
-                xDoc = XDocument.Load(sr.BaseStream);
+                feedsFileAsString = await sr.ReadToEndAsync();
             }
 
-            if (xDoc != null)
+            if (feedsFileAsString != string.Empty)
             {
-                IEnumerable<XElement> feeds = xDoc.Root.Elements("feed");
+                xDoc = XDocument.Parse(feedsFileAsString);
 
-                foreach (XElement el in feeds)
+                if (xDoc != null)
                 {
-                    Uri uri = null;
+                    IEnumerable<XElement> feeds = xDoc.Root.Elements("feed");
 
-                    if (Uri.TryCreate(el.Attribute("xmlurl").Value, UriKind.Absolute, out uri))
+                    foreach (XElement el in feeds)
                     {
-                        Disp.Invoke(new Action(
-                            delegate()
-                            {
-                                this.Feeds.Add(new Feed(uri));
-                            }));
+                        Uri uri = null;
+
+                        if (Uri.TryCreate(el.Attribute("xmlurl").Value, UriKind.Absolute, out uri))
+                        {
+                            this.Feeds.Add(new Feed(uri));
+                        }
                     }
                 }
             }
         }
 
-        private async void WriteBasicFeedsFile()
+        private async Task WriteBasicFeedsFileAsync()
         {
             StringBuilder sb = new StringBuilder();
 
@@ -269,31 +205,33 @@ namespace Rdr
 
             using (StreamWriter sw = File.CreateText(this.feedsFile))
             {
-                //sw.Write(sb.ToString());
                 await sw.WriteAsync(sb.ToString());
             }
         }
 
-        private void RefreshAllFeedsTest(object parameter)
+        public async Task RefreshAllFeedsAsync(object parameter)
         {
-            this.UIToggle(false);
+            this.Activity = true;
 
-            foreach (Feed feed in this.Feeds)
+            if (this.Feeds.Count > 0)
             {
-                RefreshFeedTest(feed);
+                foreach (Feed feed in this.Feeds)
+                {
+                    await RefreshFeedAsync(feed);
+                }
             }
 
-            this.UIToggle(true);
+            this.Activity = false;
         }
 
-        private async void RefreshFeedTest(Feed feed)
+        private async Task RefreshFeedAsync(object parameter)
         {
-            this.Status = string.Format("updating {0}", feed.Title);
+            Feed feed = parameter as Feed;
+
+            this.Status = string.Format("updating {0}", feed.FeedTitle);
 
             HttpWebRequest req = BuildWebRequest(feed.XmlUrl);
             WebResponse resp = null;
-            XmlReader reader = null;
-            SyndicationFeed xmlFeed = null;
 
             try
             {
@@ -306,7 +244,8 @@ namespace Rdr
 
             if (resp != null)
             {
-                reader = BuildXmlReader(resp.GetResponseStream());
+                XmlReader reader = BuildXmlReader(resp.GetResponseStream());
+                SyndicationFeed xmlFeed = null;
 
                 try
                 {
@@ -321,14 +260,23 @@ namespace Rdr
                     xmlFeed = null;
                 }
 
-                if (xmlFeed != null)
+                if (reader != null)
                 {
-                    ProcessReturnedXml(xmlFeed, ref feed);
+                    reader.Close();
                 }
 
-                reader.Close();
+                if (xmlFeed != null)
+                {
+                    ProcessReturnedXml(xmlFeed, feed);
+                }
+            }
+
+            if (resp != null)
+            {
                 resp.Close();
             }
+
+            this.Status = string.Empty;
         }
 
         private HttpWebRequest BuildWebRequest(Uri xmlUrl)
@@ -367,110 +315,13 @@ namespace Rdr
         private Task<SyndicationFeed> RetrieveFeedFromServer(XmlReader reader)
         {
             return Task.Factory.StartNew<SyndicationFeed>(() =>
-                {
-                    SyndicationFeed feed = SyndicationFeed.Load(reader);
-                    return feed;
-                });
-        }
-
-        private void RefreshSpecificFeed(object parameter)
-        {
-            this.UIToggle(false);
-
-            RefreshFeedTest(parameter as Feed);
-
-            this.UIToggle(true);
-        }
-
-
-
-
-        private Task RefreshAllFeedsAsync()
-        {
-            return Task.Factory.StartNew(RefreshAllFeedsAsyncAction, null);
-        }
-
-        public void RefreshAllFeedsAsyncAction(object parameter)
-        {
-            this.UIToggle(false);
-
-            foreach (Feed feed in this.Feeds)
             {
-                RefreshFeed(feed);
-            }
-
-            this.Status = string.Format("{0} items", this.Items.Count);
-
-            this.UIToggle(true);
+                SyndicationFeed feed = SyndicationFeed.Load(reader);
+                return feed;
+            });
         }
 
-        private void RefreshFeedAsyncAction(object parameter)
-        {
-            if (!(parameter is Feed))
-            {
-                throw new ArgumentException("FeedManager.cs -> RefreshFeedAsyncAction(object parameter) -> parameter must be Rdr.Feed");
-            }
-
-            this.UIToggle(false);
-
-            Feed feed = parameter as Feed;
-
-            RefreshFeed(feed);
-
-            this.Status = string.Format("{0} update finished", feed.Title);
-
-            this.UIToggle(true);
-        }
-
-        private void RefreshFeed(Feed feed)
-        {
-            this.Status = string.Format("updating {0}", feed.Title);
-
-            HttpWebRequest req = BuildWebRequest(feed.XmlUrl);
-
-            WebResponse resp = null;
-            XmlReader reader = null;
-            SyndicationFeed xmlFeed = null;
-
-            try
-            {
-                resp = req.GetResponse();
-            }
-            catch (WebException)
-            {
-                resp = null;
-            }
-
-            if (resp != null)
-            {
-                reader = BuildXmlReader(resp.GetResponseStream());
-
-                try
-                {
-                    xmlFeed = SyndicationFeed.Load(reader);
-                }
-                catch (XmlException)
-                {
-                    xmlFeed = null;
-                }
-                catch (WebException)
-                {
-                    xmlFeed = null;
-                }
-
-                if (xmlFeed != null)
-                {
-                    ProcessReturnedXml(xmlFeed, ref feed);
-                }
-
-                reader.Close();
-                resp.Close();
-            }
-        }
-
-        
-
-        private void ProcessReturnedXml(SyndicationFeed xmlFeed, ref Feed feed)
+        private void ProcessReturnedXml(SyndicationFeed xmlFeed, Feed feed)
         {
             List<FeedItem> itemsToAdd = new List<FeedItem>();
 
@@ -483,26 +334,29 @@ namespace Rdr
                 itemsToAdd = feed.Load(xmlFeed);
             }
 
+            //foreach (FeedItem feedItem in itemsToAdd)
+            //{
+            //    this.Items.Add(feedItem);
+            //}
+
             foreach (FeedItem feedItem in itemsToAdd)
             {
-                Disp.Invoke(new Action(
-                    delegate()
-                    {
-                        this.Items.Add(feedItem);
-                    }));
+                this.UnreadItems.Add(feedItem);
             }
         }
 
-        private void MarkAllItemsAsRead(object parameter)
+        private async Task MarkAllItemsAsReadAsync(object parameter)
         {
-            this.Items.Clear();
+            this.Activity = true;
+
+            this.UnreadItems.Clear();
 
             foreach (Feed feed in this.Feeds)
             {
-                feed.MarkAllItemsAsRead();
+                await feed.MarkAllItemsAsReadAsync();
             }
 
-            this.Status = string.Empty;
+            this.Activity = false;
         }
 
         private void MarkItemAsRead(object parameter)
@@ -514,11 +368,6 @@ namespace Rdr
 
         private void GoToItem(object parameter)
         {
-            if (!(parameter is FeedItem))
-            {
-                throw new ArgumentException("FeedManager.cs -> GoToItem(object parameter) -> parameter must be FeedItem");
-            }
-
             FeedItem feedItem = parameter as FeedItem;
 
             Uri uri = null;
@@ -537,11 +386,6 @@ namespace Rdr
 
         private void GoToFeed(object parameter)
         {
-            if (!(parameter is Feed))
-            {
-                throw new ArgumentException("FeedManager.cs -> GoToFeed(object parameter) -> parameter must be Feed");
-            }
-
             Feed feed = parameter as Feed;
 
             Misc.OpenUrlInBrowser(feed.XmlUrl.AbsoluteUri);
@@ -549,10 +393,7 @@ namespace Rdr
 
         private void MoveItemsToView(object parameter)
         {
-            if (!(parameter is Feed))
-            {
-                throw new ArgumentException("FeedManager.cs -> MoveAllAFeedsItemsToView(object parameter) -> parameter must be Rdr.Feed");
-            }
+            this.Activity = true;
 
             this.Items.Clear();
 
@@ -569,35 +410,67 @@ namespace Rdr
                     }
                 }
             }
+
+            this.OnItemsCollectionSwitched(new ItemsCollectionSwitchedEventArgs(this.Items));
+
+            //this.Items.Clear();
+
+            //Feed feed = parameter as Feed;
+            //List<FeedItem> allItems = feed.FeedItems;
+
+            //if (allItems != null)
+            //{
+            //    if (allItems.Count > 0)
+            //    {
+            //        foreach (FeedItem item in allItems)
+            //        {
+            //            this.Items.Add(item);
+            //        }
+            //    }
+            //}
+
+            this.Activity = false;
         }
 
         private void MoveUnreadItemsToView(object parameter)
         {
-            lock (this.Items)
-            {
-                this.Items.Clear();
+            this.Activity = true;
 
-                foreach (Feed feed in this.Feeds)
-                {
-                    foreach (FeedItem feedItem in feed.FeedItems)
-                    {
-                        if (feedItem.Unread)
-                        {
-                            this.Items.Add(feedItem);
-                        }
-                    }
-                }
-            }
+            this.OnItemsCollectionSwitched(new ItemsCollectionSwitchedEventArgs(this.UnreadItems));
+
+            //this.Items.Clear();
+
+            //foreach (Feed feed in this.Feeds)
+            //{
+            //    foreach (FeedItem feedItem in feed.FeedItems)
+            //    {
+            //        if (feedItem.Unread)
+            //        {
+            //            this.Items.Add(feedItem);
+            //        }
+            //    }
+            //}
+
+            //this.Items.Clear();
+
+            //foreach (FeedItem feedItem in this.unreadItems)
+            //{
+            //    this.Items.Add(feedItem);
+            //}
+
+            this.Activity = false;
         }
 
         private bool canExecuteCommand(object parameter)
         {
-            //if (this.inactive)
-            //{
-            //    return true;
-            //}
-
-            return false;
+            if (this.Activity)
+            {
+                return false;
+            }
+            else
+            {
+                return true;
+            }
         }
 
         private bool canExecuteGoToCommand(object parameter)

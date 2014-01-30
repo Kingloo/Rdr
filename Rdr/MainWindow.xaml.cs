@@ -1,4 +1,7 @@
-﻿using System.Windows;
+﻿using System.ComponentModel;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
 
 namespace Rdr
 {
@@ -7,6 +10,17 @@ namespace Rdr
         public MainWindow()
         {
             this.InitializeComponent();
+            this.feedManager.ItemsCollectionSwitched += feedManager_ItemsCollectionSwitched;
+        }
+
+        void feedManager_ItemsCollectionSwitched(object sender, ItemsCollectionSwitchedEventArgs e)
+        {
+            CollectionViewSource cvsItems = new CollectionViewSource();
+            cvsItems.IsLiveSortingRequested = true;
+            cvsItems.SortDescriptions.Add(new SortDescription("Published", ListSortDirection.Descending));
+            cvsItems.Source = e.Obj;
+
+            BindingOperations.SetBinding(ic_Items, ItemsControl.ItemsSourceProperty, new Binding { Source = cvsItems, Mode = BindingMode.OneWay });
         }
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)

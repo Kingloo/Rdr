@@ -137,4 +137,17 @@ namespace Rdr
             return Convert.ToInt32(str.Substring(index));
         }
     }
+	
+	/// <summary>
+    /// Simple EventArgs class with only a string.
+    /// </summary>
+	public class MessageEventArgs : EventArgs
+	{
+		public string Message { get; private set; }
+
+        public MessageEventArgs(string message)
+        {
+            this.Message = message;
+        }
+	}
 }
