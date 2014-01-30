@@ -348,6 +348,7 @@ namespace Rdr
                 await feed.MarkAllItemsAsReadAsync();
             }
 
+            this.Status = string.Empty;
             this.Activity = false;
         }
 
