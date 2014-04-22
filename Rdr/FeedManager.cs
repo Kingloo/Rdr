@@ -1,16 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Cache;
 using System.ServiceModel.Syndication;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Input;
 using System.Windows.Threading;
 using System.Xml;
 using System.Xml.Linq;
@@ -76,8 +73,8 @@ namespace Rdr
                 this.UIToggle();
             }
         }
-        private readonly string feedsFile = string.Format(@"C:\Users\{0}\Documents\rssfeeds.xml", Environment.UserName);
         private readonly DispatcherTimer updateAllTimer = new DispatcherTimer();
+        private readonly string feedsFile = string.Format(@"C:\Users\{0}\Documents\rssfeeds.xml", Environment.UserName);
         #endregion
 
         #region Visible
@@ -104,7 +101,7 @@ namespace Rdr
                 this.InitializeMembers();
                 areMembersInitialized = true;
             }
-        } // locked
+        }
 
         private void InitializeMembers()
         {
@@ -158,16 +155,19 @@ namespace Rdr
 
             this.Status = string.Format("{0} feeds loaded", this.Feeds.Count);
             this.Activity = false;
-        } // locked
+        }
 
         private async Task LoadXmlUrlsFromFileAsync()
         {
             XDocument xDoc = null;
             string feedsFileAsString = string.Empty;
 
-            using (StreamReader sr = new StreamReader(this.feedsFile))
+            using (FileStream fsAsync = new FileStream(this.feedsFile, FileMode.Open, FileAccess.Read, FileShare.None, 1024, true))
             {
-                feedsFileAsString = await sr.ReadToEndAsync();
+                using (StreamReader sr = new StreamReader(fsAsync))
+                {
+                    feedsFileAsString = await sr.ReadToEndAsync();
+                }
             }
 
             if (feedsFileAsString != string.Empty)
@@ -189,7 +189,7 @@ namespace Rdr
                     }
                 }
             }
-        } // locked
+        }
 
         private async Task WriteBasicFeedsFileAsync()
         {
@@ -199,11 +199,14 @@ namespace Rdr
             sb.AppendLine("<feeds>");
             sb.AppendLine("</feeds>");
 
-            using (StreamWriter sw = File.CreateText(this.feedsFile))
+            using (FileStream fsAsync = new FileStream(this.feedsFile, FileMode.Create, FileAccess.Write, FileShare.None, 1024, true))
             {
-                await sw.WriteAsync(sb.ToString());
+                using (StreamWriter sw = new StreamWriter(fsAsync))
+                {
+                    await sw.WriteAsync(sb.ToString());
+                }
             }
-        } // locked
+        }
 
         public async Task RefreshAllFeedsAsync(object parameter)
         {
@@ -224,6 +227,7 @@ namespace Rdr
         private async Task RefreshFeedAsync(object parameter)
         {
             Feed feed = parameter as Feed;
+            feed.Updating = true;
 
             this.Status = string.Format("updating {0}", feed.FeedTitle);
 
@@ -273,6 +277,7 @@ namespace Rdr
                 resp.Close();
             }
 
+            feed.Updating = false;
             this.Status = string.Empty;
         }
 
@@ -293,7 +298,7 @@ namespace Rdr
             req.UserAgent = @"Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko";
 
             return req;
-        } // locked
+        }
 
         private XmlReader BuildXmlReader(Stream stream)
         {
@@ -307,16 +312,15 @@ namespace Rdr
             };
 
             return XmlReader.Create(stream, readerSettings);
-        } // locked
+        }
 
         private Task<SyndicationFeed> RetrieveFeedFromServer(XmlReader reader)
         {
             return Task.Factory.StartNew<SyndicationFeed>(() =>
             {
-                SyndicationFeed feed = SyndicationFeed.Load(reader);
-                return feed;
+                return SyndicationFeed.Load(reader);
             });
-        } // locked
+        }
 
         private void ProcessReturnedXml(SyndicationFeed xmlFeed, Feed feed)
         {
@@ -368,14 +372,14 @@ namespace Rdr
             {
                 MessageBox.Show("Cannot go to this item.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-        } // locked
+        }
 
         private void GoToFeed(object parameter)
         {
             Feed feed = parameter as Feed;
 
             Misc.OpenUrlInBrowser(feed.XmlUrl.AbsoluteUri);
-        } // locked
+        }
 
         private void MoveItemsToView(object parameter)
         {
@@ -418,12 +422,12 @@ namespace Rdr
             {
                 return true;
             }
-        } // locked
+        }
 
         private bool canExecuteGoToCommand(object parameter)
         {
             return true;
-        } // locked
+        }
 
         private void Debug(object parameter)
         {
@@ -444,6 +448,6 @@ namespace Rdr
             sb.AppendLine(string.Format("Items: {0}", this.Items.Count));
 
             return sb.ToString();
-        } // locked
+        }
     }
 }

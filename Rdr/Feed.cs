@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ServiceModel.Syndication;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media;
 
 namespace Rdr
 {
@@ -29,6 +30,17 @@ namespace Rdr
                 return string.Format("{0} items, {1} unread", this.FeedItems.Count, UnreadItemsCount());
             }
         }
+
+        private bool _updating = false;
+        public bool Updating
+        {
+            get { return this._updating; }
+            set
+            {
+                this._updating = value;
+                OnPropertyChanged("Updating");
+            }
+        }
         #endregion
 
         public Feed(Uri xmlurl)
@@ -37,7 +49,7 @@ namespace Rdr
             this.XmlUrl = xmlurl;
             this.FeedItems = new List<FeedItem>();
             this.IsFirstLoad = true;
-        } // locked
+        }
 
         public Feed(string message)
         {
@@ -52,7 +64,7 @@ namespace Rdr
             {
                 throw new ArgumentException(string.Format("Feed URL is not valid: {0}", message));
             }
-        } // locked
+        }
 
         public List<FeedItem> FirstLoad(SyndicationFeed xmlFeed, int max)
         {
@@ -125,7 +137,7 @@ namespace Rdr
             {
                 return this.XmlUrl.AbsoluteUri;
             }
-        } // locked
+        }
 
         public Task MarkAllItemsAsReadAsync()
         {
@@ -152,7 +164,7 @@ namespace Rdr
             }
 
             return count;
-        } // locked
+        }
 
         public override string ToString()
         {
@@ -164,6 +176,6 @@ namespace Rdr
             sb.AppendLine(string.Format("Feed Items: {0}", this.FeedItems.Count));
 
             return sb.ToString();
-        } // locked
+        }
     }
 }

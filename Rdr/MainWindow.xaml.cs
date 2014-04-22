@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Input;
 
 namespace Rdr
 {
@@ -13,7 +14,7 @@ namespace Rdr
             this.feedManager.ItemsCollectionSwitched += feedManager_ItemsCollectionSwitched;
         }
 
-        void feedManager_ItemsCollectionSwitched(object sender, ItemsCollectionSwitchedEventArgs e)
+        private void feedManager_ItemsCollectionSwitched(object sender, ItemsCollectionSwitchedEventArgs e)
         {
             CollectionViewSource cvsItems = new CollectionViewSource();
             cvsItems.IsLiveSortingRequested = true;
@@ -25,6 +26,7 @@ namespace Rdr
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            Keyboard.Focus(this.stkPnlButtons);
             await this.feedManager.LoadAsync();
         }
 

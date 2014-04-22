@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows.Data;
+using System.Windows.Media;
 
 namespace Rdr
 {
@@ -29,4 +30,28 @@ namespace Rdr
             return value as string;
         }
     }
+
+    [ValueConversion(typeof(bool), typeof(SolidColorBrush))]
+    class FeedUpdatingConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            bool b = (bool)value;
+
+            if (b)
+            {
+                return Brushes.Green;
+            }
+            else
+            {
+                return Brushes.Black;
+            }
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            return null;
+        }
+    }
+
 }

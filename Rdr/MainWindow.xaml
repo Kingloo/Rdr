@@ -13,7 +13,11 @@
     <Window.Resources>
 
         <DataTemplate DataType="{x:Type this:Feed}">
-            <Label Content="{Binding Path=FeedTitle, Mode=OneWay}">
+            <DataTemplate.Resources>
+                <this:FeedUpdatingConverter x:Key="feedUpdatingConverter" />
+            </DataTemplate.Resources>
+            <Label Content="{Binding Path=FeedTitle, Mode=OneWay}"
+                   Foreground="{Binding Path=Updating, Mode=OneWay, Converter={StaticResource feedUpdatingConverter}}">
                 <Label.InputBindings>
                     <MouseBinding MouseAction="LeftDoubleClick"
                                               Command="{Binding Path=RefreshFeedAsyncCommand, ElementName=feedManager}"
@@ -74,7 +78,9 @@
             <RowDefinition Height="70" />
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0"
+        <StackPanel x:Name="stkPnlButtons"
+                    Grid.Row="0"
+                    KeyboardNavigation.TabNavigation="Cycle"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Stretch"
                     Orientation="Horizontal">
@@ -95,10 +101,6 @@
                     Margin="25,0,0,0" />
             
         </StackPanel>
-
-        <Label x:Name="Status"
-               Grid.Row="2"
-               Content="{Binding Path=Status}" />
 
         <Grid Grid.Row="1">
 
@@ -145,5 +147,9 @@
 
             </ItemsControl>
         </Grid>
+
+        <Label x:Name="Status"
+               Grid.Row="2"
+               Content="{Binding Path=Status}" />
     </Grid>
 </Window>

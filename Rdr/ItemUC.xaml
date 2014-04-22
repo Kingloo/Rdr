@@ -1,30 +1,21 @@
 ﻿<UserControl x:Class="Rdr.ItemUC"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:this="clr-namespace:Rdr"
-             x:Name="itemuc"
-             mc:Ignorable="d" 
-             d:DesignHeight="100" d:DesignWidth="500">
+             x:Name="itemuc">
+    
     <UserControl.Resources>
-        
-        <Style TargetType="{x:Type Grid}">
-            <Setter Property="Background" Value="AliceBlue" />
-            <Setter Property="Margin" Value="10,20,10,0" />
-        </Style>
-        
-        <Style TargetType="{x:Type Label}">
-            <Setter Property="FontSize" Value="17" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="HorizontalContentAlignment" Value="Left" />
-        </Style>
-        
         <this:ShortTitleConverter x:Key="shortTitleConverter" />
-        
     </UserControl.Resources>
     
     <Grid>
+        
+        <Grid.Style>
+            <Style TargetType="{x:Type Grid}">
+                <Setter Property="Background" Value="AliceBlue" />
+                <Setter Property="Margin" Value="10" />
+            </Style>
+        </Grid.Style>
         
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="300" />
@@ -33,12 +24,14 @@
         </Grid.ColumnDefinitions>
         
         <Label Grid.Column="0"
+               HorizontalAlignment="Left"
                ToolTip="{Binding Path=TitleOfFeed, Mode=OneWay}"
                Content="{Binding Path=TitleOfFeed, Mode=OneWay, Converter={StaticResource shortTitleConverter}}" />
         
         <Label Grid.Column="1"
+               HorizontalAlignment="Left"
                FontWeight="SemiBold"
-               FontSize="18"
+               FontSize="19"
                Content="{Binding Path=FeedItemTitle, Mode=OneWay}" />
         
         <Label Grid.Column="2"

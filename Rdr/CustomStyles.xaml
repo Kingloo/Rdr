@@ -9,11 +9,15 @@
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
     </Style>
-    
+
     <Style TargetType="{x:Type Panel}" BasedOn="{StaticResource {x:Type FrameworkElement}}">
         <Setter Property="Focusable" Value="False" />
+        <Setter Property="KeyboardNavigation.IsTabStop" Value="False" />
     </Style>
     
+    <Style TargetType="{x:Type StackPanel}" BasedOn="{StaticResource {x:Type Panel}}" />
+    <Style TargetType="{x:Type Grid}" BasedOn="{StaticResource {x:Type Panel}}" />
+
     <Style TargetType="{x:Type Control}" BasedOn="{StaticResource {x:Type FrameworkElement}}">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="Black" />
@@ -24,7 +28,9 @@
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="BorderThickness" Value="0" />
     </Style>
-    
+
+    <Style TargetType="{x:Type UserControl}" BasedOn="{StaticResource {x:Type Control}}" />
+    <Style TargetType="{x:Type ItemsControl}" BasedOn="{StaticResource {x:Type Control}}" />
     <Style TargetType="{x:Type Label}" BasedOn="{StaticResource {x:Type Control}}" />
     
     <Style TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Control}}">
@@ -35,7 +41,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Button}">
-                    <Border x:Name="Border">
+                    <Border x:Name="btnBorder" BorderThickness="0">
                         
                         <Border.CornerRadius>
                             <CornerRadius BottomLeft="10"
@@ -43,6 +49,10 @@
                                           TopLeft="10"
                                           TopRight="10" />
                         </Border.CornerRadius>
+                        
+                        <Border.BorderBrush>
+                            <SolidColorBrush Color="Transparent" />
+                        </Border.BorderBrush>
                         
                         <Border.Background>
                             <SolidColorBrush Color="LightGray" />
@@ -55,44 +65,54 @@
                         <VisualStateManager.VisualStateGroups>
                             
                             <VisualStateGroup x:Name="CommonStates">
-                                
                                 <VisualState x:Name="Normal" />
-                                
                                 <VisualState x:Name="MouseOver">
                                     <Storyboard>
-                                        <ColorAnimation Storyboard.TargetName="Border"
+                                        <ColorAnimation Storyboard.TargetName="btnBorder"
                                                         Storyboard.TargetProperty="Background.Color"
                                                         Duration="0"
                                                         To="LightSteelBlue" />
                                     </Storyboard>
                                 </VisualState>
-                                
                                 <VisualState x:Name="Pressed">
                                     <Storyboard>
-                                        <ColorAnimation Storyboard.TargetName="Border"
+                                        <ColorAnimation Storyboard.TargetName="btnBorder"
                                                         Storyboard.TargetProperty="Background.Color"
                                                         Duration="0"
-                                                        To="AliceBlue" />
+                                                        To="Green" />
                                     </Storyboard>
                                 </VisualState>
-                                
                                 <VisualState x:Name="Disabled">
                                     <Storyboard>
-                                        <ColorAnimation Storyboard.TargetName="Border"
+                                        <ColorAnimation Storyboard.TargetName="btnBorder"
                                                         Storyboard.TargetProperty="Background.Color"
                                                         Duration="0"
                                                         To="#FFEEEEEE" />
                                     </Storyboard>
                                 </VisualState>
-                                
+                            </VisualStateGroup>
+                            
+                            <VisualStateGroup x:Name="FocusStates">
+                                <VisualState x:Name="Unfocused" />
+                                <VisualState x:Name="Focused">
+                                    <Storyboard>
+                                        <ThicknessAnimation Storyboard.TargetName="btnBorder"
+                                                            Storyboard.TargetProperty="BorderThickness"
+                                                            Duration="0"
+                                                            To="3" />
+                                        <ColorAnimation Storyboard.TargetName="btnBorder"
+                                                        Storyboard.TargetProperty="BorderBrush.Color"
+                                                        Duration="0"
+                                                        To="DarkGray" />
+                                        <DoubleAnimation Storyboard.TargetName="btnBorder"
+                                                        Storyboard.TargetProperty="Background.Opacity"
+                                                        Duration="0:0:1.0" AutoReverse="True" RepeatBehavior="Forever"
+                                                        From="1.0" To="0.5" />
+                                    </Storyboard>
+                                </VisualState>
                             </VisualStateGroup>
                         </VisualStateManager.VisualStateGroups>
                     </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsDefault" Value="true">
-                            <Setter TargetName="Border" Property="Background" Value="LightGray" />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
