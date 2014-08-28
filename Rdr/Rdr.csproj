@@ -32,7 +32,7 @@
     <ProductName>Rdr</ProductName>
     <PublisherName>Kingloo Holdings Ltd.</PublisherName>
     <DisallowUrlActivation>true</DisallowUrlActivation>
-    <ApplicationRevision>17</ApplicationRevision>
+    <ApplicationRevision>19</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -59,6 +59,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <LangVersion>5</LangVersion>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>Rdr.App</StartupObject>
@@ -109,20 +110,25 @@
     </ApplicationDefinition>
     <Compile Include="Converters.cs" />
     <Compile Include="DelegateCommand.cs" />
-    <Compile Include="FeedItem.cs" />
-    <Compile Include="ItemUC.xaml.cs">
-      <DependentUpon>ItemUC.xaml</DependentUpon>
-    </Compile>
+    <Compile Include="FeedItemDataTemplateSelector.cs" />
+    <Compile Include="Fidr\AtomFeed.cs" />
+    <Compile Include="Fidr\AtomFeedEnclosure.cs" />
+    <Compile Include="Fidr\AtomFeedEntry.cs" />
+    <Compile Include="Fidr\AtomFeedImage.cs" />
+    <Compile Include="Fidr\Feed.cs" />
+    <Compile Include="Fidr\FeedEnclosure.cs" />
+    <Compile Include="Fidr\FeedItem.cs" />
+    <Compile Include="Fidr\HelperMethods.cs" />
+    <Compile Include="Fidr\IFeedEnclosure.cs" />
+    <Compile Include="Fidr\IFeedImage.cs" />
+    <Compile Include="Fidr\IFeedItem.cs" />
+    <Compile Include="Fidr\RSSFeed.cs" />
+    <Compile Include="Fidr\RSSFeedEnclosure.cs" />
+    <Compile Include="Fidr\RSSFeedImage.cs" />
+    <Compile Include="Fidr\RSSFeedItem.cs" />
+    <Compile Include="Fidr\IFeed.cs" />
     <Compile Include="Misc.cs" />
     <Compile Include="RdrBase.cs" />
-    <Page Include="CustomStyles.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="ItemUC.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -131,7 +137,6 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Feed.cs" />
     <Compile Include="FeedManager.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
@@ -184,9 +189,6 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="rss.ico" />

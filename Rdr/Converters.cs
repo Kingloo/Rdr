@@ -1,25 +1,27 @@
 ﻿using System;
+using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 
 namespace Rdr
 {
     [ValueConversion(typeof(string), typeof(string))]
-    class ShortTitleConverter : IValueConverter
+    public class ShortTitleConverter : IValueConverter
     {
+        private int _maxLength = Int32.MaxValue - 1;
+        public int MaxLength
+        {
+            get { return this._maxLength; }
+            set { this._maxLength = value; }
+        }
+        
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
-            if (!(value is string))
-            {
-                throw new ArgumentException("Converters.cs -> Convert -> value must be string - and some stuff");
-            }
+            string title = (string)value;
 
-            string title = value as string;
-            int maxLength = 27;
-
-            if (title.Length > maxLength)
+            if (title.Length > MaxLength)
             {
-                title = title.Substring(0, maxLength);
+                title = title.Substring(0, MaxLength);
             }
 
             return title;
@@ -27,31 +29,70 @@ namespace Rdr
 
         public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
-            return value as string;
+            return (string)value;
         }
     }
 
-    [ValueConversion(typeof(bool), typeof(SolidColorBrush))]
-    class FeedUpdatingConverter : IValueConverter
+    [ValueConversion(typeof(bool), typeof(Style))]
+    public class FeedUpdatingConverter : IValueConverter
     {
+        private Style _notUpdating = null;
+        public Style NotUpdating
+        {
+            get { return this._notUpdating; }
+            set { this._notUpdating = value; }
+        }
+
+        private Style _updating = null;
+        public Style Updating
+        {
+            get { return this._updating; }
+            set { this._updating = value; }
+        }
+        
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
             bool b = (bool)value;
 
             if (b)
             {
-                return Brushes.Green;
+                return this.Updating;
             }
             else
             {
-                return Brushes.Black;
+                return this.NotUpdating;
             }
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
-            return null;
+            return true;
         }
     }
 
+    [ValueConversion(typeof(bool), typeof(Brush))]
+    public class UnreadToBackgroundConverter : IValueConverter
+    {
+        public SolidColorBrush True { get; set; }
+        public SolidColorBrush False { get; set; }
+
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            bool b = (bool)value;
+
+            if (b)
+            {
+                return this.True;
+            }
+            else
+            {
+                return this.False;
+            }
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            return true;
+        }
+    }
 }

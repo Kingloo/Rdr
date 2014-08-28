@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.ServiceModel.Syndication;
 using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Media;
 
 namespace Rdr
 {
-    class Feed : RdrBase
+    class Feed : RdrBase, IEquatable<Feed>
     {
-        #region Visible
+        #region Properties
         private string _feedTitle = string.Empty;
         public string FeedTitle
         {
@@ -17,19 +16,12 @@ namespace Rdr
             set
             {
                 this._feedTitle = value;
-                OnPropertyChanged("FeedTitle");
+                OnPropertyChanged();
             }
         }
-        public Uri XmlUrl { get; private set; }
-        public List<FeedItem> FeedItems { get; private set; }
-        public bool IsFirstLoad { get; private set; }
-        public string ItemsCount
-        {
-            get
-            {
-                return string.Format("{0} items, {1} unread", this.FeedItems.Count, UnreadItemsCount());
-            }
-        }
+
+        private readonly Uri _xmlUrl = null;
+        public Uri XmlUrl { get { return this._xmlUrl; } }
 
         private bool _updating = false;
         public bool Updating
@@ -38,93 +30,36 @@ namespace Rdr
             set
             {
                 this._updating = value;
-                OnPropertyChanged("Updating");
+                OnPropertyChanged();
+            }
+        }
+
+        private List<FeedItem> _feedItems = new List<FeedItem>();
+        public List<FeedItem> FeedItems { get { return this._feedItems; } }
+
+        public string ItemsCount
+        {
+            get
+            {
+                return string.Format("{0} items, {1} unread", this.FeedItems.Count, UnreadItemsCount());
             }
         }
         #endregion
 
         public Feed(Uri xmlurl)
         {
-            this.FeedTitle = xmlurl.AbsoluteUri;
-            this.XmlUrl = xmlurl;
-            this.FeedItems = new List<FeedItem>();
-            this.IsFirstLoad = true;
+            this._xmlUrl = xmlurl;
+            this._feedTitle = xmlurl.AbsoluteUri;
         }
 
-        public Feed(string message)
-        {
-            this.FeedTitle = message;
-
-            Uri uri = null;
-            if (Uri.TryCreate(message, UriKind.Absolute, out uri))
-            {
-                this.XmlUrl = uri;
-            }
-            else
-            {
-                throw new ArgumentException(string.Format("Feed URL is not valid: {0}", message));
-            }
-        }
-
-        public List<FeedItem> FirstLoad(SyndicationFeed xmlFeed, int max)
+        public void Load(SyndicationFeed xmlFeed)
         {
             this.FeedTitle = DetermineFeedTitle(xmlFeed.Title);
 
-            foreach (SyndicationItem item in xmlFeed.Items)
-            {
-                FeedItem feedItem = new FeedItem(item, FeedTitle);
+            IEnumerable<FeedItem> allItemsInFeed = from each in xmlFeed.Items
+                                                   select new FeedItem(each, xmlFeed.Title.Text);
 
-                this.FeedItems.Add(feedItem);
-            }
-
-            List<FeedItem> toReturn = new List<FeedItem>();
-
-            // evalute (max > this.FeedItems.Count) -> if true use this.FeedItems.Count, if false use max
-            int range = (max > this.FeedItems.Count) ? this.FeedItems.Count : max;
-
-            for (int i = 0; i < range; i++)
-            {
-                toReturn.Add(this.FeedItems[i]);
-            }
-
-            this.IsFirstLoad = false;
-            return toReturn;
-        }
-
-        public List<FeedItem> Load(SyndicationFeed xmlFeed)
-        {
-            List<FeedItem> allFeedItems = new List<FeedItem>();
-
-            foreach (SyndicationItem item in xmlFeed.Items)
-            {
-                FeedItem feedItem = new FeedItem(item, xmlFeed.Title.Text);
-                allFeedItems.Add(feedItem);
-            }
-
-            List<FeedItem> itemsToAdd = new List<FeedItem>();
-            foreach (FeedItem test in allFeedItems)
-            {
-                if (FeedItemsContains(test) == false)
-                {
-                    itemsToAdd.Add(test);
-                    this.FeedItems.Add(test);
-                }
-            }
-
-            return new List<FeedItem>(itemsToAdd);
-        }
-
-        private bool FeedItemsContains(FeedItem test)
-        {
-            foreach (FeedItem each in this.FeedItems)
-            {
-                if (test.Equals(each))
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            this.FeedItems.AddMissingItems<FeedItem>(allItemsInFeed);
         }
 
         private string DetermineFeedTitle(TextSyndicationContent tsc)
@@ -139,40 +74,45 @@ namespace Rdr
             }
         }
 
-        public Task MarkAllItemsAsReadAsync()
+        public void MarkAllItemsAsRead()
         {
-            return Task.Factory.StartNew(new Action(
-                delegate()
-                {
-                    foreach (FeedItem feedItem in this.FeedItems)
-                    {
-                        feedItem.Unread = false;
-                    }
-                }));
+            foreach (FeedItem each in this.FeedItems)
+            {
+                each.MarkAsRead();
+            }
         }
 
         private int UnreadItemsCount()
         {
-            int count = 0;
+            IEnumerable<FeedItem> unreadItems = from each in this.FeedItems
+                                                where each.Unread
+                                                select each;
 
-            foreach (FeedItem feedItem in this.FeedItems)
+            return unreadItems.Count<FeedItem>();
+        }
+
+        public bool Equals(Feed other)
+        {
+            if (other.FeedTitle.Equals(this.FeedTitle) == false)
             {
-                if (feedItem.Unread)
-                {
-                    count++;
-                }
+                return false;
             }
 
-            return count;
+            if (other.XmlUrl.AbsoluteUri.Equals(this.XmlUrl.AbsoluteUri) == false)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
 
+            sb.AppendLine(this.GetType().ToString());
             sb.AppendLine(this.FeedTitle);
             sb.AppendLine(this.XmlUrl.AbsoluteUri);
-            sb.AppendLine(this.IsFirstLoad.ToString());
             sb.AppendLine(string.Format("Feed Items: {0}", this.FeedItems.Count));
 
             return sb.ToString();

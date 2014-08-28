@@ -6,9 +6,9 @@ using System.Windows;
 
 namespace Rdr
 {
-    class FeedItem : RdrBase
+    class FeedItem : RdrBase, IEquatable<FeedItem>
     {
-        #region Visible
+        #region Properties
         public string FeedItemTitle { get; private set; }
         public string TitleOfFeed { get; private set; }
         public DateTime Published { get; private set; }
@@ -20,7 +20,7 @@ namespace Rdr
             set
             {
                 this._unread = value;
-                OnPropertyChanged("Unread");
+                OnPropertyChanged();
             }
         }
         #endregion
@@ -31,61 +31,60 @@ namespace Rdr
             this.TitleOfFeed = feedTitle;
             this.Published = item.PublishDate.LocalDateTime;
             this.Link = DetermineItemLink(item);
-            this.Unread = true;
         }
 
         private string DetermineItemTitle(SyndicationItem item)
         {
             if (item.Title != null)
             {
-                if (item.Title is TextSyndicationContent)
-                {
-                    if (item.Title.Text == string.Empty)
-                    {
-                        return "untitled";
-                    }
-                    else
-                    {
-                        return item.Title.Text;
-                    }
-                }
+                return String.IsNullOrEmpty(item.Title.Text) ? "untitled" : item.Title.Text;
             }
 
-            return "title unknown";
+            return "untitled";
         }
 
         private string DetermineItemLink(SyndicationItem item)
         {
             if (item.Links != null)
             {
-                if (item.Links is Collection<SyndicationLink>)
+                if (item.Links.Count > 0)
                 {
-                    if (item.Links.Count > 0)
-                    {
-                        return item.Links[0].Uri.AbsoluteUri;
-                    }
+                    return item.Links[0].Uri.AbsoluteUri;
                 }
             }
 
             return string.Empty;
         }
 
-        public override bool Equals(object obj)
+        public void MarkAsRead()
         {
-            if (this.GetHashCode() == obj.GetHashCode())
-            {
-                return true;
-            }
-            else
+            this.Unread = false;
+        }
+
+        public bool Equals(FeedItem other)
+        {
+            if (other.FeedItemTitle.Equals(this.FeedItemTitle) == false)
             {
                 return false;
             }
-        } // locked
 
-        public override int GetHashCode()
-        {
-            return this.FeedItemTitle.GetHashCode();
-        } // locked
+            if (other.TitleOfFeed.Equals(this.TitleOfFeed) == false)
+            {
+                return false;
+            }
+
+            if (other.Published.Equals(this.Published) == false)
+            {
+                return false;
+            }
+
+            if (other.Link.Equals(this.Link) == false)
+            {
+                return false;
+            }
+
+            return true;
+        }
 
         public override string ToString()
         {
@@ -98,6 +97,6 @@ namespace Rdr
             sb.AppendLine(this.Unread.ToString());
 
             return sb.ToString();
-        } // locked
+        }
     }
 }
