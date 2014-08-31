@@ -96,11 +96,6 @@ namespace Rdr.Fidr
                 return false;
             }
 
-            if (other.PubDate.Equals(this.PubDate) == false)
-            {
-                return false;
-            }
-
             return true;
         }
 
