@@ -32,7 +32,7 @@
     <ProductName>Rdr</ProductName>
     <PublisherName>Kingloo Holdings Ltd.</PublisherName>
     <DisallowUrlActivation>true</DisallowUrlActivation>
-    <ApplicationRevision>21</ApplicationRevision>
+    <ApplicationRevision>22</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -117,16 +117,13 @@
     <Compile Include="Fidr\AtomFeedImage.cs" />
     <Compile Include="Fidr\Feed.cs" />
     <Compile Include="Fidr\FeedEnclosure.cs" />
+    <Compile Include="Fidr\FeedImage.cs" />
     <Compile Include="Fidr\FeedItem.cs" />
     <Compile Include="Fidr\HelperMethods.cs" />
-    <Compile Include="Fidr\IFeedEnclosure.cs" />
-    <Compile Include="Fidr\IFeedImage.cs" />
-    <Compile Include="Fidr\IFeedItem.cs" />
     <Compile Include="Fidr\RSSFeed.cs" />
     <Compile Include="Fidr\RSSFeedEnclosure.cs" />
     <Compile Include="Fidr\RSSFeedImage.cs" />
     <Compile Include="Fidr\RSSFeedItem.cs" />
-    <Compile Include="Fidr\IFeed.cs" />
     <Compile Include="Misc.cs" />
     <Compile Include="RdrBase.cs" />
     <Page Include="MainWindow.xaml">

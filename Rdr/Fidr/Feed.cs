@@ -8,7 +8,7 @@ using System.Text;
 
 namespace Rdr.Fidr
 {
-    abstract class Feed : IFeed, INotifyPropertyChanged
+    abstract class Feed : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnNotifyPropertyChanged([CallerMemberName] string propertyName = "")
@@ -31,26 +31,14 @@ namespace Rdr.Fidr
             }
         }
 
-        private Uri _xmlUrl = null;
-        public Uri XmlUrl
-        {
-            get { return this._xmlUrl; }
-            set { this._xmlUrl = value; }
-        }
+        protected Uri _xmlUrl = null;
+        public Uri XmlUrl { get { return this._xmlUrl; } }
 
-        private string _generator = string.Empty;
-        public string Generator
-        {
-            get { return this._generator; }
-            set { this._generator = value; }
-        }
+        protected string _generator = string.Empty;
+        public string Generator { get { return this._generator; } }
 
-        private DateTime _lastBuildDate = DateTime.MinValue;
-        public DateTime LastBuildDate
-        {
-            get { return this._lastBuildDate; }
-            set { this._lastBuildDate = value; }
-        }
+        protected DateTime _lastBuildDate = DateTime.MinValue;
+        public DateTime LastBuildDate { get { return this._lastBuildDate; } }
 
         private bool _updating = false;
         public bool Updating
@@ -71,21 +59,17 @@ namespace Rdr.Fidr
             }
         }
 
-        private IFeedImage _image = null;
-        public IFeedImage Image
-        {
-            get { return this._image; }
-            set { this._image = value; }
-        }
+        protected FeedImage _image = null;
+        public FeedImage Image { get { return this._image; } }
 
-        protected ObservableCollection<IFeedItem> _feedItems = new ObservableCollection<IFeedItem>();
-        public ObservableCollection<IFeedItem> FeedItems { get { return this._feedItems; } }
+        protected ObservableCollection<FeedItem> _feedItems = new ObservableCollection<FeedItem>();
+        public ObservableCollection<FeedItem> FeedItems { get { return this._feedItems; } }
 
         public abstract void Load(string s);
 
         public void MarkAllItemsAsRead()
         {
-            foreach (IFeedItem each in this.FeedItems)
+            foreach (FeedItem each in this.FeedItems)
             {
                 each.MarkAsRead();
             }
@@ -93,11 +77,11 @@ namespace Rdr.Fidr
 
         private int UnreadItemsCount()
         {
-            IEnumerable<IFeedItem> allUnreadItems = from each in this.FeedItems
+            IEnumerable<FeedItem> allUnreadItems = from each in this.FeedItems
                                                     where each.Unread
                                                     select each;
 
-            return allUnreadItems.Count<IFeedItem>();
+            return allUnreadItems.Count<FeedItem>();
         }
 
         public override string ToString()

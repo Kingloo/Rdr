@@ -45,21 +45,21 @@ namespace Rdr
             this.Activity = false;
         }
 
-        private DelegateCommandAsync<IFeed> _refreshFeedCommandAsync = null;
-        public DelegateCommandAsync<IFeed> RefreshFeedCommandAsync
+        private DelegateCommandAsync<Feed> _refreshFeedCommandAsync = null;
+        public DelegateCommandAsync<Feed> RefreshFeedCommandAsync
         {
             get
             {
                 if (this._refreshFeedCommandAsync == null)
                 {
-                    this._refreshFeedCommandAsync = new DelegateCommandAsync<IFeed>(new Func<IFeed, Task>(RefreshFeedAsync), canExecuteAsync);
+                    this._refreshFeedCommandAsync = new DelegateCommandAsync<Feed>(new Func<Feed, Task>(RefreshFeedAsync), canExecuteAsync);
                 }
 
                 return this._refreshFeedCommandAsync;
             }
         }
 
-        private async Task RefreshFeedAsync(IFeed feed)
+        private async Task RefreshFeedAsync(Feed feed)
         {
             feed.Updating = true;
 
@@ -90,9 +90,9 @@ namespace Rdr
             }
         }
 
-        private void MarkAllItemsAsRead(object parameter)
+        private void MarkAllItemsAsRead(object _)
         {
-            foreach (IFeed each in this.Feeds)
+            foreach (Feed each in this.Feeds)
             {
                 if (each != null)
                 {
@@ -103,70 +103,70 @@ namespace Rdr
             MoveAllUnreadItemsToView(null);
         }
 
-        private DelegateCommand<IFeed> _goToFeedCommand = null;
-        public DelegateCommand<IFeed> GoToFeedCommand
+        private DelegateCommand<Feed> _goToFeedCommand = null;
+        public DelegateCommand<Feed> GoToFeedCommand
         {
             get
             {
                 if (this._goToFeedCommand == null)
                 {
-                    this._goToFeedCommand = new DelegateCommand<IFeed>(new Action<IFeed>(GoToFeed), canExecute);
+                    this._goToFeedCommand = new DelegateCommand<Feed>(new Action<Feed>(GoToFeed), canExecute);
                 }
 
                 return _goToFeedCommand;
             }
         }
 
-        private void GoToFeed(IFeed feed)
+        private void GoToFeed(Feed feed)
         {
             Misc.OpenUrlInBrowser(feed.XmlUrl);
         }
 
-        private DelegateCommand<IFeedItem> _goToItemCommand = null;
-        public DelegateCommand<IFeedItem> GoToItemCommand
+        private DelegateCommand<FeedItem> _goToItemCommand = null;
+        public DelegateCommand<FeedItem> GoToItemCommand
         {
             get
             {
                 if (this._goToItemCommand == null)
                 {
-                    this._goToItemCommand = new DelegateCommand<IFeedItem>(new Action<IFeedItem>(GoToItem), canExecute);
+                    this._goToItemCommand = new DelegateCommand<FeedItem>(new Action<FeedItem>(GoToItem), canExecute);
                 }
 
                 return _goToItemCommand;
             }
         }
 
-        private void GoToItem(IFeedItem feedItem)
+        private void GoToItem(FeedItem feedItem)
         {
             Misc.OpenUrlInBrowser(feedItem.Link);
 
             feedItem.Unread = false;
         }
 
-        private DelegateCommand<IFeed> _moveItemsToViewCommand = null;
-        public DelegateCommand<IFeed> MoveItemsToViewCommand
+        private DelegateCommand<Feed> _moveItemsToViewCommand = null;
+        public DelegateCommand<Feed> MoveItemsToViewCommand
         {
             get
             {
                 if (this._moveItemsToViewCommand == null)
                 {
-                    this._moveItemsToViewCommand = new DelegateCommand<IFeed>(new Action<IFeed>(MoveItemsToView), canExecute);
+                    this._moveItemsToViewCommand = new DelegateCommand<Feed>(new Action<Feed>(MoveItemsToView), canExecute);
                 }
 
                 return _moveItemsToViewCommand;
             }
         }
 
-        private void MoveItemsToView(IFeed feed)
+        private void MoveItemsToView(Feed feed)
         {
             lock (this.Items)
             {
                 this.Items.Clear();
 
-                IEnumerable<IFeedItem> feedItems = from each in feed.FeedItems
-                                                   select each;
+                IEnumerable<FeedItem> feedItems = from each in feed.FeedItems
+                                                  select each;
 
-                this.Items.AddList<IFeedItem>(feedItems);
+                this.Items.AddList<FeedItem>(feedItems);
             }
         }
 
@@ -184,13 +184,13 @@ namespace Rdr
             }
         }
 
-        private void MoveUnreadItemsToView(IFeed feed)
+        private void MoveUnreadItemsToView(Feed feed)
         {
-            IEnumerable<IFeedItem> unreadItems = from each in feed.FeedItems
-                                                 where each.Unread
-                                                 select each;
+            IEnumerable<FeedItem> unreadItems = from each in feed.FeedItems
+                                                where each.Unread
+                                                select each;
 
-            this.Items.AddMissingItems<IFeedItem>(unreadItems);
+            this.Items.AddMissingItems<FeedItem>(unreadItems);
         }
         #endregion
 
@@ -215,11 +215,11 @@ namespace Rdr
             }
         }
 
-        private ObservableCollection<IFeed> _feeds = new ObservableCollection<IFeed>();
-        public ObservableCollection<IFeed> Feeds { get { return this._feeds; } }
+        private ObservableCollection<Feed> _feeds = new ObservableCollection<Feed>();
+        public ObservableCollection<Feed> Feeds { get { return this._feeds; } }
 
-        private ObservableCollection<IFeedItem> _items = new ObservableCollection<IFeedItem>();
-        public ObservableCollection<IFeedItem> Items { get { return this._items; } }
+        private ObservableCollection<FeedItem> _items = new ObservableCollection<FeedItem>();
+        public ObservableCollection<FeedItem> Items { get { return this._items; } }
         #endregion
 
         public FeedManager(MainWindow mainWindow)
@@ -339,7 +339,7 @@ namespace Rdr
             string websiteAsString = await Misc.DownloadWebsiteAsString(req);
 
             HelperMethods.FeedType type = HelperMethods.DetermineFeedType(websiteAsString);
-            IFeed feed = null;
+            Feed feed = null;
 
             switch (type)
             {
@@ -387,22 +387,22 @@ namespace Rdr
             {
                 this.Items.Clear();
 
-                List<IFeedItem> toAdd = new List<IFeedItem>();
+                List<FeedItem> toAdd = new List<FeedItem>();
 
-                foreach (IFeed each in this.Feeds)
+                foreach (Feed each in this.Feeds)
                 {
                     if (each != null)
                     {
                         if (each.FeedItems != null)
                         {
-                            toAdd.AddList<IFeedItem>(from eeach in each.FeedItems
-                                                     where eeach.Unread
-                                                     select eeach);
+                            toAdd.AddList<FeedItem>(from eeach in each.FeedItems
+                                                    where eeach.Unread
+                                                    select eeach);
                         }
                     }
                 }
 
-                this.Items.AddList<IFeedItem>(toAdd);
+                this.Items.AddList<FeedItem>(toAdd);
             }
         }
 

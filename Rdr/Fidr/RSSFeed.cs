@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Text;
-using System.Xml.Linq;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Xml;
+using System.Xml.Linq;
 
 namespace Rdr.Fidr
 {
@@ -26,7 +26,7 @@ namespace Rdr.Fidr
 
         public RSSFeed(string websiteAsString, Uri xmlUrl)
         {
-            this.XmlUrl = xmlUrl;
+            this._xmlUrl = xmlUrl;
             
             XDocument xDoc = XDocument.Parse(websiteAsString);
             XElement x = xDoc.Root.Element("channel");
@@ -45,7 +45,7 @@ namespace Rdr.Fidr
 
                 if (each.Name.LocalName.Equals("generator"))
                 {
-                    this.Generator = String.IsNullOrEmpty(each.Value) ? "no generator" : each.Value;
+                    this._generator = String.IsNullOrEmpty(each.Value) ? "no generator" : each.Value;
                 }
 
                 if (each.Name.LocalName.Equals("docs"))
@@ -65,7 +65,7 @@ namespace Rdr.Fidr
 
                 if (each.Name.LocalName.Equals("lastBuildDate", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    this.LastBuildDate = HelperMethods.ConvertXElementToDateTime(each);
+                    this._lastBuildDate = HelperMethods.ConvertXElementToDateTime(each);
                 }
 
                 if (each.Name.LocalName.Equals("ttl"))
@@ -77,7 +77,8 @@ namespace Rdr.Fidr
                 {
                     if ((each.IsEmpty == false) && (each.HasElements))
                     {
-                        this.Image = new RSSFeedImage(each) as IFeedImage;
+                        //this.Image = new RSSFeedImage(each) as IFeedImage;
+                        this._image = new RSSFeedImage(each);
                     }
                 }
 
@@ -92,7 +93,7 @@ namespace Rdr.Fidr
             }
         }
 
-        public static bool TryCreate(string websiteAsString, Uri uri, out IFeed feed)
+        public static bool TryCreate(string websiteAsString, Uri uri, out Feed feed)
         {
             XDocument xDoc = XDocument.Parse(websiteAsString);
 
@@ -155,11 +156,11 @@ namespace Rdr.Fidr
             {
                 RSSFeedItem feedItem = null;
 
-                IEnumerable<IFeedItem> feedItems = from each in xDoc.Root.Element("channel").Elements("item")
+                IEnumerable<FeedItem> feedItems = from each in xDoc.Root.Element("channel").Elements("item")
                                                    where RSSFeedItem.TryCreate(each, this.Name, out feedItem)
                                                    select new RSSFeedItem(each, this.Name);
 
-                this.FeedItems.AddMissingItems<IFeedItem>(feedItems);
+                this.FeedItems.AddMissingItems<FeedItem>(feedItems);
             }
         }
 

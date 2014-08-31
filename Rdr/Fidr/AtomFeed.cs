@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Xml.Linq;
 using System.Linq;
 using System.Xml;
+using System.Xml.Linq;
 
 namespace Rdr.Fidr
 {
@@ -10,7 +10,7 @@ namespace Rdr.Fidr
     {
         public AtomFeed(string websiteAsString, Uri xmlUrl)
         {
-            this.XmlUrl = xmlUrl;
+            this._xmlUrl = xmlUrl;
 
             XDocument xDoc = XDocument.Parse(websiteAsString);
             XElement x = xDoc.Root;
@@ -24,17 +24,18 @@ namespace Rdr.Fidr
 
                 if (each.Name.LocalName.Equals("icon"))
                 {
-                    this.Image = new AtomFeedImage(each) as IFeedImage;
+                    //this.Image = new AtomFeedImage(each) as FeedImage;
+                    this._image = new AtomFeedImage(each);
                 }
 
                 if (each.Name.LocalName.Equals("updated", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    this.LastBuildDate = HelperMethods.ConvertStringToDateTime(each.Value);
+                    this._lastBuildDate = HelperMethods.ConvertStringToDateTime(each.Value);
                 }
 
                 if (each.Name.LocalName.Equals("generator"))
                 {
-                    this.Generator = String.IsNullOrEmpty(each.Value) ? "none" : each.Value;
+                    this._generator = String.IsNullOrEmpty(each.Value) ? "none" : each.Value;
                 }
 
                 if (each.Name.LocalName.Equals("entry"))
@@ -48,7 +49,7 @@ namespace Rdr.Fidr
             }
         }
 
-        public static bool TryCreate(string websiteAsString, Uri uri, out IFeed feed)
+        public static bool TryCreate(string websiteAsString, Uri uri, out Feed feed)
         {
             XDocument xDoc = XDocument.Parse(websiteAsString);
 
@@ -95,7 +96,7 @@ namespace Rdr.Fidr
                                                      where AtomFeedEntry.TryCreate(each, this.Name, out entry)
                                                      select new AtomFeedEntry(each, this.Name);
 
-                this.FeedItems.AddMissingItems<IFeedItem>(entries);
+                this.FeedItems.AddMissingItems<FeedItem>(entries);
             }
         }
 

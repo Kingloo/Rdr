@@ -4,14 +4,8 @@ using System.Xml.Linq;
 
 namespace Rdr.Fidr
 {
-    class RSSFeedImage : IFeedImage
+    class RSSFeedImage : FeedImage
     {
-        private Uri _uri = null;
-        public Uri Uri { get { return this._uri; } }
-
-        private string _title = string.Empty;
-        public string Title { get { return this._title; } }
-
         private Uri _link = null;
         public Uri Link { get { return this._link; } }
 

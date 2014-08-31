@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Rdr.Fidr
 {
-    abstract class FeedEnclosure : IFeedEnclosure, INotifyPropertyChanged
+    abstract class FeedEnclosure : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
         private void OnNotifyPropertyChanged([CallerMemberName] string propertyName = "")
@@ -20,26 +20,14 @@ namespace Rdr.Fidr
             }
         }
 
-        private ContentType _contentType = new ContentType { MediaType = "application/unknown" };
-        public ContentType ContentType
-        {
-            get { return this._contentType; }
-            set { this._contentType = value; }
-        }
+        protected ContentType _contentType = new ContentType { MediaType = "application/unknown" };
+        public ContentType ContentType { get { return this._contentType; } }
 
-        private Uri _link = null;
-        public Uri Link
-        {
-            get { return this._link; }
-            set { this._link = value; }
-        }
+        protected Uri _link = null;
+        public Uri Link { get { return this._link; } }
 
-        private int _fileSize = 0;
-        public int FileSize
-        {
-            get { return this._fileSize; }
-            set { this._fileSize = value; }
-        }
+        protected int _fileSize = 0;
+        public int FileSize { get { return this._fileSize; } }
 
         private string _duration = "00:00:00";
         public string Duration
@@ -59,21 +47,21 @@ namespace Rdr.Fidr
             }
         }
 
-        private DelegateCommandAsync<IFeedEnclosure> _downloadEnclosureCommandAsync = null;
-        public DelegateCommandAsync<IFeedEnclosure> DownloadEnclosureCommandAsync
+        private DelegateCommandAsync<FeedEnclosure> _downloadEnclosureCommandAsync = null;
+        public DelegateCommandAsync<FeedEnclosure> DownloadEnclosureCommandAsync
         {
             get
             {
                 if (this._downloadEnclosureCommandAsync == null)
                 {
-                    this._downloadEnclosureCommandAsync = new DelegateCommandAsync<IFeedEnclosure>(new Func<IFeedEnclosure, Task>(DownloadEnclosureAsync), canExecute);
+                    this._downloadEnclosureCommandAsync = new DelegateCommandAsync<FeedEnclosure>(new Func<FeedEnclosure, Task>(DownloadEnclosureAsync), canExecute);
                 }
 
                 return this._downloadEnclosureCommandAsync;
             }
         }
 
-        public async Task DownloadEnclosureAsync(IFeedEnclosure enclosure)
+        public async Task DownloadEnclosureAsync(FeedEnclosure enclosure)
         {
             if (enclosure.Link != null)
             {
@@ -105,7 +93,7 @@ namespace Rdr.Fidr
             return string.Format(@"C:\Users\{0}\Documents\share\{1}", Environment.UserName, link.Substring(indexOfLastSlash));
         }
 
-        private bool canExecute(IFeedEnclosure _)
+        private bool canExecute(FeedEnclosure _)
         {
             return true;
         }

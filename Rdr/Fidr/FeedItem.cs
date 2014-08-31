@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Rdr.Fidr
 {
-    abstract class FeedItem : IFeedItem, IEquatable<IFeedItem>, IComparable<IFeedItem>, INotifyPropertyChanged
+    abstract class FeedItem : IEquatable<FeedItem>, IComparable<FeedItem>, INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnNotifyPropertyChanged([CallerMemberName] string propertyName = "")
@@ -17,19 +17,11 @@ namespace Rdr.Fidr
             }
         }
 
-        private string _name = string.Empty;
-        public string Name
-        {
-            get { return this._name; }
-            set { this._name = value; }
-        }
+        protected string _name = string.Empty;
+        public string Name { get { return this._name; } }
 
-        private string _titleOfFeed = string.Empty;
-        public string TitleOfFeed
-        {
-            get { return this._titleOfFeed; }
-            set { this._titleOfFeed = value; }
-        }
+        protected string _titleOfFeed = string.Empty;
+        public string TitleOfFeed { get { return this._titleOfFeed; } }
 
         private bool _unread = true;
         public bool Unread
@@ -42,54 +34,30 @@ namespace Rdr.Fidr
             }
         }
 
-        private string _description = string.Empty;
-        public string Description
-        {
-            get { return this._description; }
-            set { this._description = value; }
-        }
+        protected string _description = string.Empty;
+        public string Description { get { return this._description; } }
 
-        private string _author = string.Empty;
-        public string Author
-        {
-            get { return this._author; }
-            set { this._author = value; }
-        }
+        protected string _author = string.Empty;
+        public string Author { get { return this._author; } }
 
-        private DateTime _pubDate = DateTime.MinValue;
-        public DateTime PubDate
-        {
-            get { return this._pubDate; }
-            set { this._pubDate = value; }
-        }
+        protected DateTime _pubDate = DateTime.MinValue;
+        public DateTime PubDate { get { return this._pubDate; } }
 
-        private Uri _link = null;
-        public Uri Link
-        {
-            get { return this._link; }
-            set { this._link = value; }
-        }
+        protected Uri _link = null;
+        public Uri Link { get { return this._link; } }
 
-        private IFeedEnclosure _enclosure = null;
-        public IFeedEnclosure Enclosure
-        {
-            get { return this._enclosure; }
-            set { this._enclosure = value; }
-        }
+        protected FeedEnclosure _enclosure = null;
+        public FeedEnclosure Enclosure { get { return this._enclosure; } }
 
-        private bool _hasEnclosure = false;
-        public bool HasEnclosure
-        {
-            get { return this._hasEnclosure; }
-            set { this._hasEnclosure = value; }
-        }
+        protected bool _hasEnclosure = false;
+        public bool HasEnclosure { get { return this._hasEnclosure; } }
 
         public void MarkAsRead()
         {
             this.Unread = false;
         }
 
-        public bool Equals(IFeedItem other)
+        public bool Equals(FeedItem other)
         {
             if (other.Name.Equals(this.Name) == false)
             {
@@ -99,7 +67,7 @@ namespace Rdr.Fidr
             return true;
         }
 
-        public int CompareTo(IFeedItem other)
+        public int CompareTo(FeedItem other)
         {
             if (this.PubDate > other.PubDate)
             {

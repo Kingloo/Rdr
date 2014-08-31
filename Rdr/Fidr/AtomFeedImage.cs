@@ -4,11 +4,8 @@ using System.Xml.Linq;
 
 namespace Rdr.Fidr
 {
-    class AtomFeedImage : IFeedImage
+    class AtomFeedImage : FeedImage
     {
-        private Uri _uri = null;
-        public Uri Uri { get { return this._uri; } }
-
         public AtomFeedImage(XElement x)
         {
             this._uri = HelperMethods.ConvertStringToUri(x.Value);

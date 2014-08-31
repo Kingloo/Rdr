@@ -11,7 +11,7 @@ namespace Rdr
         
         public override DataTemplate SelectTemplate(object item, System.Windows.DependencyObject container)
         {
-            IFeedItem feedItem = (IFeedItem)item;
+            FeedItem feedItem = (FeedItem)item;
 
             if (feedItem.HasEnclosure)
             {

@@ -12,17 +12,17 @@ namespace Rdr.Fidr
             {
                 if (each.Name.LocalName.Equals("type"))
                 {
-                    this.ContentType = new ContentType { MediaType = (String.IsNullOrEmpty(each.Value) ? "undefined" : each.Value) };
+                    this._contentType = new ContentType { MediaType = (String.IsNullOrEmpty(each.Value) ? "undefined" : each.Value) };
                 }
 
                 if (each.Name.LocalName.Equals("url"))
                 {
-                    this.Link = HelperMethods.ConvertStringToUri(each.Value);
+                    this._link = HelperMethods.ConvertStringToUri(each.Value);
                 }
 
                 if (each.Name.LocalName.Equals("length"))
                 {
-                    this.FileSize = HelperMethods.ConvertStringToInt32(each.Value);
+                    this._fileSize = HelperMethods.ConvertStringToInt32(each.Value);
                 }
             }
         }

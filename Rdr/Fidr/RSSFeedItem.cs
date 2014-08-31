@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 using System.Xml.Linq;
 
 namespace Rdr.Fidr
@@ -8,7 +7,7 @@ namespace Rdr.Fidr
     {
         public RSSFeedItem(XElement x, string titleOfFeed)
         {
-            this.TitleOfFeed = titleOfFeed;
+            this._titleOfFeed = titleOfFeed;
             
             // we need to "cache" the Duration value outside the foreach loop
             // if duration appears before enclosure, there will be no enclosure object yet
@@ -19,32 +18,32 @@ namespace Rdr.Fidr
             {
                 if (each.Name.LocalName.Equals("title"))
                 {
-                    this.Name = String.IsNullOrEmpty(each.Value) ? "no title" : each.Value.RemoveNewLines();
+                    this._name = String.IsNullOrEmpty(each.Value) ? "no title" : each.Value.RemoveNewLines();
                 }
 
                 if (each.Name.LocalName.Equals("description"))
                 {
-                    this.Description = String.IsNullOrEmpty(each.Value) ? "no description" : each.Value;
+                    this._description = String.IsNullOrEmpty(each.Value) ? "no description" : each.Value;
                 }
 
                 if (each.Name.LocalName.Equals("author"))
                 {
-                    this.Author = String.IsNullOrEmpty(each.Value) ? "no author" : each.Value;
+                    this._author = String.IsNullOrEmpty(each.Value) ? "no author" : each.Value;
                 }
 
                 if (each.Name.LocalName.Equals("pubDate", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    this.PubDate = HelperMethods.ConvertXElementToDateTime(each);
+                    this._pubDate = HelperMethods.ConvertXElementToDateTime(each);
                 }
 
                 if (each.Name.LocalName.Equals("link"))
                 {
-                    this.Link = HelperMethods.ConvertXElementToUri(each);
+                    this._link = HelperMethods.ConvertXElementToUri(each);
                 }
 
                 if (each.Name.LocalName.Equals("enclosure"))
                 {
-                    this.Enclosure = new RSSFeedEnclosure(each);
+                    this._enclosure = new RSSFeedEnclosure(each);
                 }
 
                 if (each.Name.LocalName.Equals("duration"))
@@ -55,8 +54,8 @@ namespace Rdr.Fidr
 
             if (this.Enclosure != null)
             {
-                this.HasEnclosure = true;
-                this.Enclosure.Duration = string.IsNullOrEmpty(tmpDuration) ? "00:00:00" : tmpDuration;
+                this._hasEnclosure = true;
+                this._enclosure.Duration = string.IsNullOrEmpty(tmpDuration) ? "00:00:00" : tmpDuration;
             }
         }
 

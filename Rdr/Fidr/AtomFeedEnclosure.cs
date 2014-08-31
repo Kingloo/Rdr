@@ -12,12 +12,12 @@ namespace Rdr.Fidr
             {
                 if (each.Name.LocalName.Equals("type"))
                 {
-                    this.ContentType = new ContentType { MediaType = (String.IsNullOrEmpty(each.Value) ? "undefined" : each.Value) };
+                    this._contentType = new ContentType { MediaType = (String.IsNullOrEmpty(each.Value) ? "undefined" : each.Value) };
                 }
 
                 if (each.Name.LocalName.Equals("href"))
                 {
-                    this.Link = HelperMethods.ConvertStringToUri(each.Value);
+                    this._link = HelperMethods.ConvertStringToUri(each.Value);
                 }
             }
         }
