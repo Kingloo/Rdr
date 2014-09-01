@@ -220,9 +220,15 @@ namespace Rdr
         /// </summary>
         /// <param name="req">The HttpWebRequest to perform.</param>
         /// <returns></returns>
-        public static async Task<HttpWebResponse> GetResponseAsyncExt(this HttpWebRequest req)
+        public static async Task<HttpWebResponse> GetResponseAsyncExt(this HttpWebRequest req, int maxRounds)
         {
+            if (maxRounds == 0)
+            {
+                return null;
+            }
+
             WebResponse webResp = null;
+            bool tryAgain = false;
 
             try
             {
@@ -236,8 +242,17 @@ namespace Rdr
                 }
                 else
                 {
-                    Misc.LogException(e);
+                    tryAgain = true;
                 }
+
+                Misc.LogException(e);
+            }
+
+            if (tryAgain)
+            {
+                webResp = await GetResponseAsyncExt(req, maxRounds - 1);
+
+                await Misc.LogMessageAsync(string.Format("tryAgain: {0}, tries left: {1}", req.RequestUri.AbsoluteUri, maxRounds - 1));
             }
 
             return (HttpWebResponse)webResp;
@@ -252,7 +267,7 @@ namespace Rdr
         {
             string response = string.Empty;
 
-            HttpWebResponse resp = await req.GetResponseAsyncExt();
+            HttpWebResponse resp = await req.GetResponseAsyncExt(5);
 
             if (resp != null)
             {

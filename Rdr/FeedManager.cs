@@ -292,7 +292,7 @@ namespace Rdr
         {
             string feedsFileAsString = string.Empty;
 
-            using (FileStream fsAsync = new FileStream(this.feedsFile, FileMode.Open, FileAccess.Read, FileShare.None, 4096, true))
+            using (FileStream fsAsync = new FileStream(this.feedsFile, FileMode.Open, FileAccess.Read, FileShare.None, 1024, true))
             {
                 using (StreamReader sr = new StreamReader(fsAsync))
                 {
@@ -333,7 +333,7 @@ namespace Rdr
             }
         }
 
-        private async Task BuildFeed(Uri uri)
+        private async Task<bool> BuildFeed(Uri uri)
         {
             HttpWebRequest req = BuildWebRequest(uri);
             string websiteAsString = await Misc.DownloadWebsiteAsString(req);
@@ -346,22 +346,29 @@ namespace Rdr
                 case HelperMethods.FeedType.Atom:
                     if (AtomFeed.TryCreate(websiteAsString, uri, out feed) == false)
                     {
-                        return;
+                        return false;
                     }
                     break;
                 case HelperMethods.FeedType.RSS:
                     if (RSSFeed.TryCreate(websiteAsString, uri, out feed) == false)
                     {
-                        return;
+                        return false;
                     }
                     break;
                 case HelperMethods.FeedType.None:
-                    break;
+                    return false;
                 default:
-                    break;
+                    return false;
             }
 
-            this.Feeds.Add(feed);
+            if (feed != null)
+            {
+                this.Feeds.Add(feed);
+
+                return true;
+            }
+
+            return false;
         }
 
         private HttpWebRequest BuildWebRequest(Uri xmlUrl)
