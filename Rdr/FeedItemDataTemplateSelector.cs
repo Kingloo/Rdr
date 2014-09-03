@@ -1,6 +1,5 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
-using Rdr.Fidr;
 
 namespace Rdr
 {
@@ -11,7 +10,7 @@ namespace Rdr
         
         public override DataTemplate SelectTemplate(object item, System.Windows.DependencyObject container)
         {
-            FeedItem feedItem = (FeedItem)item;
+            RdrFeedItem feedItem = (RdrFeedItem)item;
 
             if (feedItem.HasEnclosure)
             {

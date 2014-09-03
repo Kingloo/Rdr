@@ -2,7 +2,7 @@
 using System.Xml;
 using System.Xml.Linq;
 
-namespace Rdr.Fidr
+namespace Rdr
 {
     internal static class HelperMethods
     {

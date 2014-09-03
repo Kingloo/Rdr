@@ -32,7 +32,7 @@
     <ProductName>Rdr</ProductName>
     <PublisherName>Kingloo Holdings Ltd.</PublisherName>
     <DisallowUrlActivation>true</DisallowUrlActivation>
-    <ApplicationRevision>24</ApplicationRevision>
+    <ApplicationRevision>27</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -111,21 +111,12 @@
     <Compile Include="Converters.cs" />
     <Compile Include="DelegateCommand.cs" />
     <Compile Include="FeedItemDataTemplateSelector.cs" />
-    <Compile Include="Fidr\AtomFeed.cs" />
-    <Compile Include="Fidr\AtomFeedEnclosure.cs" />
-    <Compile Include="Fidr\AtomFeedEntry.cs" />
-    <Compile Include="Fidr\AtomFeedImage.cs" />
-    <Compile Include="Fidr\Feed.cs" />
-    <Compile Include="Fidr\FeedEnclosure.cs" />
-    <Compile Include="Fidr\FeedImage.cs" />
-    <Compile Include="Fidr\FeedItem.cs" />
-    <Compile Include="Fidr\HelperMethods.cs" />
-    <Compile Include="Fidr\RSSFeed.cs" />
-    <Compile Include="Fidr\RSSFeedEnclosure.cs" />
-    <Compile Include="Fidr\RSSFeedImage.cs" />
-    <Compile Include="Fidr\RSSFeedItem.cs" />
+    <Compile Include="HelperMethods.cs" />
     <Compile Include="Misc.cs" />
     <Compile Include="RdrBase.cs" />
+    <Compile Include="RdrEnclosure.cs" />
+    <Compile Include="RdrFeed.cs" />
+    <Compile Include="RdrFeedItem.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

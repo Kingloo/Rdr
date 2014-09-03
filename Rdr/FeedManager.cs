@@ -8,8 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
+using System.Xml;
 using System.Xml.Linq;
-using Rdr.Fidr;
 
 namespace Rdr
 {
@@ -45,21 +45,21 @@ namespace Rdr
             this.Activity = false;
         }
 
-        private DelegateCommandAsync<Feed> _refreshFeedCommandAsync = null;
-        public DelegateCommandAsync<Feed> RefreshFeedCommandAsync
+        private DelegateCommandAsync<RdrFeed> _refreshFeedCommandAsync = null;
+        public DelegateCommandAsync<RdrFeed> RefreshFeedCommandAsync
         {
             get
             {
                 if (this._refreshFeedCommandAsync == null)
                 {
-                    this._refreshFeedCommandAsync = new DelegateCommandAsync<Feed>(new Func<Feed, Task>(RefreshFeedAsync), canExecuteAsync);
+                    this._refreshFeedCommandAsync = new DelegateCommandAsync<RdrFeed>(new Func<RdrFeed, Task>(RefreshFeedAsync), canExecuteAsync);
                 }
 
                 return this._refreshFeedCommandAsync;
             }
         }
 
-        private async Task RefreshFeedAsync(Feed feed)
+        private async Task RefreshFeedAsync(RdrFeed feed)
         {
             feed.Updating = true;
 
@@ -68,9 +68,23 @@ namespace Rdr
 
             if (String.IsNullOrEmpty(websiteAsString) == false)
             {
-                feed.Load(websiteAsString);
+                XDocument x = null;
 
-                MoveUnreadItemsToView(feed);
+                try
+                {
+                    x = XDocument.Parse(websiteAsString);
+                }
+                catch (XmlException)
+                {
+                    x = null;
+                }
+
+                if (x != null)
+                {
+                    feed.Load(x);
+
+                    MoveUnreadItemsToView(feed);
+                }
             }
 
             feed.Updating = false;
@@ -92,7 +106,7 @@ namespace Rdr
 
         private void MarkAllItemsAsRead(object _)
         {
-            foreach (Feed each in this.Feeds)
+            foreach (RdrFeed each in this.Feeds)
             {
                 if (each != null)
                 {
@@ -103,70 +117,70 @@ namespace Rdr
             MoveAllUnreadItemsToView(null);
         }
 
-        private DelegateCommand<Feed> _goToFeedCommand = null;
-        public DelegateCommand<Feed> GoToFeedCommand
+        private DelegateCommand<RdrFeed> _goToFeedCommand = null;
+        public DelegateCommand<RdrFeed> GoToFeedCommand
         {
             get
             {
                 if (this._goToFeedCommand == null)
                 {
-                    this._goToFeedCommand = new DelegateCommand<Feed>(new Action<Feed>(GoToFeed), canExecute);
+                    this._goToFeedCommand = new DelegateCommand<RdrFeed>(new Action<RdrFeed>(GoToFeed), canExecute);
                 }
 
                 return _goToFeedCommand;
             }
         }
 
-        private void GoToFeed(Feed feed)
+        private void GoToFeed(RdrFeed feed)
         {
             Misc.OpenUrlInBrowser(feed.XmlUrl);
         }
 
-        private DelegateCommand<FeedItem> _goToItemCommand = null;
-        public DelegateCommand<FeedItem> GoToItemCommand
+        private DelegateCommand<RdrFeedItem> _goToItemCommand = null;
+        public DelegateCommand<RdrFeedItem> GoToItemCommand
         {
             get
             {
                 if (this._goToItemCommand == null)
                 {
-                    this._goToItemCommand = new DelegateCommand<FeedItem>(new Action<FeedItem>(GoToItem), canExecute);
+                    this._goToItemCommand = new DelegateCommand<RdrFeedItem>(new Action<RdrFeedItem>(GoToItem), canExecute);
                 }
 
                 return _goToItemCommand;
             }
         }
 
-        private void GoToItem(FeedItem feedItem)
+        private void GoToItem(RdrFeedItem feedItem)
         {
             Misc.OpenUrlInBrowser(feedItem.Link);
 
             feedItem.Unread = false;
         }
 
-        private DelegateCommand<Feed> _moveItemsToViewCommand = null;
-        public DelegateCommand<Feed> MoveItemsToViewCommand
+        private DelegateCommand<RdrFeed> _moveItemsToViewCommand = null;
+        public DelegateCommand<RdrFeed> MoveItemsToViewCommand
         {
             get
             {
                 if (this._moveItemsToViewCommand == null)
                 {
-                    this._moveItemsToViewCommand = new DelegateCommand<Feed>(new Action<Feed>(MoveItemsToView), canExecute);
+                    this._moveItemsToViewCommand = new DelegateCommand<RdrFeed>(new Action<RdrFeed>(MoveItemsToView), canExecute);
                 }
 
                 return _moveItemsToViewCommand;
             }
         }
 
-        private void MoveItemsToView(Feed feed)
+        private void MoveItemsToView(RdrFeed feed)
         {
             lock (this.Items)
             {
                 this.Items.Clear();
 
-                IEnumerable<FeedItem> feedItems = from each in feed.FeedItems
-                                                  select each;
+                IEnumerable<RdrFeedItem> feedItems = from each in feed.Items
+                                                     select each;
 
-                this.Items.AddList<FeedItem>(feedItems);
+                this.Items.AddList<RdrFeedItem>(feedItems);
             }
         }
 
@@ -184,13 +198,13 @@ namespace Rdr
             }
         }
 
-        private void MoveUnreadItemsToView(Feed feed)
+        private void MoveUnreadItemsToView(RdrFeed feed)
         {
-            IEnumerable<FeedItem> unreadItems = from each in feed.FeedItems
-                                                where each.Unread
-                                                select each;
+            IEnumerable<RdrFeedItem> unreadItems = from each in feed.Items
+                                                   where each.Unread
+                                                   select each;
 
-            this.Items.AddMissingItems<FeedItem>(unreadItems);
+            this.Items.AddMissingItems<RdrFeedItem>(unreadItems);
         }
         #endregion
 
@@ -215,11 +229,11 @@ namespace Rdr
             }
         }
 
-        private ObservableCollection<Feed> _feeds = new ObservableCollection<Feed>();
-        public ObservableCollection<Feed> Feeds { get { return this._feeds; } }
+        private ObservableCollection<RdrFeed> _feeds = new ObservableCollection<RdrFeed>();
+        public ObservableCollection<RdrFeed> Feeds { get { return this._feeds; } }
 
-        private ObservableCollection<FeedItem> _items = new ObservableCollection<FeedItem>();
-        public ObservableCollection<FeedItem> Items { get { return this._items; } }
+        private ObservableCollection<RdrFeedItem> _items = new ObservableCollection<RdrFeedItem>();
+        public ObservableCollection<RdrFeedItem> Items { get { return this._items; } }
         #endregion
 
         public FeedManager(MainWindow mainWindow)
@@ -233,9 +247,9 @@ namespace Rdr
             this.updateAllTimer.IsEnabled = true;
         }
 
-        private void updateTimer_Tick(object sender, EventArgs e)
+        private async void updateTimer_Tick(object sender, EventArgs e)
         {
-            this.RefreshAllFeedsCommandAsync.Execute(null);
+            await RefreshAllFeedsAsync(null);
         }
 
         private async void mainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -267,6 +281,29 @@ namespace Rdr
             return false;
         }
 
+        private async Task WriteBasicFeedsFileAsync()
+        {
+            this.Activity = true;
+            this.RaiseAllAsyncCanExecuteChangedCommands();
+
+            StringBuilder sb = new StringBuilder();
+
+            sb.AppendLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+            sb.AppendLine("<feeds>");
+            sb.AppendLine("</feeds>");
+
+            using (FileStream fsAsync = new FileStream(this.feedsFile, FileMode.Create, FileAccess.Write, FileShare.None, 1024, true))
+            {
+                using (StreamWriter sw = new StreamWriter(fsAsync))
+                {
+                    await sw.WriteAsync(sb.ToString()).ConfigureAwait(false);
+                }
+            }
+
+            this.Activity = false;
+            this.RaiseAllAsyncCanExecuteChangedCommands();
+        }
+
         public async Task LoadAsync()
         {
             this.Activity = true;
@@ -276,13 +313,13 @@ namespace Rdr
 
             if (feedUris.Count<Uri>() > 0)
             {
-                IEnumerable<Task> buildFeedTasks = from each in feedUris
-                                                   select BuildFeed(each);
+                IEnumerable<RdrFeed> allFeeds = from each in feedUris
+                                                select new RdrFeed(each);
 
-                await Task.WhenAll(buildFeedTasks);
-
-                MoveAllUnreadItemsToView(null);
+                this.Feeds.AddList<RdrFeed>(allFeeds);
             }
+
+            await RefreshAllFeedsAsync(null);
 
             this.Activity = false;
             RaiseAllAsyncCanExecuteChangedCommands();
@@ -316,61 +353,6 @@ namespace Rdr
             return new List<Uri>(0);
         }
 
-        private async Task WriteBasicFeedsFileAsync()
-        {
-            StringBuilder sb = new StringBuilder();
-
-            sb.AppendLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-            sb.AppendLine("<feeds>");
-            sb.AppendLine("</feeds>");
-
-            using (FileStream fsAsync = new FileStream(this.feedsFile, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true))
-            {
-                using (StreamWriter sw = new StreamWriter(fsAsync))
-                {
-                    await sw.WriteAsync(sb.ToString()).ConfigureAwait(false);
-                }
-            }
-        }
-
-        private async Task<bool> BuildFeed(Uri uri)
-        {
-            HttpWebRequest req = BuildWebRequest(uri);
-            string websiteAsString = await Misc.DownloadWebsiteAsString(req);
-
-            HelperMethods.FeedType type = HelperMethods.DetermineFeedType(websiteAsString);
-            Feed feed = null;
-
-            switch (type)
-            {
-                case HelperMethods.FeedType.Atom:
-                    if (AtomFeed.TryCreate(websiteAsString, uri, out feed) == false)
-                    {
-                        return false;
-                    }
-                    break;
-                case HelperMethods.FeedType.RSS:
-                    if (RSSFeed.TryCreate(websiteAsString, uri, out feed) == false)
-                    {
-                        return false;
-                    }
-                    break;
-                case HelperMethods.FeedType.None:
-                    return false;
-                default:
-                    return false;
-            }
-
-            if (feed != null)
-            {
-                this.Feeds.Add(feed);
-
-                return true;
-            }
-
-            return false;
-        }
-
         private HttpWebRequest BuildWebRequest(Uri xmlUrl)
         {
             HttpWebRequest req = HttpWebRequest.CreateHttp(xmlUrl);
@@ -382,7 +364,7 @@ namespace Rdr
             req.ProtocolVersion = HttpVersion.Version11;
             req.Referer = xmlUrl.DnsSafeHost;
             req.ServicePoint.ConnectionLimit = 3;
-            req.Timeout = 2000;
+            req.Timeout = 5000;
             req.UserAgent = @"Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko";
 
             return req;
@@ -394,22 +376,22 @@ namespace Rdr
             {
                 this.Items.Clear();
 
-                List<FeedItem> toAdd = new List<FeedItem>();
+                List<RdrFeedItem> toAdd = new List<RdrFeedItem>();
 
-                foreach (Feed each in this.Feeds)
+                foreach (RdrFeed each in this.Feeds)
                 {
                     if (each != null)
                     {
-                        if (each.FeedItems != null)
+                        if (each.Items != null)
                         {
-                            toAdd.AddList<FeedItem>(from eeach in each.FeedItems
-                                                    where eeach.Unread
-                                                    select eeach);
+                            toAdd.AddList<RdrFeedItem>(from eeach in each.Items
+                                                       where eeach.Unread
+                                                       select eeach);
                         }
                     }
                 }
 
-                this.Items.AddList<FeedItem>(toAdd);
+                this.Items.AddList<RdrFeedItem>(toAdd);
             }
         }
 

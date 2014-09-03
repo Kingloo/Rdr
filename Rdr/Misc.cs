@@ -250,9 +250,11 @@ namespace Rdr
 
             if (tryAgain)
             {
-                webResp = await GetResponseAsyncExt(req, maxRounds - 1);
-
                 await Misc.LogMessageAsync(string.Format("tryAgain: {0}, tries left: {1}", req.RequestUri.AbsoluteUri, maxRounds - 1));
+
+                await Task.Delay(5000);
+
+                webResp = await GetResponseAsyncExt(req, maxRounds - 1);
             }
 
             return (HttpWebResponse)webResp;
@@ -271,9 +273,12 @@ namespace Rdr
 
             if (resp != null)
             {
-                using (StreamReader sr = new StreamReader(resp.GetResponseStream()))
+                if (resp.StatusCode == HttpStatusCode.OK)
                 {
-                    response = await sr.ReadToEndAsync().ConfigureAwait(false);
+                    using (StreamReader sr = new StreamReader(resp.GetResponseStream()))
+                    {
+                        response = await sr.ReadToEndAsync().ConfigureAwait(false);
+                    }
                 }
 
                 resp.Close();
