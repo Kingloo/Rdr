@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Xml.Linq;
@@ -9,6 +10,8 @@ namespace Rdr
 {
     class RdrFeed : RdrBase
     {
+        private enum FeedType { None, Atom, RSS };
+
         private string _name = "_name init";
         public string Name
         {
@@ -54,28 +57,42 @@ namespace Rdr
         {
             if (x.Root.Name.LocalName.Equals("feed"))
             {
-                LoadWithSpecifications(x.Root, "entry");
+                this.Name = GetTitle(x.Root);
+
+                LoadFromXElement(x.Root.Elements(XName.Get("entry", "http://www.w3.org/2005/Atom")));
             }
             else if (x.Root.Name.LocalName.Equals("rss"))
             {
-                LoadWithSpecifications(x.Root.Element("channel"), "item");
+                this.Name = GetTitle(x.Root.Element("channel"));
+
+                LoadFromXElement(x.Root.Element("channel").Elements("item"));
             }
         }
 
-        private void LoadWithSpecifications(XElement element, string nameOfRdrFeedItemTag)
+        private string GetTitle(XElement e)
         {
-            foreach (XElement each in element.Elements())
+            string toReturn = this.XmlUrl.AbsoluteUri;
+
+            foreach (XElement each in e.Elements())
             {
                 if (each.Name.LocalName.Equals("title"))
                 {
-                    this.Name = String.IsNullOrEmpty(each.Value) ? "no title" : each.Value;
+                    if (String.IsNullOrWhiteSpace(each.Value) == false)
+                    {
+                        toReturn = each.Value;
+
+                        break;
+                    }
                 }
             }
 
-            IEnumerable<RdrFeedItem> allItems = from each in element.Elements(nameOfRdrFeedItemTag)
-                                                select new RdrFeedItem(each, this.Name);
+            return toReturn;
+        }
 
-            Console.WriteLine(string.Format("{0} items count: {1}", this.Name, allItems.Count<RdrFeedItem>().ToString()));
+        private void LoadFromXElement(IEnumerable<XElement> e)
+        {
+            IEnumerable<RdrFeedItem> allItems = from each in e
+                                                select new RdrFeedItem(each, this.Name);
 
             this.Items.AddMissingItems<RdrFeedItem>(allItems);
         }
