@@ -245,12 +245,12 @@ namespace Rdr
                     tryAgain = true;
                 }
 
-                Misc.LogException(e);
+                //Misc.LogException(e);
             }
 
             if (tryAgain)
             {
-                await Misc.LogMessageAsync(string.Format("tryAgain: {0}, tries left: {1}", req.RequestUri.AbsoluteUri, maxRounds - 1));
+                //await Misc.LogMessageAsync(string.Format("tryAgain: {0}, tries left: {1}", req.RequestUri.AbsoluteUri, maxRounds - 1));
 
                 await Task.Delay(5000);
 
@@ -269,19 +269,18 @@ namespace Rdr
         {
             string response = string.Empty;
 
-            HttpWebResponse resp = await req.GetResponseAsyncExt(5);
-
-            if (resp != null)
+            using (HttpWebResponse resp = await req.GetResponseAsyncExt(5))
             {
-                if (resp.StatusCode == HttpStatusCode.OK)
+                if (resp != null)
                 {
-                    using (StreamReader sr = new StreamReader(resp.GetResponseStream()))
+                    if (resp.StatusCode == HttpStatusCode.OK)
                     {
-                        response = await sr.ReadToEndAsync().ConfigureAwait(false);
+                        using (StreamReader sr = new StreamReader(resp.GetResponseStream()))
+                        {
+                            response = await sr.ReadToEndAsync().ConfigureAwait(false);
+                        }
                     }
                 }
-
-                resp.Close();
             }
 
             return response;

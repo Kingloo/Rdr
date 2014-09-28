@@ -66,6 +66,11 @@ namespace Rdr
                 this.Name = GetTitle(x.Root.Element("channel"));
 
                 LoadFromXElement(x.Root.Element("channel").Elements("item"));
+
+                if (this.XmlUrl.AbsoluteUri.Equals("http://twituncovered.com/feed/"))
+                {
+                    Debug.WriteLine("Here: " + this.Name + this.Items.Count);
+                }
             }
         }
 

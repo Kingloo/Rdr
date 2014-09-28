@@ -64,7 +64,7 @@ namespace Rdr
         {
             feed.Updating = true;
 
-            HttpWebRequest req = BuildWebRequest(feed.XmlUrl);
+            HttpWebRequest req = BuildHttpWebRequest(feed.XmlUrl);
             string websiteAsString = await Misc.DownloadWebsiteAsString(req);
 
             if (String.IsNullOrEmpty(websiteAsString) == false)
@@ -354,7 +354,7 @@ namespace Rdr
             return new List<Uri>(0);
         }
 
-        private HttpWebRequest BuildWebRequest(Uri xmlUrl)
+        private HttpWebRequest BuildHttpWebRequest(Uri xmlUrl)
         {
             HttpWebRequest req = HttpWebRequest.CreateHttp(xmlUrl);
 
@@ -363,10 +363,11 @@ namespace Rdr
             req.KeepAlive = false;
             req.Method = "GET";
             req.ProtocolVersion = HttpVersion.Version11;
-            req.Referer = xmlUrl.DnsSafeHost;
-            req.ServicePoint.ConnectionLimit = 3;
+            req.Referer = string.Format("http://{0}/", xmlUrl.DnsSafeHost);
             req.Timeout = 5000;
             req.UserAgent = @"Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko";
+
+            req.Headers.Add("DNT", "1");
 
             return req;
         }
