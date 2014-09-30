@@ -15,6 +15,9 @@
         
         <Style TargetType="{x:Type Window}" BasedOn="{StaticResource {x:Type FrameworkElement}}" />
         <Style TargetType="{x:Type this:MainWindow}" BasedOn="{StaticResource {x:Type Window}}" />
+        <Style TargetType="{x:Type Grid}" BasedOn="{StaticResource {x:Type FrameworkElement}}" />
+        <Style TargetType="{x:Type ItemsPresenter}" BasedOn="{StaticResource {x:Type FrameworkElement}}" />
+        <Style TargetType="{x:Type StackPanel}" BasedOn="{StaticResource {x:Type FrameworkElement}}" />
         
         <Style TargetType="{x:Type Control}" BasedOn="{StaticResource {x:Type FrameworkElement}}">
             <Setter Property="FontFamily" Value="Calibri" />

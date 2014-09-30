@@ -46,12 +46,12 @@ namespace Rdr
 
             foreach (XElement each in e.Elements())
             {
-                if (each.Name.LocalName.Equals("title"))
+                if (each.Name.LocalName.Equals("title", StringComparison.InvariantCultureIgnoreCase))
                 {
                     this._name = String.IsNullOrEmpty(each.Value) ? "no title" : each.Value.RemoveNewLines();
                 }
 
-                if (each.Name.LocalName.Equals("pubDate"))
+                if (each.Name.LocalName.Equals("pubDate", StringComparison.InvariantCultureIgnoreCase))
                 {
                     if (this._pubDate == DateTime.MinValue)
                     {
@@ -59,7 +59,7 @@ namespace Rdr
                     }
                 }
 
-                if (each.Name.LocalName.Equals("published"))
+                if (each.Name.LocalName.Equals("published", StringComparison.InvariantCultureIgnoreCase))
                 {
                     if (this._pubDate == DateTime.MinValue)
                     {
@@ -67,7 +67,15 @@ namespace Rdr
                     }
                 }
 
-                if (each.Name.LocalName.Equals("enclosure"))
+                if (each.Name.LocalName.Equals("updated", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    if (this._pubDate == DateTime.MinValue)
+                    {
+                        this._pubDate = HelperMethods.ConvertXElementToDateTime(each);
+                    }
+                }
+
+                if (each.Name.LocalName.Equals("enclosure", StringComparison.InvariantCultureIgnoreCase))
                 {
                     if (this._enclosure == null)
                     {
@@ -75,7 +83,7 @@ namespace Rdr
                     }
                 }
 
-                if (each.Name.LocalName.Equals("link"))
+                if (each.Name.LocalName.Equals("link", StringComparison.InvariantCultureIgnoreCase))
                 {
                     this._link = HelperMethods.ConvertXElementToUri(each);
 
@@ -104,7 +112,7 @@ namespace Rdr
                     }
                 }
 
-                if (each.Name.LocalName.Equals("duration"))
+                if (each.Name.LocalName.Equals("duration", StringComparison.InvariantCultureIgnoreCase))
                 {
                     tmpDuration = each.Value;
                 }
@@ -123,10 +131,24 @@ namespace Rdr
 
         public bool Equals(RdrFeedItem other)
         {
-            if (other.Name.Equals(this.Name) == false)
+            if (this.Name.Equals(other.Name) == false)
             {
                 return false;
             }
+
+            if (this.Link != null)
+            {
+                if (this.Link.AbsoluteUri.Equals(other.Link.AbsoluteUri) == false)
+                {
+                    return false;
+                }
+            }
+
+            if (this.PubDate.Equals(other.PubDate) == false)
+            {
+                return false;
+            }
+
 
             return true;
         }
