@@ -143,12 +143,13 @@ namespace Rdr
                     return false;
                 }
             }
-
-            if (this.PubDate.Equals(other.PubDate) == false)
+            else
             {
-                return false;
+                if (this.PubDate.Equals(other.PubDate) == false)
+                {
+                    return false;
+                }
             }
-
 
             return true;
         }

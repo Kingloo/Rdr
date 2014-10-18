@@ -277,7 +277,15 @@ namespace Rdr
                     {
                         using (StreamReader sr = new StreamReader(resp.GetResponseStream()))
                         {
-                            response = await sr.ReadToEndAsync().ConfigureAwait(false);
+                            //response = await sr.ReadToEndAsync().ConfigureAwait(false);
+                            try
+                            {
+                                response = await sr.ReadToEndAsync().ConfigureAwait(false);
+                            }
+                            catch (IOException)
+                            {
+                                response = string.Empty;
+                            }
                         }
                     }
                 }

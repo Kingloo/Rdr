@@ -24,44 +24,61 @@
 
         <Style TargetType="{x:Type this:MainWindow}">
             <Setter Property="Title" Value="Rdr" />
-            <Setter Property="WindowState" Value="Maximized" />
+            <Setter Property="Background" Value="#FF212121" />
             <Setter Property="ResizeMode" Value="CanResize" />
-            <Setter Property="MinWidth" Value="1500" />
-            <Setter Property="MinHeight" Value="1000" />
+            <Setter Property="MinWidth" Value="700" />
+            <Setter Property="MinHeight" Value="700" />
+            <Setter Property="Width" Value="1000" />
+            <Setter Property="Height" Value="1000" />
         </Style>
 
         <DataTemplate DataType="{x:Type this:RdrFeed}">
             
             <DataTemplate.Resources>
+                
                 <Style TargetType="{x:Type Label}" BasedOn="{StaticResource {x:Type Label}}" x:Key="FeedUpdating">
                     <Setter Property="FontWeight" Value="SemiBold" />
-                    <Setter Property="Background" Value="AliceBlue" />
+                    <Setter Property="Foreground" Value="Black" />
+                    <Setter Property="Background" Value="LightGray" />
                 </Style>
 
                 <Style TargetType="{x:Type Label}" BasedOn="{StaticResource {x:Type Label}}" x:Key="FeedNotUpdating">
                     <Setter Property="FontWeight" Value="Normal" />
-                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="Foreground" Value="#FF7A7A7A" />
+                    <Setter Property="Background" Value="#FF313131" />
                 </Style>
                 
                 <this:FeedUpdatingConverter x:Key="feedUpdatingConverter"
                                             Updating="{StaticResource FeedUpdating}"
                                             NotUpdating="{StaticResource FeedNotUpdating}" />
+                
             </DataTemplate.Resources>
             
-            <Label Content="{Binding Path=Name, Mode=OneWay}"
+            <Label Margin="0,0,0,5"
+                   Tag="{Binding Path=DataContext, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type this:MainWindow}}}"
                    Style="{Binding Path=Updating, Mode=OneWay, Converter={StaticResource feedUpdatingConverter}}">
+                
+                <Label.Content>
+                    <TextBlock Text="{Binding Path=Name, Mode=OneWay}"
+                               TextTrimming="CharacterEllipsis" />
+                </Label.Content>
                 
                 <Label.InputBindings>
                     <MouseBinding MouseAction="LeftClick"
                                   Command="{Binding Path=DataContext.MoveItemsToViewCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type this:MainWindow}}}"
                                   CommandParameter="{Binding}" />
-                    <MouseBinding MouseAction="LeftDoubleClick"
-                                  Command="{Binding Path=DataContext.RefreshFeedCommandAsync, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type this:MainWindow}}}"
-                                  CommandParameter="{Binding}" />
-                    <MouseBinding MouseAction="RightClick"
-                                  Command="{Binding Path=DataContext.GoToFeedCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type this:MainWindow}}}"
-                                  CommandParameter="{Binding}" />
                 </Label.InputBindings>
+                
+                <Label.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Refresh"
+                                  Command="{Binding Path=PlacementTarget.Tag.RefreshFeedCommandAsync, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}"
+                                  CommandParameter="{Binding}" />
+                        <MenuItem Header="Go To Feed"
+                                  Command="{Binding Path=PlacementTarget.Tag.GoToFeedCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}"
+                                  CommandParameter="{Binding}" />
+                    </ContextMenu>
+                </Label.ContextMenu>
                 
                 <Label.ToolTip>
                     <TextBlock Text="{Binding Path=Tooltip, Mode=OneWay}" />
@@ -70,23 +87,14 @@
             
         </DataTemplate>
         
-        <this:UnreadToBackgroundConverter x:Key="unreadToBackgroundConverter"
-                                          True="AliceBlue"
-                                          False="Transparent" />
-        
-        <this:ShortTitleConverter x:Key="shortTitleConverter"
-                                  MaxLength="20" />
-
         <DataTemplate DataType="{x:Type this:RdrFeedItem}" x:Key="withEnclosureDataTemplate">
             <Grid>
-                <Grid.Style>
-                    <Style TargetType="{x:Type Grid}">
-                        <Setter Property="Background" Value="{Binding Path=Unread, Mode=OneWay, Converter={StaticResource unreadToBackgroundConverter}}" />
-                        <Setter Property="Height" Value="40" />
-                        <Setter Property="Margin" Value="0,7,0,7" />
-                        <Setter Property="Control.FontSize" Value="20" />
-                    </Style>
-                </Grid.Style>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="200" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="170" />
+                    <ColumnDefinition Width="150" />
+                </Grid.ColumnDefinitions>
 
                 <Grid.InputBindings>
                     <MouseBinding MouseAction="LeftDoubleClick"
@@ -94,74 +102,120 @@
                                   CommandParameter="{Binding}" />
                 </Grid.InputBindings>
 
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="300" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="180" />
-                    <ColumnDefinition Width="200" />
-                </Grid.ColumnDefinitions>
+                <Grid.Resources>
+                    <this:BoolToBrushConverter x:Key="unreadToBackgroundConverter"
+                                               True="LightGray"
+                                               False="#FF313131" />
+                    <this:BoolToBrushConverter x:Key="labelForegroundConverter"
+                                               True="Black"
+                                               False="#FF7A7A7A" />
+                    <BooleanToVisibilityConverter x:Key="boolToVisibilityConverter" />
+                </Grid.Resources>
+
+                <Grid.Style>
+                    <Style TargetType="{x:Type Grid}">
+                        <Setter Property="Background" Value="{Binding Path=Unread, Mode=OneWay, Converter={StaticResource unreadToBackgroundConverter}}" />
+                        <Setter Property="Height" Value="43" />
+                        <Setter Property="Margin" Value="0,0,0,5" />
+                        <Setter Property="Control.FontSize" Value="22" />
+                    </Style>
+                </Grid.Style>
 
                 <Label Grid.Column="0"
                        HorizontalAlignment="Left"
-                       ToolTip="{Binding Path=TitleOfFeed, Mode=OneWay}"
-                       Content="{Binding Path=TitleOfFeed, Mode=OneWay, Converter={StaticResource shortTitleConverter}}" />
+                       Foreground="{Binding Path=Unread, Mode=OneWay, Converter={StaticResource labelForegroundConverter}}"
+                       ToolTip="{Binding Path=TitleOfFeed, Mode=OneWay}">
+                    <Label.Content>
+                        <TextBlock Text="{Binding Path=TitleOfFeed, Mode=OneWay}"
+                                   TextTrimming="CharacterEllipsis" />
+                    </Label.Content>
+                </Label>
 
                 <Label Grid.Column="1"
-                       HorizontalAlignment="Left"
-                       Content="{Binding Path=Name, Mode=OneWay}" />
+                       HorizontalAlignment="Stretch"
+                       Foreground="{Binding Path=Unread, Mode=OneWay, Converter={StaticResource labelForegroundConverter}}">
+                    <Label.Content>
+                        <TextBlock Text="{Binding Path=Name, Mode=OneTime}"
+                                   TextTrimming="CharacterEllipsis" />
+                    </Label.Content>
+                </Label>
 
                 <Button Grid.Column="2"
-                        Width="140"
                         HorizontalAlignment="Right"
+                        Width="130"
+                        Height="34"
+                        Visibility="{Binding Path=HasEnclosure, Mode=OneTime, Converter={StaticResource boolToVisibilityConverter}}"
                         Content="{Binding Path=Enclosure.ButtonText, Mode=OneWay}"
                         Command="{Binding Path=Enclosure.DownloadCommandAsync, Mode=OneWay}"
                         CommandParameter="{Binding Path=Enclosure}" />
 
                 <Label Grid.Column="3"
                        HorizontalAlignment="Right"
-                       Content="{Binding Path=PubDate, Mode=OneWay}"
-                       ContentStringFormat="{}{0:HH:mm - d/MM/yyyy}" />
+                       Foreground="{Binding Path=Unread, Mode=OneWay, Converter={StaticResource labelForegroundConverter}}"
+                       Content="{Binding Path=PubDate, Mode=OneTime}"
+                       ContentStringFormat="{}{0:HH:mm - dd MMM yy}" />
 
             </Grid>
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type this:RdrFeedItem}" x:Key="noEnclosureDataTemplate">
             <Grid>
-                <Grid.Style>
-                    <Style TargetType="{x:Type Grid}">
-                        <Setter Property="Background" Value="{Binding Path=Unread, Mode=OneWay, Converter={StaticResource unreadToBackgroundConverter}}" />
-                        <Setter Property="Height" Value="40" />
-                        <Setter Property="Margin" Value="0,5,0,5" />
-                        <Setter Property="Control.FontSize" Value="17" />
-                    </Style>
-                </Grid.Style>
-                
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="200" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="150" />
+                </Grid.ColumnDefinitions>
+
                 <Grid.InputBindings>
                     <MouseBinding MouseAction="LeftDoubleClick"
                                   Command="{Binding Path=DataContext.GoToItemCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type this:MainWindow}}}"
                                   CommandParameter="{Binding}" />
                 </Grid.InputBindings>
-                
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="300" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="180" />
-                </Grid.ColumnDefinitions>
-                
+
+                <Grid.Resources>
+                    <this:BoolToBrushConverter x:Key="unreadToBackgroundConverter"
+                                               True="LightGray"
+                                               False="#FF313131" />
+                    <this:BoolToBrushConverter x:Key="labelForegroundConverter"
+                                               True="Black"
+                                               False="#FF7A7A7A" />
+                    <BooleanToVisibilityConverter x:Key="boolToVisibilityConverter" />
+                </Grid.Resources>
+
+                <Grid.Style>
+                    <Style TargetType="{x:Type Grid}">
+                        <Setter Property="Background" Value="{Binding Path=Unread, Mode=OneWay, Converter={StaticResource unreadToBackgroundConverter}}" />
+                        <Setter Property="Height" Value="43" />
+                        <Setter Property="Margin" Value="0,0,0,5" />
+                        <Setter Property="Control.FontSize" Value="22" />
+                    </Style>
+                </Grid.Style>
+
                 <Label Grid.Column="0"
                        HorizontalAlignment="Left"
-                       ToolTip="{Binding Path=TitleOfFeed, Mode=OneWay}"
-                       Content="{Binding Path=TitleOfFeed, Mode=OneWay, Converter={StaticResource shortTitleConverter}}" />
-                
+                       Foreground="{Binding Path=Unread, Mode=OneWay, Converter={StaticResource labelForegroundConverter}}"
+                       ToolTip="{Binding Path=TitleOfFeed, Mode=OneWay}">
+                    <Label.Content>
+                        <TextBlock Text="{Binding Path=TitleOfFeed, Mode=OneWay}"
+                                   TextTrimming="CharacterEllipsis" />
+                    </Label.Content>
+                </Label>
+
                 <Label Grid.Column="1"
-                       HorizontalAlignment="Left"
-                       Content="{Binding Path=Name, Mode=OneWay}" />
-                
-                <Label Grid.Column="2"
+                       HorizontalAlignment="Stretch"
+                       Foreground="{Binding Path=Unread, Mode=OneWay, Converter={StaticResource labelForegroundConverter}}">
+                    <Label.Content>
+                        <TextBlock Text="{Binding Path=Name, Mode=OneTime}"
+                                   TextTrimming="CharacterEllipsis" />
+                    </Label.Content>
+                </Label>
+
+                <Label Grid.Column="3"
                        HorizontalAlignment="Right"
-                       Content="{Binding Path=PubDate, Mode=OneWay}"
-                       ContentStringFormat="{}{0:HH:mm - d/MM/yyyy}" />
-                
+                       Foreground="{Binding Path=Unread, Mode=OneWay, Converter={StaticResource labelForegroundConverter}}"
+                       Content="{Binding Path=PubDate, Mode=OneTime}"
+                       ContentStringFormat="{}{0:HH:mm - dd MMM yy}" />
+
             </Grid>
         </DataTemplate>
 
@@ -172,9 +226,9 @@
     </Window.Resources>
 
     <Window.InputBindings>
-        <KeyBinding Key="F5" Command="{Binding Path=RefreshAllFeedsCommandAsync}" />
-        <KeyBinding Key="F9" Command="{Binding Path=MoveUnreadItemsToViewCommand}" />
-        <KeyBinding Key="F12" Command="{Binding Path=MarkAllItemsAsReadCommand}"  />
+        <KeyBinding Key="F5" Command="{Binding Path=RefreshAllFeedsCommandAsync, Mode=OneTime}" />
+        <KeyBinding Key="F6" Command="{Binding Path=MarkAllItemsAsReadCommand, Mode=OneTime}" />
+        <KeyBinding Key="F9" Command="{Binding Path=MoveUnreadItemsToViewCommand, Mode=OneTime}" />
     </Window.InputBindings>
 
     <Grid Margin="0,0,0,10">
@@ -194,15 +248,15 @@
                     ToolTip="F5"
                     Command="{Binding Path=RefreshAllFeedsCommandAsync}"
                     Margin="25,0,0,0" />
-            
+
+            <Button Content="Mark All As Read"
+                    ToolTip="F6"
+                    Command="{Binding Path=MarkAllItemsAsReadCommand}"
+                    Margin="25,0,0,0" />
+
             <Button Content="Restore Unread Items"
                     ToolTip="F9"
                     Command="{Binding Path=MoveUnreadItemsToViewCommand}"
-                    Margin="25,0,0,0" />
-            
-            <Button Content="Mark All As Read"
-                    ToolTip="F12"
-                    Command="{Binding Path=MarkAllItemsAsReadCommand}"
                     Margin="25,0,0,0" />
             
         </StackPanel>
@@ -210,13 +264,8 @@
         <Grid Grid.Row="1">
 
             <Grid.ColumnDefinitions>
-                
-                <ColumnDefinition Width="*" MinWidth="150"
-                                  MaxWidth="350" />
-                
-                <ColumnDefinition Width="*"
-                                  MinWidth="500" />
-                
+                <ColumnDefinition Width="260" />
+                <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
             <ItemsControl Grid.Column="0"
@@ -241,7 +290,7 @@
             <ItemsControl Grid.Column="1"
                           ItemsSource="{Binding Source={StaticResource sortedItems}}"
                           ItemTemplateSelector="{StaticResource feedItemDataTemplateSelector}">
-
+                
                 <ItemsControl.Template>
                     <ControlTemplate>
                         <ScrollViewer CanContentScroll="True">

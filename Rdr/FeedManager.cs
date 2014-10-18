@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -67,6 +66,8 @@ namespace Rdr
             HttpWebRequest req = BuildHttpWebRequest(feed.XmlUrl);
             string websiteAsString = await Misc.DownloadWebsiteAsString(req);
 
+            websiteAsString = websiteAsString.Replace((char)(0x1F), (char)(0x20));
+
             if (String.IsNullOrEmpty(websiteAsString) == false)
             {
                 XDocument x = null;
@@ -75,8 +76,16 @@ namespace Rdr
                 {
                     x = XDocument.Parse(websiteAsString);
                 }
-                catch (XmlException)
+                catch (XmlException e)
                 {
+                    StringBuilder sb = new StringBuilder();
+
+                    sb.AppendLine(feed.XmlUrl.AbsoluteUri);
+                    sb.AppendLine(e.Message);
+                    sb.AppendLine(e.StackTrace);
+
+                    Misc.LogMessage(sb.ToString());
+
                     x = null;
                 }
 

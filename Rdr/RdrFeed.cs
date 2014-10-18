@@ -12,7 +12,7 @@ namespace Rdr
     {
         private enum FeedType { None, Atom, RSS };
 
-        private string _name = "_name init";
+        private string _name = "name init";
         public string Name
         {
             get { return this._name; }
@@ -41,7 +41,8 @@ namespace Rdr
         {
             get
             {
-                return string.Format("{0} items, {1} unread", this.Items.Count, UnreadItemsCount());
+                //return string.Format("{0} items, {1} unread", this.Items.Count, UnreadItemsCount());
+                return string.Format("{0} items, {1} unread{2}{2}{3}", this.Items.Count, UnreadItemsCount(), Environment.NewLine, this.XmlUrl.AbsoluteUri);
             }
         }
 
@@ -66,11 +67,6 @@ namespace Rdr
                 this.Name = GetTitle(x.Root.Element("channel"));
 
                 LoadFromXElement(x.Root.Element("channel").Elements("item"));
-
-                if (this.XmlUrl.AbsoluteUri.Equals("http://twituncovered.com/feed/"))
-                {
-                    Debug.WriteLine("Here: " + this.Name + this.Items.Count);
-                }
             }
         }
 

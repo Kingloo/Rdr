@@ -71,7 +71,7 @@ namespace Rdr
     }
 
     [ValueConversion(typeof(bool), typeof(Brush))]
-    public class UnreadToBackgroundConverter : IValueConverter
+    public class BoolToBrushConverter : IValueConverter
     {
         public SolidColorBrush True { get; set; }
         public SolidColorBrush False { get; set; }
