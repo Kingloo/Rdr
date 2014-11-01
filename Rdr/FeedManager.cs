@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -16,21 +17,21 @@ namespace Rdr
     class FeedManager : RdrBase
     {
         #region Commands
-        private DelegateCommandAsync<object> _refreshAllFeedsCommandAsync = null;
-        public DelegateCommandAsync<object> RefreshAllFeedsCommandAsync
+        private DelegateCommandAsync _refreshAllFeedsCommandAsync = null;
+        public DelegateCommandAsync RefreshAllFeedsCommandAsync
         {
             get
             {
                 if (this._refreshAllFeedsCommandAsync == null)
                 {
-                    this._refreshAllFeedsCommandAsync = new DelegateCommandAsync<object>(new Func<object, Task>(RefreshAllFeedsAsync), canExecuteAsync);
+                    this._refreshAllFeedsCommandAsync = new DelegateCommandAsync(new Func<Task>(RefreshAllFeedsAsync), canExecuteAsync);
                 }
 
                 return this._refreshAllFeedsCommandAsync;
             }
         }
 
-        public async Task RefreshAllFeedsAsync(object parameter)
+        public async Task RefreshAllFeedsAsync()
         {
             this.Activity = true;
 
@@ -100,21 +101,21 @@ namespace Rdr
             feed.Updating = false;
         }
 
-        private DelegateCommand<object> _markAllItemsAsReadCommand = null;
-        public DelegateCommand<object> MarkAllItemsAsReadCommand
+        private DelegateCommand _markAllItemsAsReadCommand = null;
+        public DelegateCommand MarkAllItemsAsReadCommand
         {
             get
             {
                 if (this._markAllItemsAsReadCommand == null)
                 {
-                    this._markAllItemsAsReadCommand = new DelegateCommand<object>(new Action<object>(MarkAllItemsAsRead), canExecute);
+                    this._markAllItemsAsReadCommand = new DelegateCommand(new Action(MarkAllItemsAsRead), canExecute);
                 }
 
                 return _markAllItemsAsReadCommand;
             }
         }
 
-        private void MarkAllItemsAsRead(object _)
+        private void MarkAllItemsAsRead()
         {
             foreach (RdrFeed each in this.Feeds)
             {
@@ -124,7 +125,7 @@ namespace Rdr
                 }
             }
 
-            MoveAllUnreadItemsToView(null);
+            MoveAllUnreadItemsToView();
         }
 
         private DelegateCommand<RdrFeed> _goToFeedCommand = null;
@@ -194,14 +195,14 @@ namespace Rdr
             }
         }
 
-        private DelegateCommand<object> _moveUnreadItemsToViewCommand = null;
-        public DelegateCommand<object> MoveUnreadItemsToViewCommand
+        private DelegateCommand _moveUnreadItemsToViewCommand = null;
+        public DelegateCommand MoveUnreadItemsToViewCommand
         {
             get
             {
                 if (this._moveUnreadItemsToViewCommand == null)
                 {
-                    this._moveUnreadItemsToViewCommand = new DelegateCommand<object>(new Action<object>(MoveAllUnreadItemsToView), canExecute);
+                    this._moveUnreadItemsToViewCommand = new DelegateCommand(new Action(MoveAllUnreadItemsToView), canExecute);
                 }
 
                 return _moveUnreadItemsToViewCommand;
@@ -236,6 +237,8 @@ namespace Rdr
             {
                 this._activity = value;
                 OnNotifyPropertyChanged();
+
+                this.RaiseAllAsyncCanExecuteChangedCommands();
             }
         }
 
@@ -259,7 +262,7 @@ namespace Rdr
 
         private async void updateTimer_Tick(object sender, EventArgs e)
         {
-            await RefreshAllFeedsAsync(null);
+            await RefreshAllFeedsAsync();
         }
 
         private async void mainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -294,7 +297,6 @@ namespace Rdr
         private async Task WriteBasicFeedsFileAsync()
         {
             this.Activity = true;
-            this.RaiseAllAsyncCanExecuteChangedCommands();
 
             StringBuilder sb = new StringBuilder();
 
@@ -311,13 +313,11 @@ namespace Rdr
             }
 
             this.Activity = false;
-            this.RaiseAllAsyncCanExecuteChangedCommands();
         }
 
         public async Task LoadAsync()
         {
             this.Activity = true;
-            RaiseAllAsyncCanExecuteChangedCommands();
 
             IEnumerable<Uri> feedUris = await LoadXmlUrlsFromFileAsync();
 
@@ -329,10 +329,9 @@ namespace Rdr
                 this.Feeds.AddList<RdrFeed>(allFeeds);
             }
 
-            await RefreshAllFeedsAsync(null);
+            await RefreshAllFeedsAsync();
 
             this.Activity = false;
-            RaiseAllAsyncCanExecuteChangedCommands();
         }
 
         private async Task<IEnumerable<Uri>> LoadXmlUrlsFromFileAsync()
@@ -368,11 +367,12 @@ namespace Rdr
             HttpWebRequest req = HttpWebRequest.CreateHttp(xmlUrl);
 
             req.AllowAutoRedirect = true;
+            req.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
             req.Host = xmlUrl.DnsSafeHost;
             req.KeepAlive = false;
             req.Method = "GET";
             req.ProtocolVersion = HttpVersion.Version11;
-            req.Referer = string.Format("http://{0}/", xmlUrl.DnsSafeHost);
+            req.Referer = string.Format("{0}://{1}/", xmlUrl.GetLeftPart(UriPartial.Scheme), xmlUrl.DnsSafeHost);
             req.Timeout = 5000;
             req.UserAgent = @"Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko";
 
@@ -381,7 +381,7 @@ namespace Rdr
             return req;
         }
 
-        private void MoveAllUnreadItemsToView(object _)
+        private void MoveAllUnreadItemsToView()
         {
             lock (this.Items)
             {
@@ -408,14 +408,7 @@ namespace Rdr
 
         private bool canExecuteAsync(object _)
         {
-            if (this.Activity)
-            {
-                return false;
-            }
-            else
-            {
-                return true;
-            }
+            return !this.Activity;
         }
 
         private bool canExecute(object _)

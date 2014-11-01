@@ -41,7 +41,6 @@ namespace Rdr
         {
             get
             {
-                //return string.Format("{0} items, {1} unread", this.Items.Count, UnreadItemsCount());
                 return string.Format("{0} items, {1} unread{2}{2}{3}", this.Items.Count, UnreadItemsCount(), Environment.NewLine, this.XmlUrl.AbsoluteUri);
             }
         }
