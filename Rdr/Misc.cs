@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -27,11 +28,20 @@ namespace Rdr
 
             if (Uri.TryCreate(urlString, UriKind.Absolute, out uri))
             {
-                System.Diagnostics.Process.Start(uri.AbsoluteUri);
+                try
+                {
+                    System.Diagnostics.Process.Start(uri.AbsoluteUri);
+                }
+                catch (Win32Exception w)
+                {
+                    Misc.LogException(w);
+                }
             }
             else
             {
-                throw new ArgumentException("urlString passed to Uri.TryCreate returns false");
+                string logMessage = string.Format("Uri.TryCreate(string) returned false: {0}", uri.ToString());
+
+                Misc.LogMessage(logMessage);
             }
         }
 
@@ -43,11 +53,20 @@ namespace Rdr
         {
             if (uri.IsAbsoluteUri)
             {
-                System.Diagnostics.Process.Start(uri.AbsoluteUri);
+                try
+                {
+                    System.Diagnostics.Process.Start(uri.AbsoluteUri);
+                }
+                catch (Win32Exception w)
+                {
+                    Misc.LogException(w);
+                }
             }
             else
             {
-                throw new ArgumentException("uri is not absolute");
+                string logMessage = string.Format("Uri is not absolute: {0}", uri.ToString());
+
+                Misc.LogMessage(logMessage);
             }
         }
 
@@ -254,7 +273,7 @@ namespace Rdr
             {
                 //await Misc.LogMessageAsync(string.Format("tryAgain: {0}, tries left: {1}", req.RequestUri.AbsoluteUri, maxRounds - 1));
 
-                await Task.Delay(5000);
+                await Task.Delay(3000);
 
                 webResp = await GetResponseAsyncExt(req, maxRounds - 1);
             }
@@ -271,7 +290,7 @@ namespace Rdr
         {
             string response = string.Empty;
 
-            using (HttpWebResponse resp = await req.GetResponseAsyncExt(5))
+            using (HttpWebResponse resp = await req.GetResponseAsyncExt(2))
             {
                 if (resp != null)
                 {
