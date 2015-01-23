@@ -216,6 +216,20 @@ namespace Rdr
         }
 
         /// <summary>
+        /// Removes an IEnumerable's worth of T from an ICollection.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="collection">The collection to remove from.</param>
+        /// <param name="list">The items to remove from the collection.</param>
+        public static void RemoveList<T>(this ICollection<T> collection, IEnumerable<T> list)
+        {
+            foreach (T obj in list)
+            {
+                collection.Remove(obj);
+            }
+        }
+
+        /// <summary>
         /// Returns the string from between two parts of a string.
         /// </summary>
         /// <param name="whole">The string to search within.</param>

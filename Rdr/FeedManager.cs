@@ -287,7 +287,7 @@ namespace Rdr
 
         private async Task ReloadFeedsAsync()
         {
-            this.Feeds.Clear();
+            //this.Feeds.Clear();
 
             await LoadFeedsFromFileAsync();
         }
@@ -391,7 +391,18 @@ namespace Rdr
             {
                 IEnumerable<RdrFeed> feeds = await ReadFromFeedsFileAsync();
 
-                this.Feeds.AddList<RdrFeed>(feeds);
+                this.Feeds.AddMissingItems<RdrFeed>(feeds);
+
+                List<RdrFeed> toBeDeleted = new List<RdrFeed>();
+                foreach (RdrFeed each in this.Feeds)
+                {
+                    if (feeds.Contains<RdrFeed>(each) == false)
+                    {
+                        toBeDeleted.Add(each);
+                    }
+                }
+
+                this.Feeds.RemoveList<RdrFeed>(toBeDeleted);
             }
             else
             {
@@ -413,13 +424,17 @@ namespace Rdr
 
                     while ((line = await sr.ReadLineAsync()) != null)
                     {
-                        Uri uri = null;
-
-                        if (Uri.TryCreate(line, UriKind.Absolute, out uri))
+                        // allows us to comment out a feed URL with a hash sign
+                        if (line.StartsWith("#") == false)
                         {
-                            RdrFeed feed = new RdrFeed(uri);
+                            Uri uri = null;
 
-                            feeds.Add(feed);
+                            if (Uri.TryCreate(line, UriKind.Absolute, out uri))
+                            {
+                                RdrFeed feed = new RdrFeed(uri);
+
+                                feeds.Add(feed);
+                            }
                         }
                     }
                 }

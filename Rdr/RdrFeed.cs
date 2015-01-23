@@ -8,7 +8,7 @@ using System.Xml.Linq;
 
 namespace Rdr
 {
-    class RdrFeed : RdrBase
+    class RdrFeed : RdrBase, IEquatable<RdrFeed>
     {
         private enum FeedType { None, Atom, RSS };
 
@@ -114,6 +114,18 @@ namespace Rdr
                                                       select each;
 
             return allUnreadItems.Count<RdrFeedItem>();
+        }
+
+        public bool Equals(RdrFeed other)
+        {
+            if (this._xmlUrl.AbsoluteUri.Equals(other._xmlUrl.AbsoluteUri))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         public override string ToString()
