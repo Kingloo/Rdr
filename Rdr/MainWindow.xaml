@@ -2,7 +2,24 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:this="clr-namespace:Rdr"
-        xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase">
+        xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
+        Closing="Window_Closing">
+    
+    <Window.DataContext>
+        <this:FeedManager x:Name="feedManager" />
+    </Window.DataContext>
+    
+    <Window.Style>
+        <Style TargetType="{x:Type this:MainWindow}">
+            <Setter Property="Title" Value="{Binding Path=WindowTitle}" />
+            <Setter Property="Background" Value="#FF212121" />
+            <Setter Property="ResizeMode" Value="CanResize" />
+            <Setter Property="MinWidth" Value="700" />
+            <Setter Property="MinHeight" Value="700" />
+            <Setter Property="Width" Value="1000" />
+            <Setter Property="Height" Value="1000" />
+        </Style>
+    </Window.Style>
 
     <Window.Resources>
         
@@ -21,16 +38,6 @@
                 <scm:SortDescription PropertyName="PubDate" Direction="Descending" />
             </CollectionViewSource.SortDescriptions>
         </CollectionViewSource>
-
-        <Style TargetType="{x:Type this:MainWindow}">
-            <Setter Property="Title" Value="Rdr" />
-            <Setter Property="Background" Value="#FF212121" />
-            <Setter Property="ResizeMode" Value="CanResize" />
-            <Setter Property="MinWidth" Value="700" />
-            <Setter Property="MinHeight" Value="700" />
-            <Setter Property="Width" Value="1000" />
-            <Setter Property="Height" Value="1000" />
-        </Style>
 
         <DataTemplate DataType="{x:Type this:RdrFeed}">
             
@@ -144,7 +151,6 @@
                         HorizontalAlignment="Right"
                         Width="130"
                         Height="34"
-                        Visibility="{Binding Path=HasEnclosure, Mode=OneTime, Converter={StaticResource boolToVisibilityConverter}}"
                         Content="{Binding Path=Enclosure.ButtonText, Mode=OneWay}"
                         Command="{Binding Path=Enclosure.DownloadCommandAsync, Mode=OneWay}"
                         CommandParameter="{Binding Path=Enclosure}" />
@@ -226,9 +232,28 @@
     </Window.Resources>
 
     <Window.InputBindings>
-        <KeyBinding Key="F5" Command="{Binding Path=RefreshAllFeedsCommandAsync, Mode=OneTime}" />
-        <KeyBinding Key="F6" Command="{Binding Path=MarkAllItemsAsReadCommand, Mode=OneTime}" />
-        <KeyBinding Key="F9" Command="{Binding Path=MoveUnreadItemsToViewCommand, Mode=OneTime}" />
+        <KeyBinding Key="Escape" Command="{Binding Path=ExitCommand, Mode=OneTime}" />
+        
+        <KeyBinding Key="F5"
+                    x:Name="RefreshAllFeedsKeyBinding"
+                    Command="{Binding Path=RefreshAllFeedsCommandAsync, Mode=OneTime}" />
+        
+        <KeyBinding Key="F6"
+                    x:Name="MarkAllItemsAsReadKeyBinding"
+                    Command="{Binding Path=MarkAllItemsAsReadCommand, Mode=OneTime}" />
+        
+        <KeyBinding Key="F9"
+                    x:Name="MoveUnreadItemsToViewKeyBinding"
+                    Command="{Binding Path=MoveUnreadItemsToViewCommand, Mode=OneTime}" />
+        
+        <KeyBinding Key="F11"
+                    x:Name="OpenFeedsFileKeyBinding"
+                    Command="{Binding Path=OpenFeedsFileCommand, Mode=OneTime}" />
+        
+        <KeyBinding Key="F12"
+                    x:Name="ReloadFeedsKeyBinding"
+                    Command="{Binding Path=ReloadFeedsCommandAsync, Mode=OneTime}" />
+        
     </Window.InputBindings>
 
     <Grid Margin="0,0,0,10">
@@ -245,18 +270,28 @@
                     Orientation="Horizontal">
             
             <Button Content="Refresh All"
-                    ToolTip="F5"
                     Command="{Binding Path=RefreshAllFeedsCommandAsync}"
+                    ToolTip="{Binding Path=Key, ElementName=RefreshAllFeedsKeyBinding, Mode=OneTime}"
                     Margin="25,0,0,0" />
 
             <Button Content="Mark All As Read"
-                    ToolTip="F6"
                     Command="{Binding Path=MarkAllItemsAsReadCommand}"
+                    ToolTip="{Binding Path=Key, ElementName=MarkAllItemsAsReadKeyBinding, Mode=OneTime}"
                     Margin="25,0,0,0" />
 
             <Button Content="Restore Unread"
-                    ToolTip="F9"
                     Command="{Binding Path=MoveUnreadItemsToViewCommand}"
+                    ToolTip="{Binding Path=Key, ElementName=MoveUnreadItemsToViewKeyBinding, Mode=OneTime}"
+                    Margin="25,0,0,0" />
+
+            <Button Command="{Binding Path=OpenFeedsFileCommand}"
+                    ToolTip="{Binding Path=Key, ElementName=OpenFeedsFileKeyBinding, Mode=OneTime}"
+                    Margin="25,0,0,0"
+                    Style="{StaticResource SquareButton}" />
+            
+            <Button Content="Reload"
+                    Command="{Binding Path=ReloadFeedsCommandAsync}"
+                    ToolTip="{Binding Path=Key, ElementName=ReloadFeedsKeyBinding, Mode=OneTime}"
                     Margin="25,0,0,0" />
             
         </StackPanel>

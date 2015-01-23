@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using System.Web;
 using System.Windows;
 
 namespace Rdr
@@ -28,20 +25,11 @@ namespace Rdr
 
             if (Uri.TryCreate(urlString, UriKind.Absolute, out uri))
             {
-                try
-                {
-                    System.Diagnostics.Process.Start(uri.AbsoluteUri);
-                }
-                catch (Win32Exception w)
-                {
-                    Misc.LogException(w);
-                }
+                System.Diagnostics.Process.Start(uri.AbsoluteUri);
             }
             else
             {
-                string logMessage = string.Format("Uri.TryCreate(string) returned false: {0}", uri.ToString());
-
-                Misc.LogMessage(logMessage);
+                throw new ArgumentException("urlString passed to Uri.TryCreate returns false");
             }
         }
 
@@ -53,20 +41,11 @@ namespace Rdr
         {
             if (uri.IsAbsoluteUri)
             {
-                try
-                {
-                    System.Diagnostics.Process.Start(uri.AbsoluteUri);
-                }
-                catch (Win32Exception w)
-                {
-                    Misc.LogException(w);
-                }
+                System.Diagnostics.Process.Start(uri.AbsoluteUri);
             }
             else
             {
-                string logMessage = string.Format("Uri is not absolute: {0}", uri.ToString());
-
-                Misc.LogMessage(logMessage);
+                throw new ArgumentException("uri is not absolute");
             }
         }
 
@@ -237,6 +216,51 @@ namespace Rdr
         }
 
         /// <summary>
+        /// Returns the string from between two parts of a string.
+        /// </summary>
+        /// <param name="whole">The string to search within.</param>
+        /// <param name="beginning">Should end immediately before what we want back.</param>
+        /// <param name="ending">Should begin immediately after what we want back.</param>
+        /// <returns></returns>
+        public static string FromBetween(this string whole, string beginning, string ending)
+        {
+            if (whole.Contains(beginning) == false)
+            {
+                //throw new ArgumentException(string.Format("beginning ({0}) does not appear within whole ({1})", beginning, whole));
+
+                return string.Format("beginning ({0}) does not appear within whole ({1})", beginning, whole);
+            }
+
+            if (whole.Contains(ending) == false)
+            {
+                //throw new ArgumentException(string.Format("ending ({0}) does not appear within whole ({1})", ending, whole));
+
+                return string.Format("ending ({0}) does not appear within whole ({1})", ending, whole);
+            }
+
+            if (whole.IndexOf(beginning) < 0)
+            {
+                //throw new ArgumentOutOfRangeException(string.Format("beginning ({0}) does not seem to appear in whole ({1})", beginning, whole));
+
+                return string.Format("beginning ({0}) does not seem to appear in whole ({1})", beginning, whole);
+            }
+
+            if (whole.IndexOf(ending) < 0)
+            {
+                //throw new ArgumentOutOfRangeException(string.Format("ending ({0}) does not seem to appear within whole ({1})", ending, whole));
+
+                return string.Format("ending ({0}) does not seem to appear within whole ({1})", ending, whole);
+            }
+
+            int beginningOfString = whole.IndexOf(beginning) + beginning.Length;
+            int endingOfString = whole.IndexOf(ending);
+
+            int length = endingOfString - beginningOfString;
+
+            return whole.Substring(beginningOfString, length);
+        }
+
+        /// <summary>
         /// Returns a HttpWebResponse that deals with WebException inside.
         /// </summary>
         /// <param name="req">The HttpWebRequest to perform.</param>
@@ -266,14 +290,14 @@ namespace Rdr
                     tryAgain = true;
                 }
 
-                //Misc.LogException(e);
+                Misc.LogException(e);
             }
 
             if (tryAgain)
             {
-                //await Misc.LogMessageAsync(string.Format("tryAgain: {0}, tries left: {1}", req.RequestUri.AbsoluteUri, maxRounds - 1));
+                await Misc.LogMessageAsync(string.Format("tryAgain: {0}, tries left: {1}", req.RequestUri.AbsoluteUri, maxRounds - 1));
 
-                await Task.Delay(3000);
+                await Task.Delay(5000);
 
                 webResp = await GetResponseAsyncExt(req, maxRounds - 1);
             }
@@ -290,7 +314,7 @@ namespace Rdr
         {
             string response = string.Empty;
 
-            using (HttpWebResponse resp = await req.GetResponseAsyncExt(2))
+            using (HttpWebResponse resp = await req.GetResponseAsyncExt(5))
             {
                 if (resp != null)
                 {
@@ -298,6 +322,8 @@ namespace Rdr
                     {
                         using (StreamReader sr = new StreamReader(resp.GetResponseStream()))
                         {
+                            //response = await sr.ReadToEndAsync().ConfigureAwait(false);
+
                             try
                             {
                                 response = await sr.ReadToEndAsync().ConfigureAwait(false);

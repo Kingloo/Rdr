@@ -34,6 +34,7 @@ namespace Rdr
         public async Task RefreshAllFeedsAsync()
         {
             this.Activity = true;
+            this.WindowTitle = string.Format("{0} - updating...", appName);
 
             if (this.Feeds.Count > 0)
             {
@@ -43,6 +44,7 @@ namespace Rdr
                 await Task.WhenAll(refreshTasks);
             }
 
+            this.WindowTitle = string.Format(appName);
             this.Activity = false;
         }
 
@@ -126,6 +128,31 @@ namespace Rdr
             }
 
             MoveAllUnreadItemsToView();
+        }
+
+        private void MoveAllUnreadItemsToView()
+        {
+            lock (this.Items)
+            {
+                this.Items.Clear();
+
+                List<RdrFeedItem> toAdd = new List<RdrFeedItem>();
+
+                foreach (RdrFeed each in this.Feeds)
+                {
+                    if (each != null)
+                    {
+                        if (each.Items != null)
+                        {
+                            toAdd.AddList<RdrFeedItem>(from eeach in each.Items
+                                                       where eeach.Unread
+                                                       select eeach);
+                        }
+                    }
+                }
+
+                this.Items.AddList<RdrFeedItem>(toAdd);
+            }
         }
 
         private DelegateCommand<RdrFeed> _goToFeedCommand = null;
@@ -217,15 +244,97 @@ namespace Rdr
 
             this.Items.AddMissingItems<RdrFeedItem>(unreadItems);
         }
+
+        private DelegateCommand _openFeedsFileCommand = null;
+        public DelegateCommand OpenFeedsFileCommand
+        {
+            get
+            {
+                if (this._openFeedsFileCommand == null)
+                {
+                    this._openFeedsFileCommand = new DelegateCommand(OpenFeedsFile, canExecute);
+                }
+
+                return this._openFeedsFileCommand;
+            }
+        }
+
+        private void OpenFeedsFile()
+        {
+            try
+            {
+                Process.Start("notepad.exe", this.feedsFile);
+            }
+            catch (FileNotFoundException)
+            {
+                MessageBox.Show(string.Format("The feeds file:{0}{1}{0}was not found.", Environment.NewLine, this.feedsFile), "File Missing", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private DelegateCommandAsync _reloadFeedsCommandAsync = null;
+        public DelegateCommandAsync ReloadFeedsCommandAsync
+        {
+            get
+            {
+                if (this._reloadFeedsCommandAsync == null)
+                {
+                    this._reloadFeedsCommandAsync = new DelegateCommandAsync(ReloadFeedsAsync, canExecuteAsync);
+                }
+
+                return this._reloadFeedsCommandAsync;
+            }
+        }
+
+        private async Task ReloadFeedsAsync()
+        {
+            this.Feeds.Clear();
+
+            await LoadFeedsFromFileAsync();
+        }
+
+        private DelegateCommand _exitCommand = null;
+        public DelegateCommand ExitCommand
+        {
+            get
+            {
+                if (this._exitCommand == null)
+                {
+                    this._exitCommand = new DelegateCommand(Exit, canExecute);
+                }
+
+                return this._exitCommand;
+            }
+        }
+
+        private void Exit()
+        {
+            Application.Current.MainWindow.Close();
+        }
         #endregion
 
         #region Fields
-        private readonly MainWindow mainWindow = null;
-        private readonly string feedsFile = string.Format(@"C:\Users\{0}\Documents\rssfeeds.xml", Environment.UserName);
-        private readonly DispatcherTimer updateAllTimer = new DispatcherTimer();
+        private const string appName = "Rdr";
+        //private readonly string feedsFile = string.Format(@"C:\Users\{0}\Documents\rssfeeds.xml", Environment.UserName);
+        private readonly string feedsFile = string.Format(@"C:\Users\{0}\Documents\RdrFeeds.txt", Environment.UserName);
+        private readonly DispatcherTimer updateAllTimer = null;
         #endregion
 
         #region Properties
+        private string _windowTitle = appName;
+        public string WindowTitle
+        {
+            get
+            {
+                return this._windowTitle;
+            }
+            set
+            {
+                this._windowTitle = value;
+
+                OnNotifyPropertyChanged();
+            }
+        }
+
         private bool _activity = false;
         private bool Activity
         {
@@ -249,31 +358,90 @@ namespace Rdr
         public ObservableCollection<RdrFeedItem> Items { get { return this._items; } }
         #endregion
 
-        public FeedManager(MainWindow mainWindow)
+        public FeedManager()
         {
-            this.mainWindow = mainWindow;
-            mainWindow.Loaded += mainWindow_Loaded;
-            mainWindow.Closing += mainWindow_Closing;
+            this.updateAllTimer = new DispatcherTimer
+            {
+                Interval = new TimeSpan(0, 20, 0)
+            };
 
-            this.updateAllTimer.Interval = new TimeSpan(0, 20, 0);
-            this.updateAllTimer.Tick += updateTimer_Tick;
+            this.updateAllTimer.Tick += updateAllTimer_Tick;
             this.updateAllTimer.IsEnabled = true;
+
+            // not awaited cos... ya can't
+            Init();
         }
 
-        private async void updateTimer_Tick(object sender, EventArgs e)
+        private async void updateAllTimer_Tick(object sender, EventArgs e)
         {
             await RefreshAllFeedsAsync();
         }
 
-        private async void mainWindow_Loaded(object sender, RoutedEventArgs e)
+        public async Task Init()
         {
+            await LoadFeedsFromFileAsync();
+            await RefreshAllFeedsAsync();
+        }
+
+        public async Task LoadFeedsFromFileAsync()
+        {
+            this.Activity = true;
+            
             if (FeedsFileExists())
             {
-                await LoadAsync();
+                IEnumerable<RdrFeed> feeds = await ReadFromFeedsFileAsync();
+
+                this.Feeds.AddList<RdrFeed>(feeds);
             }
             else
             {
                 await WriteBasicFeedsFileAsync();
+            }
+
+            this.Activity = false;
+        }
+
+        private async Task<IEnumerable<RdrFeed>> ReadFromFeedsFileAsync()
+        {
+            List<RdrFeed> feeds = new List<RdrFeed>();
+
+            using (FileStream fsAsync = new FileStream(this.feedsFile, FileMode.Open, FileAccess.Read, FileShare.None, 4096, true))
+            {
+                using (StreamReader sr = new StreamReader(fsAsync))
+                {
+                    string line = string.Empty;
+
+                    while ((line = await sr.ReadLineAsync()) != null)
+                    {
+                        Uri uri = null;
+
+                        if (Uri.TryCreate(line, UriKind.Absolute, out uri))
+                        {
+                            RdrFeed feed = new RdrFeed(uri);
+
+                            feeds.Add(feed);
+                        }
+                    }
+                }
+            }
+
+            return feeds;
+        }
+
+        private async Task WriteBasicFeedsFileAsync()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            sb.AppendLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+            sb.AppendLine("<feeds>");
+            sb.AppendLine("</feeds>");
+
+            using (FileStream fsAsync = new FileStream(this.feedsFile, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true))
+            {
+                using (StreamWriter sw = new StreamWriter(fsAsync))
+                {
+                    await sw.WriteAsync(sb.ToString()).ConfigureAwait(false);
+                }
             }
         }
 
@@ -294,74 +462,6 @@ namespace Rdr
             return false;
         }
 
-        private async Task WriteBasicFeedsFileAsync()
-        {
-            this.Activity = true;
-
-            StringBuilder sb = new StringBuilder();
-
-            sb.AppendLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-            sb.AppendLine("<feeds>");
-            sb.AppendLine("</feeds>");
-
-            using (FileStream fsAsync = new FileStream(this.feedsFile, FileMode.Create, FileAccess.Write, FileShare.None, 1024, true))
-            {
-                using (StreamWriter sw = new StreamWriter(fsAsync))
-                {
-                    await sw.WriteAsync(sb.ToString()).ConfigureAwait(false);
-                }
-            }
-
-            this.Activity = false;
-        }
-
-        public async Task LoadAsync()
-        {
-            this.Activity = true;
-
-            IEnumerable<Uri> feedUris = await LoadXmlUrlsFromFileAsync();
-
-            if (feedUris.Count<Uri>() > 0)
-            {
-                IEnumerable<RdrFeed> allFeeds = from each in feedUris
-                                                select new RdrFeed(each);
-
-                this.Feeds.AddList<RdrFeed>(allFeeds);
-            }
-
-            await RefreshAllFeedsAsync();
-
-            this.Activity = false;
-        }
-
-        private async Task<IEnumerable<Uri>> LoadXmlUrlsFromFileAsync()
-        {
-            string feedsFileAsString = string.Empty;
-
-            using (FileStream fsAsync = new FileStream(this.feedsFile, FileMode.Open, FileAccess.Read, FileShare.None, 1024, true))
-            {
-                using (StreamReader sr = new StreamReader(fsAsync))
-                {
-                    feedsFileAsString = await sr.ReadToEndAsync().ConfigureAwait(false);
-                }
-            }
-
-            if (String.IsNullOrEmpty(feedsFileAsString) == false)
-            {
-                XDocument xDoc = XDocument.Parse(feedsFileAsString);
-
-                if (xDoc != null)
-                {
-                    IEnumerable<Uri> feeds = from each in xDoc.Root.Elements("feed")
-                                             select new Uri(each.Attribute("xmlurl").Value);
-
-                    return feeds;
-                }
-            }
-
-            return new List<Uri>(0);
-        }
-
         private HttpWebRequest BuildHttpWebRequest(Uri xmlUrl)
         {
             HttpWebRequest req = HttpWebRequest.CreateHttp(xmlUrl);
@@ -373,7 +473,7 @@ namespace Rdr
             req.Method = "GET";
             req.ProtocolVersion = HttpVersion.Version11;
             req.Referer = string.Format("{0}://{1}/", xmlUrl.GetLeftPart(UriPartial.Scheme), xmlUrl.DnsSafeHost);
-            req.Timeout = 5000;
+            req.Timeout = 2500;
             req.UserAgent = @"Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko";
 
             req.Headers.Add("DNT", "1");
@@ -381,29 +481,9 @@ namespace Rdr
             return req;
         }
 
-        private void MoveAllUnreadItemsToView()
+        private bool canExecute(object _)
         {
-            lock (this.Items)
-            {
-                this.Items.Clear();
-
-                List<RdrFeedItem> toAdd = new List<RdrFeedItem>();
-
-                foreach (RdrFeed each in this.Feeds)
-                {
-                    if (each != null)
-                    {
-                        if (each.Items != null)
-                        {
-                            toAdd.AddList<RdrFeedItem>(from eeach in each.Items
-                                                       where eeach.Unread
-                                                       select eeach);
-                        }
-                    }
-                }
-
-                this.Items.AddList<RdrFeedItem>(toAdd);
-            }
+            return true;
         }
 
         private bool canExecuteAsync(object _)
@@ -411,33 +491,11 @@ namespace Rdr
             return !this.Activity;
         }
 
-        private bool canExecute(object _)
-        {
-            return true;
-        }
-
-        private void mainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-            MessageBoxResult mbr = MessageBox.Show("Do you really want to Quit?", "Quit", MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-            switch (mbr)
-            {
-                case MessageBoxResult.Yes:
-                    e.Cancel = false;
-                    break;
-                case MessageBoxResult.No:
-                    e.Cancel = true;
-                    break;
-                default:
-                    e.Cancel = true;
-                    break;
-            }
-        }
-
         private void RaiseAllAsyncCanExecuteChangedCommands()
         {
             this.RefreshAllFeedsCommandAsync.RaiseCanExecuteChanged();
             this.RefreshFeedCommandAsync.RaiseCanExecuteChanged();
+            this.ReloadFeedsCommandAsync.RaiseCanExecuteChanged();
         }
 
         public override string ToString()

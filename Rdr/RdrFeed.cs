@@ -12,13 +12,14 @@ namespace Rdr
     {
         private enum FeedType { None, Atom, RSS };
 
-        private string _name = "name init";
+        private string _name = ".name init";
         public string Name
         {
             get { return this._name; }
             set
             {
                 this._name = value;
+
                 OnNotifyPropertyChanged();
             }
         }
@@ -33,6 +34,7 @@ namespace Rdr
             set
             {
                 this._updating = value;
+
                 OnNotifyPropertyChanged();
             }
         }

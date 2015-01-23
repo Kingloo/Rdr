@@ -63,21 +63,21 @@ namespace Rdr
             }
         }
 
-        private DelegateCommandAsync<RdrEnclosure> _downloadCommandAsync = null;
-        public DelegateCommandAsync<RdrEnclosure> DownloadCommandAsync
+        private DelegateCommandAsync _downloadCommandAsync = null;
+        public DelegateCommandAsync DownloadCommandAsync
         {
             get
             {
                 if (this._downloadCommandAsync == null)
                 {
-                    this._downloadCommandAsync = new DelegateCommandAsync<RdrEnclosure>(new Func<RdrEnclosure, Task>(DownloadAsync), canExecute);
+                    this._downloadCommandAsync = new DelegateCommandAsync(new Func<Task>(DownloadAsync), (_) => { return true; });
                 }
 
                 return this._downloadCommandAsync;
             }
         }
 
-        public async Task DownloadAsync(RdrEnclosure _)
+        public async Task DownloadAsync()
         {
             if (this._downloadLink != null)
             {
@@ -94,11 +94,6 @@ namespace Rdr
             {
                 this.ButtonText = "Error";
             }
-        }
-
-        private bool canExecute(RdrEnclosure _)
-        {
-            return true;
         }
 
         private string DetermineLocalFilePath(string link)

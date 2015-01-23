@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.Xml.Linq;
 
 namespace Rdr
@@ -35,9 +36,6 @@ namespace Rdr
 
         private readonly RdrEnclosure _enclosure = null;
         public RdrEnclosure Enclosure { get { return this._enclosure; } }
-
-        private readonly string _duration = "00:00:00";
-        public string Duration { get { return this._duration; } }
 
         public RdrFeedItem(XElement e, string titleOfFeed)
         {
@@ -168,6 +166,36 @@ namespace Rdr
             {
                 return 0;
             }
+        }
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            sb.AppendLine(this.GetType().ToString());
+            sb.AppendLine(string.Format("Name: {0}", this.Name));
+            sb.AppendLine(string.Format("TitleOfFeed: {0}", this.TitleOfFeed));
+
+            if (this.Link != null)
+            {
+                sb.AppendLine(string.Format("Link: {0}", this.Link.AbsoluteUri));
+            }
+            else
+            {
+                sb.AppendLine("Link is null");
+            }
+
+            sb.AppendLine(string.Format("PubDate: {0}", this.PubDate.ToString()));
+            sb.AppendLine(string.Format("Unread: {0}", this.Unread.ToString()));
+            sb.AppendLine(string.Format("Has enclosure: {0}", this.HasEnclosure.ToString()));
+
+            if (this.HasEnclosure)
+            {
+                sb.AppendLine(string.Format("Enclosure:{0}", Environment.NewLine));
+                sb.AppendLine(this.Enclosure.ToString());
+            }
+
+            return sb.ToString();
         }
     }
 }

@@ -36,6 +36,11 @@
             <Setter Property="Height" Value="38" />
         </Style>
         
+        <Style x:Key="SquareButton" TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Control}}">
+            <Setter Property="Width" Value="38" />
+            <Setter Property="Height" Value="38" />
+        </Style>
+        
         <Style TargetType="{x:Type ItemsControl}" BasedOn="{StaticResource {x:Type Control}}">
             <Setter Property="IsTabStop" Value="False" />
             <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel" />
