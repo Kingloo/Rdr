@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.Text;
+using System.Windows;
 
 namespace Rdr
 {
@@ -24,6 +25,21 @@ namespace Rdr
                 default:
                     e.Cancel = true;
                     break;
+            }
+        }
+
+        private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.F1)
+            {
+                StringBuilder sb = new StringBuilder();
+
+                foreach (RdrFeedItem each in feedManager.Items)
+                {
+                    sb.AppendLine(each.ToString());
+                }
+
+                Misc.LogMessage(sb.ToString());
             }
         }
     }

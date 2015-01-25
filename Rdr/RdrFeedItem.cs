@@ -136,7 +136,14 @@ namespace Rdr
 
             if (this.Link != null)
             {
-                if (this.Link.AbsoluteUri.Equals(other.Link.AbsoluteUri) == false)
+                //if (this.Link.AbsoluteUri.Equals(other.Link.AbsoluteUri) == false)
+                //{
+                //    return false;
+                //}
+
+                // Re/code was alternating between http and https links - we are unconcerned about that
+                // hence .PathAndQuery which omits the scheme
+                if (this.Link.PathAndQuery.Equals(other.Link.PathAndQuery) == false)
                 {
                     return false;
                 }

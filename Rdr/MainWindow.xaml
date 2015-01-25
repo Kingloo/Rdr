@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:this="clr-namespace:Rdr"
         xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
+        KeyDown="Window_KeyDown"
         Closing="Window_Closing">
     
     <Window.DataContext>

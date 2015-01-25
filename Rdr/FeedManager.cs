@@ -67,9 +67,9 @@ namespace Rdr
             feed.Updating = true;
 
             HttpWebRequest req = BuildHttpWebRequest(feed.XmlUrl);
-            string websiteAsString = await Misc.DownloadWebsiteAsString(req);
+            string websiteAsString = await Misc.DownloadWebsiteAsString(req, 2);
 
-            websiteAsString = websiteAsString.Replace((char)(0x1F), (char)(0x20));
+            //websiteAsString = websiteAsString.Replace((char)(0x1F), (char)(0x20));
 
             if (String.IsNullOrEmpty(websiteAsString) == false)
             {
@@ -128,31 +128,6 @@ namespace Rdr
             }
 
             MoveAllUnreadItemsToView();
-        }
-
-        private void MoveAllUnreadItemsToView()
-        {
-            lock (this.Items)
-            {
-                this.Items.Clear();
-
-                List<RdrFeedItem> toAdd = new List<RdrFeedItem>();
-
-                foreach (RdrFeed each in this.Feeds)
-                {
-                    if (each != null)
-                    {
-                        if (each.Items != null)
-                        {
-                            toAdd.AddList<RdrFeedItem>(from eeach in each.Items
-                                                       where eeach.Unread
-                                                       select eeach);
-                        }
-                    }
-                }
-
-                this.Items.AddList<RdrFeedItem>(toAdd);
-            }
         }
 
         private DelegateCommand<RdrFeed> _goToFeedCommand = null;
@@ -229,10 +204,23 @@ namespace Rdr
             {
                 if (this._moveUnreadItemsToViewCommand == null)
                 {
-                    this._moveUnreadItemsToViewCommand = new DelegateCommand(new Action(MoveAllUnreadItemsToView), canExecute);
+                    this._moveUnreadItemsToViewCommand = new DelegateCommand(MoveAllUnreadItemsToView, canExecute);
                 }
 
                 return _moveUnreadItemsToViewCommand;
+            }
+        }
+
+        private void MoveAllUnreadItemsToView()
+        {
+            lock (this.Items)
+            {
+                this.Items.Clear();
+
+                foreach (RdrFeed each in this.Feeds)
+                {
+                    MoveUnreadItemsToView(each);
+                }
             }
         }
 
@@ -308,13 +296,15 @@ namespace Rdr
 
         private void Exit()
         {
+            // App.xaml:ShutdownMode->OnMainWindowClose
+            // see MainWindow.xaml.cs for Closing event handler
+
             Application.Current.MainWindow.Close();
         }
         #endregion
 
         #region Fields
         private const string appName = "Rdr";
-        //private readonly string feedsFile = string.Format(@"C:\Users\{0}\Documents\rssfeeds.xml", Environment.UserName);
         private readonly string feedsFile = string.Format(@"C:\Users\{0}\Documents\RdrFeeds.txt", Environment.UserName);
         private readonly DispatcherTimer updateAllTimer = null;
         #endregion
@@ -406,7 +396,7 @@ namespace Rdr
             }
             else
             {
-                await WriteBasicFeedsFileAsync();
+                File.CreateText(this.feedsFile);
             }
 
             this.Activity = false;
@@ -443,23 +433,6 @@ namespace Rdr
             return feeds;
         }
 
-        private async Task WriteBasicFeedsFileAsync()
-        {
-            StringBuilder sb = new StringBuilder();
-
-            sb.AppendLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-            sb.AppendLine("<feeds>");
-            sb.AppendLine("</feeds>");
-
-            using (FileStream fsAsync = new FileStream(this.feedsFile, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true))
-            {
-                using (StreamWriter sw = new StreamWriter(fsAsync))
-                {
-                    await sw.WriteAsync(sb.ToString()).ConfigureAwait(false);
-                }
-            }
-        }
-
         private bool FeedsFileExists()
         {
             if (String.IsNullOrEmpty(this.feedsFile))
@@ -483,6 +456,7 @@ namespace Rdr
 
             req.AllowAutoRedirect = true;
             req.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
+            req.CachePolicy = new System.Net.Cache.RequestCachePolicy(System.Net.Cache.RequestCacheLevel.BypassCache);
             req.Host = xmlUrl.DnsSafeHost;
             req.KeepAlive = false;
             req.Method = "GET";
@@ -492,6 +466,7 @@ namespace Rdr
             req.UserAgent = @"Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko";
 
             req.Headers.Add("DNT", "1");
+            req.Headers.Add("Accept-Encoding", "gzip, deflate");
 
             return req;
         }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -324,11 +325,11 @@ namespace Rdr
         /// </summary>
         /// <param name="req">Custom HttpWebRequest object.</param>
         /// <returns></returns>
-        public static async Task<string> DownloadWebsiteAsString(HttpWebRequest req)
+        public static async Task<string> DownloadWebsiteAsString(HttpWebRequest req, int maxRounds)
         {
-            string response = string.Empty;
+            string response = null;
 
-            using (HttpWebResponse resp = await req.GetResponseAsyncExt(5))
+            using (HttpWebResponse resp = await req.GetResponseAsyncExt(maxRounds))
             {
                 if (resp != null)
                 {
@@ -338,13 +339,15 @@ namespace Rdr
                         {
                             //response = await sr.ReadToEndAsync().ConfigureAwait(false);
 
+                            // documentation says this shouldn't throw an IOException, it comes from deeper in the framework
                             try
                             {
                                 response = await sr.ReadToEndAsync().ConfigureAwait(false);
                             }
                             catch (IOException)
                             {
-                                response = string.Empty;
+                                //response = string.Empty;
+                                response = null;
                             }
                         }
                     }
