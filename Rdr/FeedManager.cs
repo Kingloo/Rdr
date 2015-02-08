@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
@@ -39,6 +40,7 @@ namespace Rdr
             if (this.Feeds.Count > 0)
             {
                 IEnumerable<Task> refreshTasks = from each in this.Feeds
+                                                 where each != null
                                                  select RefreshFeedAsync(each);
 
                 await Task.WhenAll(refreshTasks);
@@ -55,7 +57,7 @@ namespace Rdr
             {
                 if (this._refreshFeedCommandAsync == null)
                 {
-                    this._refreshFeedCommandAsync = new DelegateCommandAsync<RdrFeed>(new Func<RdrFeed, Task>(RefreshFeedAsync), canExecuteAsync);
+                    this._refreshFeedCommandAsync = new DelegateCommandAsync<RdrFeed>(RefreshFeedAsync, canExecuteAsync);
                 }
 
                 return this._refreshFeedCommandAsync;
@@ -69,10 +71,10 @@ namespace Rdr
             HttpWebRequest req = BuildHttpWebRequest(feed.XmlUrl);
             string websiteAsString = await Misc.DownloadWebsiteAsString(req, 2);
 
-            //websiteAsString = websiteAsString.Replace((char)(0x1F), (char)(0x20));
-
             if (String.IsNullOrEmpty(websiteAsString) == false)
             {
+                websiteAsString = websiteAsString.Replace((char)(0x1F), (char)(0x20));
+                
                 XDocument x = null;
 
                 try
@@ -352,7 +354,11 @@ namespace Rdr
         {
             this.updateAllTimer = new DispatcherTimer
             {
+#if DEBUG
+                Interval = new TimeSpan(0, 2, 0)
+#else
                 Interval = new TimeSpan(0, 20, 0)
+#endif
             };
 
             this.updateAllTimer.Tick += updateAllTimer_Tick;
@@ -462,12 +468,17 @@ namespace Rdr
             req.Method = "GET";
             req.ProtocolVersion = HttpVersion.Version11;
             req.Referer = string.Format("{0}://{1}/", xmlUrl.GetLeftPart(UriPartial.Scheme), xmlUrl.DnsSafeHost);
-            req.Timeout = 2500;
+            req.Timeout = 4500;
             req.UserAgent = @"Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko";
 
             req.Headers.Add("DNT", "1");
             req.Headers.Add("Accept-Encoding", "gzip, deflate");
 
+            if (xmlUrl.Scheme.Equals("https"))
+            {
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+            }
+            
             return req;
         }
 
