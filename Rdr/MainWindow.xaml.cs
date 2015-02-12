@@ -39,7 +39,7 @@ namespace Rdr
                     sb.AppendLine(each.ToString());
                 }
 
-                Misc.LogMessage(sb.ToString());
+                Utils.LogMessage(sb.ToString());
             }
         }
     }

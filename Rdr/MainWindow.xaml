@@ -9,21 +9,9 @@
     <Window.DataContext>
         <this:FeedManager x:Name="feedManager" />
     </Window.DataContext>
-    
-    <Window.Style>
-        <Style TargetType="{x:Type this:MainWindow}">
-            <Setter Property="Title" Value="{Binding Path=WindowTitle}" />
-            <Setter Property="Background" Value="#FF212121" />
-            <Setter Property="ResizeMode" Value="CanResize" />
-            <Setter Property="MinWidth" Value="700" />
-            <Setter Property="MinHeight" Value="700" />
-            <Setter Property="Width" Value="1000" />
-            <Setter Property="Height" Value="1000" />
-        </Style>
-    </Window.Style>
 
     <Window.Resources>
-        
+
         <CollectionViewSource x:Key="sortedFeeds"
                               Source="{Binding Path=Feeds, Mode=OneWay}"
                               IsLiveSortingRequested="True">
@@ -55,11 +43,11 @@
                     <Setter Property="Foreground" Value="#FF7A7A7A" />
                     <Setter Property="Background" Value="#FF313131" />
                 </Style>
-                
+
                 <this:FeedUpdatingConverter x:Key="feedUpdatingConverter"
-                                            Updating="{StaticResource FeedUpdating}"
-                                            NotUpdating="{StaticResource FeedNotUpdating}" />
-                
+                                            True="{StaticResource FeedUpdating}"
+                                            False="{StaticResource FeedNotUpdating}" />
+
             </DataTemplate.Resources>
             
             <Label Margin="0,0,0,5"
@@ -94,7 +82,11 @@
             </Label>
             
         </DataTemplate>
-        
+
+        <this:BoolToBrushConverter x:Key="labelForegroundConverter"
+                                               True="Black"
+                                               False="#FF7A7A7A" />
+
         <DataTemplate DataType="{x:Type this:RdrFeedItem}" x:Key="withEnclosureDataTemplate">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -111,13 +103,17 @@
                 </Grid.InputBindings>
 
                 <Grid.Resources>
+                    
                     <this:BoolToBrushConverter x:Key="unreadToBackgroundConverter"
                                                True="LightGray"
                                                False="#FF313131" />
-                    <this:BoolToBrushConverter x:Key="labelForegroundConverter"
-                                               True="Black"
-                                               False="#FF7A7A7A" />
+                    
                     <BooleanToVisibilityConverter x:Key="boolToVisibilityConverter" />
+
+                    <Style TargetType="{x:Type Label}" BasedOn="{StaticResource {x:Type Label}}">
+                        <Setter Property="Foreground" Value="{Binding Path=Unread, Mode=OneWay, Converter={StaticResource labelForegroundConverter}}" />
+                    </Style>
+                    
                 </Grid.Resources>
 
                 <Grid.Style>
@@ -131,7 +127,6 @@
 
                 <Label Grid.Column="0"
                        HorizontalAlignment="Left"
-                       Foreground="{Binding Path=Unread, Mode=OneWay, Converter={StaticResource labelForegroundConverter}}"
                        ToolTip="{Binding Path=TitleOfFeed, Mode=OneWay}">
                     <Label.Content>
                         <TextBlock Text="{Binding Path=TitleOfFeed, Mode=OneWay}"
@@ -140,8 +135,7 @@
                 </Label>
 
                 <Label Grid.Column="1"
-                       HorizontalAlignment="Stretch"
-                       Foreground="{Binding Path=Unread, Mode=OneWay, Converter={StaticResource labelForegroundConverter}}">
+                       HorizontalAlignment="Stretch">
                     <Label.Content>
                         <TextBlock Text="{Binding Path=Name, Mode=OneTime}"
                                    TextTrimming="CharacterEllipsis" />
@@ -153,7 +147,7 @@
                         Width="130"
                         Height="34"
                         Content="{Binding Path=Enclosure.ButtonText, Mode=OneWay}"
-                        Command="{Binding Path=Enclosure.DownloadCommandAsync, Mode=OneWay}"
+                        Command="{Binding Path=DataContext.DownloadEnclosureCommandAsync, RelativeSource={RelativeSource AncestorType={x:Type this:MainWindow}}}"
                         CommandParameter="{Binding Path=Enclosure}" />
 
                 <Label Grid.Column="3"
@@ -180,13 +174,17 @@
                 </Grid.InputBindings>
 
                 <Grid.Resources>
+                    
                     <this:BoolToBrushConverter x:Key="unreadToBackgroundConverter"
                                                True="LightGray"
                                                False="#FF313131" />
-                    <this:BoolToBrushConverter x:Key="labelForegroundConverter"
-                                               True="Black"
-                                               False="#FF7A7A7A" />
+                    
                     <BooleanToVisibilityConverter x:Key="boolToVisibilityConverter" />
+
+                    <Style TargetType="{x:Type Label}" BasedOn="{StaticResource {x:Type Label}}">
+                        <Setter Property="Foreground" Value="{Binding Path=Unread, Mode=OneWay, Converter={StaticResource labelForegroundConverter}}" />
+                    </Style>
+                    
                 </Grid.Resources>
 
                 <Grid.Style>
@@ -194,13 +192,11 @@
                         <Setter Property="Background" Value="{Binding Path=Unread, Mode=OneWay, Converter={StaticResource unreadToBackgroundConverter}}" />
                         <Setter Property="Height" Value="43" />
                         <Setter Property="Margin" Value="0,0,0,5" />
-                        <Setter Property="Control.FontSize" Value="22" />
                     </Style>
                 </Grid.Style>
 
                 <Label Grid.Column="0"
                        HorizontalAlignment="Left"
-                       Foreground="{Binding Path=Unread, Mode=OneWay, Converter={StaticResource labelForegroundConverter}}"
                        ToolTip="{Binding Path=TitleOfFeed, Mode=OneWay}">
                     <Label.Content>
                         <TextBlock Text="{Binding Path=TitleOfFeed, Mode=OneWay}"
@@ -209,8 +205,7 @@
                 </Label>
 
                 <Label Grid.Column="1"
-                       HorizontalAlignment="Stretch"
-                       Foreground="{Binding Path=Unread, Mode=OneWay, Converter={StaticResource labelForegroundConverter}}">
+                       HorizontalAlignment="Stretch">
                     <Label.Content>
                         <TextBlock Text="{Binding Path=Name, Mode=OneTime}"
                                    TextTrimming="CharacterEllipsis" />
@@ -219,7 +214,6 @@
 
                 <Label Grid.Column="3"
                        HorizontalAlignment="Right"
-                       Foreground="{Binding Path=Unread, Mode=OneWay, Converter={StaticResource labelForegroundConverter}}"
                        Content="{Binding Path=PubDate, Mode=OneTime}"
                        ContentStringFormat="{}{0:HH:mm - dd MMM yy}" />
 
@@ -232,8 +226,21 @@
 
     </Window.Resources>
 
+    <Window.Style>
+        <Style TargetType="{x:Type this:MainWindow}">
+            <Setter Property="Title" Value="{Binding Path=WindowTitle}" />
+            <Setter Property="Background" Value="#FF212121" />
+            <Setter Property="ResizeMode" Value="CanResize" />
+            <Setter Property="MinWidth" Value="700" />
+            <Setter Property="MinHeight" Value="700" />
+            <Setter Property="Width" Value="1000" />
+            <Setter Property="Height" Value="1000" />
+        </Style>
+    </Window.Style>
+
     <Window.InputBindings>
-        <KeyBinding Key="Escape" Command="{Binding Path=ExitCommand, Mode=OneTime}" />
+        <KeyBinding Key="Escape"
+                    Command="{Binding Path=ExitCommand, Mode=OneTime}" />
         
         <KeyBinding Key="F5"
                     x:Name="RefreshAllFeedsKeyBinding"

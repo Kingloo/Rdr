@@ -26,7 +26,9 @@
             <Setter Property="FontSize" Value="18" />
         </Style>
 
-        <Style TargetType="{x:Type ScrollViewer}" BasedOn="{StaticResource {x:Type Control}}" />
+        <Style TargetType="{x:Type ScrollViewer}" BasedOn="{StaticResource {x:Type Control}}">
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+        </Style>
 
         <Style TargetType="{x:Type Label}" BasedOn="{StaticResource {x:Type Control}}">
             <Setter Property="Height" Value="38" />

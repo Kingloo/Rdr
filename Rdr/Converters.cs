@@ -1,82 +1,17 @@
 ﻿using System;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
 
 namespace Rdr
 {
-    [ValueConversion(typeof(string), typeof(string))]
-    public class ShortTitleConverter : IValueConverter
+    public abstract class GenericBooleanConverter<T> : IValueConverter
     {
-        private int _maxLength = Int32.MaxValue - 1;
-        public int MaxLength
-        {
-            get { return this._maxLength; }
-            set { this._maxLength = value; }
-        }
-        
-        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-        {
-            string title = (string)value;
+        public T True { get; set; }
+        public T False { get; set; }
 
-            if (title.Length > MaxLength)
-            {
-                title = title.Substring(0, MaxLength);
-            }
-
-            return title;
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-        {
-            return (string)value;
-        }
-    }
-
-    [ValueConversion(typeof(bool), typeof(Style))]
-    public class FeedUpdatingConverter : IValueConverter
-    {
-        private Style _notUpdating = null;
-        public Style NotUpdating
-        {
-            get { return this._notUpdating; }
-            set { this._notUpdating = value; }
-        }
-
-        private Style _updating = null;
-        public Style Updating
-        {
-            get { return this._updating; }
-            set { this._updating = value; }
-        }
-        
-        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-        {
-            bool b = (bool)value;
-
-            if (b)
-            {
-                return this.Updating;
-            }
-            else
-            {
-                return this.NotUpdating;
-            }
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-        {
-            return true;
-        }
-    }
-
-    [ValueConversion(typeof(bool), typeof(Brush))]
-    public class BoolToBrushConverter : IValueConverter
-    {
-        public SolidColorBrush True { get; set; }
-        public SolidColorBrush False { get; set; }
-
-        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        public virtual object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
             bool b = (bool)value;
 
@@ -90,9 +25,35 @@ namespace Rdr
             }
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        public virtual object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
-            return true;
+            return default(T);
+        }
+    }
+
+    [ValueConversion(typeof(bool), typeof(Style))]
+    public class FeedUpdatingConverter : GenericBooleanConverter<Style> { }
+
+    [ValueConversion(typeof(bool), typeof(SolidColorBrush))]
+    public class BoolToBrushConverter : GenericBooleanConverter<SolidColorBrush> { }
+
+    public class FeedItemDataTemplateSelector : DataTemplateSelector
+    {
+        public DataTemplate WithEnclosure { get; set; }
+        public DataTemplate NoEnclosure { get; set; }
+
+        public override DataTemplate SelectTemplate(object item, System.Windows.DependencyObject container)
+        {
+            RdrFeedItem feedItem = (RdrFeedItem)item;
+
+            if (feedItem.HasEnclosure)
+            {
+                return WithEnclosure;
+            }
+            else
+            {
+                return NoEnclosure;
+            }
         }
     }
 }

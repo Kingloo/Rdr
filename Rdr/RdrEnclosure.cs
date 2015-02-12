@@ -18,6 +18,7 @@ namespace Rdr
             set
             {
                 this._buttonText = value;
+
                 OnNotifyPropertyChanged();
             }
         }
@@ -61,56 +62,6 @@ namespace Rdr
                     this._fileSize = HelperMethods.ConvertStringToInt32(each.Value);
                 }
             }
-        }
-
-        private DelegateCommandAsync _downloadCommandAsync = null;
-        public DelegateCommandAsync DownloadCommandAsync
-        {
-            get
-            {
-                if (this._downloadCommandAsync == null)
-                {
-                    this._downloadCommandAsync = new DelegateCommandAsync(new Func<Task>(DownloadAsync), (_) => { return true; });
-                }
-
-                return this._downloadCommandAsync;
-            }
-        }
-
-        public async Task DownloadAsync()
-        {
-            if (this._downloadLink != null)
-            {
-                string link = this._downloadLink.AbsoluteUri;
-                string localFilePath = DetermineLocalFilePath(link);
-
-                WebClient wc = new WebClient();
-                wc.DownloadProgressChanged += wc_DownloadProgressChanged;
-                wc.DownloadFileCompleted += wc_DownloadFileCompleted;
-
-                await wc.DownloadFileTaskAsync(link, localFilePath);
-            }
-            else
-            {
-                this.ButtonText = "Error";
-            }
-        }
-
-        private string DetermineLocalFilePath(string link)
-        {
-            int indexOfLastSlash = link.LastIndexOf(@"/");
-
-            return string.Format(@"C:\Users\{0}\Documents\share\{1}", Environment.UserName, link.Substring(indexOfLastSlash));
-        }
-
-        private void wc_DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e)
-        {
-            this.ButtonText = string.Format("{0} %", e.ProgressPercentage);
-        }
-
-        private void wc_DownloadFileCompleted(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
-        {
-            this.ButtonText = "Done";
         }
 
         public override string ToString()

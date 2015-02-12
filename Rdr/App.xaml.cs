@@ -1,4 +1,7 @@
-﻿using System.Windows;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Windows;
 
 namespace Rdr
 {
@@ -6,7 +9,7 @@ namespace Rdr
     {
         private void Application_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
         {
-            Misc.LogException(e.Exception, string.Empty);
+            Utils.LogException(e.Exception);
         }
     }
 }

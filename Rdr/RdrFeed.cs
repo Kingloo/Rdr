@@ -43,7 +43,12 @@ namespace Rdr
         {
             get
             {
-                return string.Format("{0} items, {1} unread{2}{2}{3}", this.Items.Count, UnreadItemsCount(), Environment.NewLine, this.XmlUrl.AbsoluteUri);
+                StringBuilder sb = new StringBuilder();
+
+                sb.AppendLine(string.Format("{0} items, {1} unread", this.Items.Count, UnreadItemsCount()));
+                sb.Append(this.XmlUrl.AbsoluteUri);
+
+                return sb.ToString();
             }
         }
 
@@ -96,7 +101,7 @@ namespace Rdr
             IEnumerable<RdrFeedItem> allItems = from each in e
                                                 select new RdrFeedItem(each, this.Name);
 
-            this.Items.AddMissingItems<RdrFeedItem>(allItems);
+            this.Items.AddMissing<RdrFeedItem>(allItems);
         }
 
         public void MarkAllItemsAsRead()
