@@ -80,6 +80,11 @@ namespace Rdr
                     }
                 }
             }
+			
+			if (fsAsync != null)
+			{
+				fsAsync.Close();
+			}
 
             return toReturn;
         }
