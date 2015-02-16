@@ -37,6 +37,21 @@ namespace Rdr
         private readonly int _fileSize = 0;
         public int FileSize { get { return this._fileSize; } }
 
+        private bool _downloading = false;
+        public bool Downloading
+        {
+            get
+            {
+                return this._downloading;
+            }
+            set
+            {
+                this._downloading = value;
+
+                OnNotifyPropertyChanged();
+            }
+        }
+
         public RdrEnclosure(XElement e)
         {
             foreach (XAttribute each in e.Attributes())

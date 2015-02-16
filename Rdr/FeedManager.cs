@@ -294,12 +294,13 @@ namespace Rdr
         {
             get
             {
-                return new DelegateCommandAsync<RdrEnclosure>(DownloadEnclosureAsync, (_) => { return true; });
+                return new DelegateCommandAsync<RdrEnclosure>(DownloadEnclosureAsync, (enclosure) => { return !enclosure.Downloading; });
             }
         }
 
         private async Task DownloadEnclosureAsync(RdrEnclosure arg)
         {
+            arg.Downloading = true;
             HttpWebRequest req = HttpWebRequest.CreateHttp(arg.DownloadLink);
 
             using (HttpWebResponse resp = (HttpWebResponse)await req.GetResponseAsyncExt(false).ConfigureAwait(false))
@@ -336,6 +337,8 @@ namespace Rdr
                     }
                 }
             }
+
+            arg.Downloading = false;
         }
 
         private string DetermineFullLocalFilePath(Uri uri)

@@ -49,11 +49,11 @@ namespace Rdr
         {
             List<RdrFeed> toReturn = new List<RdrFeed>();
 
-            FileStream fs = null;
+            FileStream fsAsync = null;
 
             try
             {
-                fs = new FileStream(_feedsFile, FileMode.Open, FileAccess.Read, FileShare.None, 1024, true);
+                fsAsync = new FileStream(_feedsFile, FileMode.Open, FileAccess.Read, FileShare.None, 1024, true);
             }
             catch (DirectoryNotFoundException) { return null; }
             catch (FileNotFoundException) { return null; }
@@ -61,7 +61,7 @@ namespace Rdr
             catch (SecurityException) { return null; }
             catch (IOException) { return null; }
 
-            using (StreamReader sr = new StreamReader(fs))
+            using (StreamReader sr = new StreamReader(fsAsync))
             {
                 string line = string.Empty;
 
