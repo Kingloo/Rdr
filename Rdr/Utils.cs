@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace Rdr
 {
@@ -20,6 +19,18 @@ namespace Rdr
             double screenWidth = SystemParameters.PrimaryScreenWidth;
             double windowWidth = window.Width;
             window.Left = (screenWidth / 2) - (windowWidth / 2);
+        }
+
+        public static void SafeDispatcher(Action action, DispatcherPriority priority = DispatcherPriority.Normal)
+        {
+            if (Application.Current.Dispatcher.CheckAccess())
+            {
+                action();
+            }
+            else
+            {
+                Application.Current.Dispatcher.Invoke(action, priority);
+            }
         }
 
 
@@ -173,15 +184,20 @@ namespace Rdr
         }
 
 
-        private static bool _useLogging = false;
-
-        public static string DownloadWebsiteAsString(HttpWebRequest req, int rounds = 1)
+        public static string DownloadWebsiteAsString(HttpWebRequest req, bool useLogging = false, int rounds = 1)
         {
             string response = string.Empty;
 
-            using (HttpWebResponse resp = (HttpWebResponse)req.GetResponseExt(_useLogging, rounds))
+            using (HttpWebResponse resp = (HttpWebResponse)req.GetResponseExt(useLogging, rounds))
             {
-                if (resp != null)
+                if (resp == null)
+                {
+                    if (req != null)
+                    {
+                        req.Abort();
+                    }
+                }
+                else
                 {
                     if (resp.StatusCode == HttpStatusCode.OK)
                     {
@@ -204,25 +220,25 @@ namespace Rdr
                         Utils.LogMessage(errorMessage);
                     }
                 }
-                else
+            }
+
+            return response;
+        }
+
+        public static async Task<string> DownloadWebsiteAsStringAsync(HttpWebRequest req, bool useLogging = false, int rounds = 1)
+        {
+            string response = string.Empty;
+
+            using (HttpWebResponse resp = (HttpWebResponse)(await req.GetResponseAsyncExt(useLogging, rounds)))
+            {
+                if (resp == null)
                 {
                     if (req != null)
                     {
                         req.Abort();
                     }
                 }
-            }
-
-            return response;
-        }
-
-        public static async Task<string> DownloadWebsiteAsStringAsync(HttpWebRequest req, int rounds = 1)
-        {
-            string response = string.Empty;
-
-            using (HttpWebResponse resp = (HttpWebResponse)(await req.GetResponseAsyncExt(_useLogging, rounds)))
-            {
-                if (resp != null)
+                else
                 {
                     if (resp.StatusCode == HttpStatusCode.OK)
                     {
@@ -240,109 +256,14 @@ namespace Rdr
                     }
                     else
                     {
-                        string errorMessage = string.Format("Getting website {0} failed with code {1}", req.RequestUri.AbsoluteUri, resp.StatusCode.ToString());
+                        string errorMessage = string.Format("Getting website {0} failed with code: {1}, desc: {2}", req.RequestUri.AbsoluteUri, resp.StatusCode.ToString(), resp.StatusDescription);
 
                         await Utils.LogMessageAsync(errorMessage).ConfigureAwait(false);
                     }
                 }
-                else
-                {
-                    Debug.WriteLine("BEGIN");
-
-                    if (req != null)
-                    {
-                        Debug.WriteLine(string.Format("Host: {0}", req.Host));
-
-                        req.Abort();
-                    }
-                    else
-                    {
-                        Debug.WriteLine("req was null");
-                    }
-
-                    Debug.WriteLine("END");
-                }
             }
 
             return response;
-        }
-
-        public static async Task<string> DownloadWebsiteAsStringAsyncComplicated(HttpWebRequest req)
-        {
-            string response = string.Empty;
-
-            using (HttpWebResponse resp = await GetResponseAsyncComplicated(req))
-            {
-                if (resp != null)
-                {
-                    if (resp.StatusCode == HttpStatusCode.OK)
-                    {
-                        using (StreamReader sr = new StreamReader(resp.GetResponseStream()))
-                        {
-                            response = await sr.ReadToEndAsync().ConfigureAwait(false);
-                        }
-                    }
-                }
-            }
-
-            return response;
-        }
-
-
-
-
-
-        private static async Task<HttpWebResponse> GetResponseAsyncComplicated(HttpWebRequest req)
-        {
-            return await Task.Factory.StartNew<HttpWebResponse>(() =>
-                {
-                    HttpWebResponse resp = null;
-                    ManualResetEvent mre = new ManualResetEvent(false);
-
-                    try
-                    {
-                        IAsyncResult ar = req.BeginGetResponse(new AsyncCallback((innerAr) =>
-                            {
-                                HttpWebRequest innerReq = (HttpWebRequest)innerAr.AsyncState;
-
-                                try
-                                {
-                                    resp = (HttpWebResponse)innerReq.EndGetResponse(innerAr);
-                                }
-                                catch (WebException)
-                                {
-                                    Debug.WriteLine("inner: " + req.RequestUri.AbsoluteUri);
-                                }
-
-                                mre.Set();
-                            }), req);
-
-                        ThreadPool.RegisterWaitForSingleObject(ar.AsyncWaitHandle, timeoutCallback, req, 4500, true);
-
-                        mre.WaitOne();
-                    }
-                    catch (WebException)
-                    {
-                        Debug.WriteLine("outer: " + req.RequestUri.AbsoluteUri);
-                    }
-
-                    return resp;
-                });
-        }
-
-        private static void timeoutCallback(object state, bool timedOut)
-        {
-            if (timedOut)
-            {
-                HttpWebRequest req = (HttpWebRequest)state;
-
-                if (req != null)
-                {
-                    Debug.WriteLine("timedOut: " + req.RequestUri.AbsoluteUri);
-
-                    req.Abort();
-                }
-            }
         }
     }
 }

@@ -61,9 +61,7 @@ namespace Rdr
             OnNotifyPropertyChanged("WindowTitle");
 
             HttpWebRequest req = BuildHttpWebRequest(feed.XmlUrl);
-            string websiteAsString = await Utils.DownloadWebsiteAsStringAsync(req, 2);
-            //string websiteAsString = await Utils.DownloadWebsiteAsStringAsyncComplicated(req);
-            //string websiteAsString = await Utils.HttpGetStringAsync(feed.XmlUrl);
+            string websiteAsString = await Utils.DownloadWebsiteAsStringAsync(req, true, 2);
 
             if (String.IsNullOrEmpty(websiteAsString) == false)
             {
