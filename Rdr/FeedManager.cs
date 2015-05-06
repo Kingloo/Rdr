@@ -41,7 +41,7 @@ namespace Rdr
                                                  where each.Updating == false
                                                  select RefreshFeedAsync(each);
 
-                await Task.WhenAll(refreshTasks);
+                await Task.WhenAll(refreshTasks).ConfigureAwait(false);
             }   
         }
 
@@ -56,12 +56,12 @@ namespace Rdr
         private async Task RefreshFeedAsync(RdrFeed feed)
         {
             feed.Updating = true;
-            this.Activity = (activeTasks.Count<RdrFeed>() > 0);
+            this.Activity = activeTasks.Count<RdrFeed>() > 0;
 
             OnNotifyPropertyChanged("WindowTitle");
 
             HttpWebRequest req = BuildHttpWebRequest(feed.XmlUrl);
-            string websiteAsString = await Utils.DownloadWebsiteAsStringAsync(req, true, 2);
+            string websiteAsString = await Utils.DownloadWebsiteAsStringAsync(req).ConfigureAwait(false);
 
             if (String.IsNullOrEmpty(websiteAsString) == false)
             {
@@ -75,13 +75,9 @@ namespace Rdr
                 }
                 catch (XmlException e)
                 {
-                    StringBuilder sb = new StringBuilder();
+                    string errorMessage = string.Format("XML parse exception on {0}", feed.XmlUrl.AbsoluteUri);
 
-                    sb.AppendLine(feed.XmlUrl.AbsoluteUri);
-                    sb.AppendLine(e.Message);
-                    sb.AppendLine(e.StackTrace);
-
-                    Utils.LogMessage(sb.ToString());
+                    Utils.LogException(e, errorMessage);
 
                     x = null;
                 }
@@ -90,12 +86,13 @@ namespace Rdr
                 {
                     feed.Load(x);
 
-                    MoveUnreadItemsToView(feed);
+                    Utils.SafeDispatcher(() => MoveUnreadItemsToView(feed), DispatcherPriority.Background);
                 }
             }
 
             feed.Updating = false;
-            this.Activity = (activeTasks.Count<RdrFeed>() > 0);
+
+            Utils.SafeDispatcher(() => this.Activity = activeTasks.Count<RdrFeed>() > 0, DispatcherPriority.Normal);
 
             OnNotifyPropertyChanged("WindowTitle");
         }
@@ -301,7 +298,7 @@ namespace Rdr
             arg.Downloading = true;
             HttpWebRequest req = HttpWebRequest.CreateHttp(arg.DownloadLink);
 
-            using (HttpWebResponse resp = (HttpWebResponse)await req.GetResponseAsyncExt(false).ConfigureAwait(false))
+            using (HttpWebResponse resp = (HttpWebResponse)await req.GetResponseAsyncExt().ConfigureAwait(false))
             {
                 if (resp != null)
                 {
@@ -311,7 +308,7 @@ namespace Rdr
                         {
                             string fullLocalFilePath = DetermineFullLocalFilePath(arg.DownloadLink);
 
-                            using (FileStream fsAsync = new FileStream(fullLocalFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 1024, true))
+                            using (FileStream fsAsync = new FileStream(fullLocalFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 6144, true)) // 4096 + 2048
                             {
                                 int bytesRead = 0;
                                 decimal totalBytesRead = 0;
@@ -468,7 +465,7 @@ namespace Rdr
 
         private async void updateAllTimer_Tick(object sender, EventArgs e)
         {
-            await RefreshAllFeedsAsync();
+            await RefreshAllFeedsAsync().ConfigureAwait(false);
         }
 
         private HttpWebRequest BuildHttpWebRequest(Uri xmlUrl)
@@ -487,7 +484,7 @@ namespace Rdr
             req.UserAgent = @"Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko";
 
             req.Headers.Add("DNT", "1");
-            req.Headers.Add("Accept-Encoding", "gzip, deflate");
+            req.Headers.Add("Accept-Encoding", "gzip, deflate"); // to match the choices made for AutomaticDecompression
 
             if (xmlUrl.Scheme.Equals("https"))
             {

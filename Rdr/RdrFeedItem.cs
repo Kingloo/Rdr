@@ -129,7 +129,7 @@ namespace Rdr
 
         public bool Equals(RdrFeedItem other)
         {
-            if (this.Name.Equals(other.Name) == false)
+            if (this.Name.Equals(other.Name, StringComparison.InvariantCultureIgnoreCase) == false)
             {
                 return false;
             }
