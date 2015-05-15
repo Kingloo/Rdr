@@ -37,6 +37,7 @@ namespace Rdr
     [ValueConversion(typeof(bool), typeof(SolidColorBrush))]
     public class BoolToBrushConverter : GenericBooleanConverter<SolidColorBrush> { }
 
+
     public class FeedItemDataTemplateSelector : DataTemplateSelector
     {
         public DataTemplate WithEnclosure { get; set; }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -132,6 +133,26 @@ namespace Rdr
         }
 
 
+        // ObservableCollection<T> where T : IComparable<T>, IAlternativeSort
+        public static void AlternativeSort<T>(this ObservableCollection<T> collection, T mustSortFirst, T mustSortLast) where T : IComparable<T>, IAlternativeSort
+        {
+            List<T> all = new List<T>(collection);
+
+            all.Sort();
+
+            foreach (T each in collection)
+            {
+                if (each.SortId != Int32.MinValue || each.SortId != Int32.MaxValue)
+                {
+                    each.SortId = all.IndexOf(each) + 1;
+                }
+            }
+
+            if (mustSortFirst != null) mustSortFirst.SortId = Int32.MinValue;
+            if (mustSortLast != null) mustSortLast.SortId = Int32.MaxValue;
+        }
+
+
         // HttpWebRequest
         public static WebResponse GetResponseExt(this HttpWebRequest req)
         {
@@ -171,9 +192,9 @@ namespace Rdr
                     webResp = e.Response;
                 }
 
-                string message = string.Format("Request uri: {0}, Method: {1}, Timeout: {2}", req.RequestUri, req.Method, req.Timeout);
+                //string message = string.Format("Request uri: {0}, Method: {1}, Timeout: {2}", req.RequestUri, req.Method, req.Timeout);
 
-                Utils.LogException(e, message); // C#6 will allow for awaiting in Catch/Finally blocks
+                //Utils.LogException(e, message); // C#6 will allow for awaiting in Catch/Finally blocks
             }
 
             return webResp;
@@ -204,5 +225,10 @@ namespace Rdr
                 throw new TimeoutException(string.Format("Task timed out: {0}", task.Status.ToString()));
             }
         }
+    }
+
+    public interface IAlternativeSort
+    {
+        int SortId { get; set; }
     }
 }

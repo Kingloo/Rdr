@@ -4,8 +4,9 @@ using System.Xml.Linq;
 
 namespace Rdr
 {
-    class RdrFeedItem : RdrBase, IEquatable<RdrFeedItem>, IComparable<RdrFeedItem>
+    internal class RdrFeedItem : RdrBase, IEquatable<RdrFeedItem>, IComparable<RdrFeedItem>
     {
+        #region Properties
         private readonly string _name = "no name";
         public string Name { get { return this._name; } }
 
@@ -36,6 +37,13 @@ namespace Rdr
 
         private readonly RdrEnclosure _enclosure = null;
         public RdrEnclosure Enclosure { get { return this._enclosure; } }
+        #endregion
+
+        public RdrFeedItem(string name, string titleOfFeed)
+        {
+            this._name = name;
+            this._titleOfFeed = titleOfFeed;
+        }
 
         public RdrFeedItem(XElement e, string titleOfFeed)
         {
@@ -134,25 +142,30 @@ namespace Rdr
                 return false;
             }
 
-            if (this.Link != null)
+            if (this.Link != null && other.Link != null)
             {
-                //if (this.Link.AbsoluteUri.Equals(other.Link.AbsoluteUri) == false)
-                //{
-                //    return false;
-                //}
+                /*
+                 * we avoid AbsoluteUri because we do not want to treat http and https as different
+                 * 
+                 * sites have sometimes republished the exact same feed item with the only difference being the scheme
+                 * 
+                 */
 
-                // Re/code was alternating between http and https links - we are unconcerned about that
-                // hence .PathAndQuery which omits the scheme
-                if (this.Link.PathAndQuery.Equals(other.Link.PathAndQuery) == false)
+                string thisUriString = string.Concat(this.Link.DnsSafeHost, this.Link.PathAndQuery);
+                string otherUriString = string.Concat(other.Link.DnsSafeHost, other.Link.PathAndQuery);
+
+                if (thisUriString.Equals(otherUriString))
                 {
-                    return false;
-                }
-            }
-            else
-            {
-                if (this.PubDate.Equals(other.PubDate) == false)
-                {
-                    return false;
+                    // just in case two different feeds published a feed item with identical name and identical link
+
+                    if (this.TitleOfFeed.Equals(other.TitleOfFeed))
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
                 }
             }
 

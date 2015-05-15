@@ -3,11 +3,11 @@ using System.Runtime.CompilerServices;
 
 namespace Rdr
 {
-    class RdrBase : INotifyPropertyChanged
+    internal class RdrBase : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
-        protected void OnNotifyPropertyChanged([CallerMemberName] string propertyName = "")
+        protected void OnNotifyPropertyChanged([CallerMemberName] string propertyName = default(string))
         {
             PropertyChangedEventHandler pceh = this.PropertyChanged;
 

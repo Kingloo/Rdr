@@ -8,14 +8,18 @@ using System.Xml.Linq;
 
 namespace Rdr
 {
-    class RdrFeed : RdrBase, IEquatable<RdrFeed>
+    class RdrFeed : RdrBase, IEquatable<RdrFeed>, IComparable<RdrFeed>, IAlternativeSort
     {
         private enum FeedType { None, Atom, RSS };
 
+        #region Properties
         private string _name = ".name init";
         public string Name
         {
-            get { return this._name; }
+            get
+            {
+                return this._name;
+            }
             set
             {
                 this._name = value;
@@ -30,7 +34,10 @@ namespace Rdr
         private bool _updating = false;
         public bool Updating
         {
-            get { return this._updating; }
+            get
+            {
+                return this._updating;
+            }
             set
             {
                 this._updating = value;
@@ -45,19 +52,46 @@ namespace Rdr
             {
                 StringBuilder sb = new StringBuilder();
 
-                sb.AppendLine(string.Format("{0} items, {1} unread", this.Items.Count, UnreadItemsCount()));
-                sb.Append(this.XmlUrl.AbsoluteUri);
+                sb.Append(string.Format("{0} items, {1} unread", this.Items.Count, UnreadItemsCount()));
+
+                if (this.XmlUrl != null)
+                {
+                    sb.Append(Environment.NewLine);
+                    sb.Append(this.XmlUrl.AbsoluteUri);
+                }
 
                 return sb.ToString();
             }
         }
 
+        private int _sortId = 0;
+        public int SortId
+        {
+            get
+            {
+                return _sortId;
+            }
+            set
+            {
+                _sortId = value;
+
+                OnNotifyPropertyChanged();
+            }
+        }
+
         private ObservableCollection<RdrFeedItem> _items = new ObservableCollection<RdrFeedItem>();
         public ObservableCollection<RdrFeedItem> Items { get { return this._items; } }
+        #endregion
+
+        public RdrFeed(string name)
+        {
+            this.Name = name;
+        }
 
         public RdrFeed(Uri xmlUrl)
         {
             this._xmlUrl = xmlUrl;
+            this._name = xmlUrl.AbsoluteUri;
         }
 
         public void Load(XDocument x)
@@ -121,15 +155,20 @@ namespace Rdr
             return allUnreadItems.Count<RdrFeedItem>();
         }
 
+        public int CompareTo(RdrFeed other)
+        {
+            return this.Name.CompareTo(other.Name);
+        }
+
         public bool Equals(RdrFeed other)
         {
-            if (this._xmlUrl.AbsoluteUri.Equals(other._xmlUrl.AbsoluteUri))
+            if ((this.XmlUrl != null) && (other.XmlUrl != null))
             {
-                return true;
+                return this.XmlUrl.AbsoluteUri.Equals(other.XmlUrl.AbsoluteUri);
             }
             else
             {
-                return false;
+                return this.Name.Equals(other.Name);
             }
         }
 
@@ -139,9 +178,10 @@ namespace Rdr
 
             sb.AppendLine(this.GetType().ToString());
             sb.AppendLine(this.Name);
-            sb.AppendLine(this.XmlUrl.AbsoluteUri);
+            if (this.XmlUrl != null) sb.AppendLine(this.XmlUrl.AbsoluteUri);
             sb.AppendLine(this.Updating.ToString());
             sb.AppendLine(this.Tooltip);
+            sb.AppendLine(this.SortId.ToString());
 
             return sb.ToString();
         }

@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Cache;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -18,18 +19,33 @@ namespace Rdr
 {
     class FeedManager : RdrBase
     {
+        #region Events
+        public event EventHandler FeedChanged;
+        private void OnFeedChanged(RdrFeed feed)
+        {
+            EventHandler eh = FeedChanged;
+
+            if (eh != null)
+            {
+                EventArgs args = new EventArgs();
+
+                eh(feed, args);
+            }
+        }
+        #endregion
+        
         #region Commands
         private DelegateCommandAsync _refreshAllFeedsCommandAsync = null;
         public DelegateCommandAsync RefreshAllFeedsCommandAsync
         {
             get
             {
-                if (this._refreshAllFeedsCommandAsync == null)
+                if (_refreshAllFeedsCommandAsync == null)
                 {
-                    this._refreshAllFeedsCommandAsync = new DelegateCommandAsync(RefreshAllFeedsAsync, canExecuteAsync);
+                    _refreshAllFeedsCommandAsync = new DelegateCommandAsync(RefreshAllFeedsAsync, canExecuteAsync);
                 }
 
-                return this._refreshAllFeedsCommandAsync;
+                return _refreshAllFeedsCommandAsync;
             }
         }
 
@@ -38,13 +54,16 @@ namespace Rdr
             if (this.Feeds.Count > 0)
             {
                 IEnumerable<Task> refreshTasks = from each in this.Feeds
-                                                 where each.Updating == false
+                                                 where !each.Updating
                                                  select RefreshFeedAsync(each);
 
                 await Task.WhenAll(refreshTasks).ConfigureAwait(false);
+
+                this.Feeds.AlternativeSort<RdrFeed>(unreadCollector, null);
             }   
         }
 
+        // we do not cache so that we can refresh a second feed manually before the first one has finished
         public DelegateCommandAsync<RdrFeed> RefreshFeedCommandAsync
         {
             get
@@ -55,46 +74,71 @@ namespace Rdr
 
         private async Task RefreshFeedAsync(RdrFeed feed)
         {
+            if (feed.Name.Equals("Unread")) return;
+
             feed.Updating = true;
             this.Activity = activeTasks.Count<RdrFeed>() > 0;
 
-            OnNotifyPropertyChanged("WindowTitle");
+            string websiteAsString = await GetFeed(feed.XmlUrl);
 
-            HttpWebRequest req = BuildHttpWebRequest(feed.XmlUrl);
-            string websiteAsString = await Utils.DownloadWebsiteAsStringAsync(req).ConfigureAwait(false);
-
-            if (String.IsNullOrEmpty(websiteAsString) == false)
+            if (String.IsNullOrWhiteSpace(websiteAsString))
             {
-                websiteAsString = websiteAsString.Replace((char)(0x1F), (char)(0x20));
-                
-                XDocument x = null;
-
-                try
-                {
-                    x = XDocument.Parse(websiteAsString);
-                }
-                catch (XmlException e)
-                {
-                    string errorMessage = string.Format("XML parse exception on {0}", feed.XmlUrl.AbsoluteUri);
-
-                    Utils.LogException(e, errorMessage);
-
-                    x = null;
-                }
-
-                if (x != null)
-                {
-                    feed.Load(x);
-
-                    Utils.SafeDispatcher(() => MoveUnreadItemsToView(feed), DispatcherPriority.Background);
-                }
+                return;
             }
 
+            websiteAsString = websiteAsString.Replace((char)(0x1F), (char)(0x20)); // removing this breaks something
+
+            XDocument x = ParseWebsiteStringIntoXDocument(websiteAsString, feed.XmlUrl);
+
+            if (x == null)
+            {
+                return;
+            }
+
+            feed.Load(x);
+
+            AddUnreadItemsToUnreadCollector(feed.Items);
+
             feed.Updating = false;
+            this.Activity = activeTasks.Count<RdrFeed>() > 0;
+        }
 
-            Utils.SafeDispatcher(() => this.Activity = activeTasks.Count<RdrFeed>() > 0, DispatcherPriority.Normal);
+        private async Task<string> GetFeed(Uri uri)
+        {
+            HttpWebRequest req = BuildHttpWebRequest(uri);
 
-            OnNotifyPropertyChanged("WindowTitle");
+            string websiteAsString = await Utils.DownloadWebsiteAsStringAsync(req).ConfigureAwait(false);
+
+            return websiteAsString;
+        }
+
+        private XDocument ParseWebsiteStringIntoXDocument(string websiteAsString, Uri feedUri)
+        {
+            XDocument x = null;
+
+            try
+            {
+                x = XDocument.Parse(websiteAsString);
+            }
+            catch (XmlException e)
+            {
+                string errorMessage = string.Format("XML parse exception in {0}", feedUri.AbsoluteUri);
+
+                Utils.LogException(e, errorMessage);
+
+                x = null;
+            }
+
+            return x;
+        }
+
+        private void AddUnreadItemsToUnreadCollector(IEnumerable<RdrFeedItem> feedItems)
+        {
+            IEnumerable<RdrFeedItem> unreadItems = from each in feedItems
+                                                   where each.Unread
+                                                   select each;
+
+            unreadCollector.Items.AddMissing<RdrFeedItem>(unreadItems);
         }
 
         private DelegateCommand _markAllItemsAsReadCommand = null;
@@ -102,9 +146,9 @@ namespace Rdr
         {
             get
             {
-                if (this._markAllItemsAsReadCommand == null)
+                if (_markAllItemsAsReadCommand == null)
                 {
-                    this._markAllItemsAsReadCommand = new DelegateCommand(new Action(MarkAllItemsAsRead), canExecute);
+                    _markAllItemsAsReadCommand = new DelegateCommand(MarkAllItemsAsRead, canExecute);
                 }
 
                 return _markAllItemsAsReadCommand;
@@ -113,12 +157,26 @@ namespace Rdr
 
         private void MarkAllItemsAsRead()
         {
-            foreach (RdrFeed each in this.Feeds)
-            {
-                each.MarkAllItemsAsRead();
-            }
+            int indexOfCollector = Feeds.IndexOf(unreadCollector);
 
-            MoveAllUnreadItemsToView();
+            List<RdrFeedItem> unreadItems = (from each in Feeds[indexOfCollector].Items
+                                             select each)
+                                             .ToList<RdrFeedItem>();
+
+            foreach (RdrFeedItem each in unreadItems)
+            {
+                MarkItemAsUnread(each);
+            }
+        }
+
+        private void MarkItemAsUnread(RdrFeedItem feedItem)
+        {
+            feedItem.Unread = false;
+
+            if (unreadCollector.Items.Contains<RdrFeedItem>(feedItem))
+            {
+                unreadCollector.Items.Remove(feedItem);
+            }
         }
 
         private DelegateCommand<RdrFeed> _goToFeedCommand = null;
@@ -126,9 +184,9 @@ namespace Rdr
         {
             get
             {
-                if (this._goToFeedCommand == null)
+                if (_goToFeedCommand == null)
                 {
-                    this._goToFeedCommand = new DelegateCommand<RdrFeed>(new Action<RdrFeed>(GoToFeed), canExecute);
+                    _goToFeedCommand = new DelegateCommand<RdrFeed>(GoToFeed, canExecute);
                 }
 
                 return _goToFeedCommand;
@@ -145,9 +203,9 @@ namespace Rdr
         {
             get
             {
-                if (this._goToItemCommand == null)
+                if (_goToItemCommand == null)
                 {
-                    this._goToItemCommand = new DelegateCommand<RdrFeedItem>(new Action<RdrFeedItem>(GoToItem), canExecute);
+                    _goToItemCommand = new DelegateCommand<RdrFeedItem>(GoToItem, canExecute);
                 }
 
                 return _goToItemCommand;
@@ -158,7 +216,7 @@ namespace Rdr
         {
             Utils.OpenUriInBrowser(feedItem.Link);
 
-            feedItem.Unread = false;
+            MarkItemAsUnread(feedItem);
         }
 
         private DelegateCommand<RdrFeed> _moveItemsToViewCommand = null;
@@ -166,62 +224,18 @@ namespace Rdr
         {
             get
             {
-                if (this._moveItemsToViewCommand == null)
+                if (_moveItemsToViewCommand == null)
                 {
-                    this._moveItemsToViewCommand = new DelegateCommand<RdrFeed>(new Action<RdrFeed>(MoveItemsToView), canExecute);
+                    _moveItemsToViewCommand = new DelegateCommand<RdrFeed>(MoveItemsToView, canExecute);
                 }
 
                 return _moveItemsToViewCommand;
             }
         }
 
-        private void MoveItemsToView(RdrFeed feed)
+        public void MoveItemsToView(RdrFeed feed)
         {
-            lock (this.Items)
-            {
-                this.Items.Clear();
-
-                IEnumerable<RdrFeedItem> feedItems = from each in feed.Items
-                                                     select each;
-
-                this.Items.AddList<RdrFeedItem>(feedItems);
-            }
-        }
-
-        private DelegateCommand _moveUnreadItemsToViewCommand = null;
-        public DelegateCommand MoveUnreadItemsToViewCommand
-        {
-            get
-            {
-                if (this._moveUnreadItemsToViewCommand == null)
-                {
-                    this._moveUnreadItemsToViewCommand = new DelegateCommand(MoveAllUnreadItemsToView, canExecute);
-                }
-
-                return _moveUnreadItemsToViewCommand;
-            }
-        }
-
-        private void MoveAllUnreadItemsToView()
-        {
-            lock (this.Items)
-            {
-                this.Items.Clear();
-
-                foreach (RdrFeed each in this.Feeds)
-                {
-                    MoveUnreadItemsToView(each);
-                }
-            }
-        }
-
-        private void MoveUnreadItemsToView(RdrFeed feed)
-        {
-            IEnumerable<RdrFeedItem> unreadItems = from each in feed.Items
-                                                   where each.Unread
-                                                   select each;
-
-            this.Items.AddMissing<RdrFeedItem>(unreadItems);
+            this.OnFeedChanged(feed);
         }
 
         private DelegateCommand _openFeedsFileCommand = null;
@@ -229,12 +243,12 @@ namespace Rdr
         {
             get
             {
-                if (this._openFeedsFileCommand == null)
+                if (_openFeedsFileCommand == null)
                 {
-                    this._openFeedsFileCommand = new DelegateCommand(OpenFeedsFile, canExecute);
+                    _openFeedsFileCommand = new DelegateCommand(OpenFeedsFile, canExecute);
                 }
 
-                return this._openFeedsFileCommand;
+                return _openFeedsFileCommand;
             }
         }
 
@@ -246,7 +260,7 @@ namespace Rdr
             }
             catch (FileNotFoundException)
             {
-                MessageBox.Show(string.Format("The feeds file:{0}{1}{0}was not found.", Environment.NewLine, Program.FeedsFile), "File Missing", MessageBoxButton.OK, MessageBoxImage.Error);
+                Process.Start(Program.FeedsFile);
             }
         }
 
@@ -255,32 +269,32 @@ namespace Rdr
         {
             get
             {
-                if (this._reloadFeedsCommandAsync == null)
+                if (_reloadFeedsCommandAsync == null)
                 {
-                    this._reloadFeedsCommandAsync = new DelegateCommandAsync(ReloadFeedsAsync, canExecuteAsync);
+                    _reloadFeedsCommandAsync = new DelegateCommandAsync(ReloadFeedsAsync, canExecuteAsync);
                 }
 
-                return this._reloadFeedsCommandAsync;
+                return _reloadFeedsCommandAsync;
             }
         }
 
         private async Task ReloadFeedsAsync()
         {
+            /*
+             * if add ConfigureAwait(false) would have to dispatch everything hereafter
+             * 
+             * whatever benefit ConfigureAwait(false) might bring is surely outweighed by having to dispatch the rest of the instructions
+             */
             IEnumerable<RdrFeed> loadedFeeds = await Program.LoadFeedsFromFile();
 
-            this.Feeds.AddMissing<RdrFeed>(loadedFeeds);
+            Feeds.AddMissing<RdrFeed>(loadedFeeds);
+            Feeds.Add(unreadCollector);
 
-            List<RdrFeed> toBeRemoved = new List<RdrFeed>();
+            List<RdrFeed> toBeRemoved = (from each in this.Feeds
+                                         where loadedFeeds.Contains<RdrFeed>(each) == false
+                                         select each).ToList<RdrFeed>();
 
-            foreach (RdrFeed each in this.Feeds)
-            {
-                if (loadedFeeds.Contains<RdrFeed>(each) == false)
-                {
-                    toBeRemoved.Add(each);
-                }
-            }
-
-            this.Feeds.RemoveList<RdrFeed>(toBeRemoved);
+            Feeds.RemoveList<RdrFeed>(toBeRemoved);
         }
         
         // we deliberately don't cache this download command so that each enclosure gets its own
@@ -330,6 +344,12 @@ namespace Rdr
                             }
                         }
                     }
+                    else // if resp.StatusCode != HttpStatusCode.OK
+                    {
+                        string errorMessage = string.Format("A request to {0} failed with code {1}", arg.DownloadLink, resp.StatusCode);
+
+                        await Utils.LogMessageAsync(errorMessage).ConfigureAwait(false);
+                    }
                 }
             }
 
@@ -348,12 +368,12 @@ namespace Rdr
         {
             get
             {
-                if (this._exitCommand == null)
+                if (_exitCommand == null)
                 {
-                    this._exitCommand = new DelegateCommand(Exit, canExecute);
+                    _exitCommand = new DelegateCommand(Exit, canExecute);
                 }
 
-                return this._exitCommand;
+                return _exitCommand;
             }
         }
 
@@ -377,10 +397,10 @@ namespace Rdr
         #endregion
 
         #region Fields
-        //private const string appName = "Rdr";
         private readonly string downloadDirectory = string.Format(@"C:\Users\{0}\Documents\share\", Environment.UserName);
-        private readonly DispatcherTimer updateAllTimer = null;
+        private DispatcherTimer updateAllTimer = null;
         private IEnumerable<RdrFeed> activeTasks;
+        private RdrFeed unreadCollector = new RdrFeed("Unread");
         #endregion
 
         #region Properties
@@ -408,59 +428,71 @@ namespace Rdr
             }
             set
             {
-                this._activity = value;
-                OnNotifyPropertyChanged();
+                if (this._activity != value)
+                {
+                    this._activity = value;
 
-                this.RaiseAllAsyncCanExecuteChangedCommands();
+                    OnNotifyPropertyChanged();
+                    OnNotifyPropertyChanged("WindowTitle");
+
+                    this.RaiseAllAsyncCanExecuteChangedCommands();
+                }
             }
         }
 
         private void RaiseAllAsyncCanExecuteChangedCommands()
         {
-            this.RefreshAllFeedsCommandAsync.RaiseCanExecuteChanged();
-            this.RefreshFeedCommandAsync.RaiseCanExecuteChanged();
-            this.ReloadFeedsCommandAsync.RaiseCanExecuteChanged();
+            RefreshAllFeedsCommandAsync.RaiseCanExecuteChanged();
+            RefreshFeedCommandAsync.RaiseCanExecuteChanged();
+            ReloadFeedsCommandAsync.RaiseCanExecuteChanged();
         }
 
         private ObservableCollection<RdrFeed> _feeds = new ObservableCollection<RdrFeed>();
-        public ObservableCollection<RdrFeed> Feeds { get { return this._feeds; } }
+        public ObservableCollection<RdrFeed> Feeds { get { return _feeds; } }
 
         private ObservableCollection<RdrFeedItem> _items = new ObservableCollection<RdrFeedItem>();
-        public ObservableCollection<RdrFeedItem> Items { get { return this._items; } }
+        public ObservableCollection<RdrFeedItem> Items { get { return _items; } }
         #endregion
 
         public FeedManager()
         {
-            this.activeTasks = from each in this.Feeds
-                               where each.Updating
-                               select each;
+            activeTasks = from each in Feeds
+                          where each.Updating
+                          select each;
 
-            this.Feeds.CollectionChanged += Feeds_CollectionChanged;
+            Feeds.Add(unreadCollector);
+            Feeds.CollectionChanged += Feeds_CollectionChanged;
+            Feeds.AddList<RdrFeed>(Program.Feeds);
 
-            this.updateAllTimer = new DispatcherTimer
-            {
-#if DEBUG
-                Interval = new TimeSpan(0, 2, 0)
-#else
-                Interval = new TimeSpan(0, 20, 0)
-#endif
-            };
-
-            this.updateAllTimer.Tick += updateAllTimer_Tick;
-            this.updateAllTimer.IsEnabled = true;
-
-            this.Feeds.AddList<RdrFeed>(Program.Feeds);
+            StartUpdateTimer();
         }
 
         private async void Feeds_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             if (e.Action == NotifyCollectionChangedAction.Add)
             {
-                foreach (RdrFeed each in e.NewItems)
-                {
-                    await RefreshFeedAsync(each).ConfigureAwait(false);
-                }
+                IEnumerable<Task> refreshTasks = from each in e.NewItems.Cast<RdrFeed>()
+                                                 select RefreshFeedAsync(each);
+
+                await Task.WhenAll(refreshTasks).ConfigureAwait(false);
             }
+
+            this.Feeds.AlternativeSort<RdrFeed>(unreadCollector, null);
+        }
+
+        private void StartUpdateTimer()
+        {
+            this.updateAllTimer = new DispatcherTimer
+            {
+#if DEBUG
+                Interval = new TimeSpan(0, 3, 0)
+#else
+                Interval = new TimeSpan(0, 20, 0)
+#endif
+            };
+
+            this.updateAllTimer.Tick += updateAllTimer_Tick;
+            this.updateAllTimer.Start();
         }
 
         private async void updateAllTimer_Tick(object sender, EventArgs e)
@@ -474,13 +506,13 @@ namespace Rdr
 
             req.AllowAutoRedirect = true;
             req.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
-            req.CachePolicy = new System.Net.Cache.RequestCachePolicy(System.Net.Cache.RequestCacheLevel.BypassCache);
+            req.CachePolicy = new RequestCachePolicy(RequestCacheLevel.BypassCache);
             req.Host = xmlUrl.DnsSafeHost;
             req.KeepAlive = false;
             req.Method = "GET";
             req.ProtocolVersion = HttpVersion.Version11;
             req.Referer = string.Format("{0}://{1}/", xmlUrl.GetLeftPart(UriPartial.Scheme), xmlUrl.DnsSafeHost);
-            req.Timeout = 4500;
+            req.Timeout = 2500;
             req.UserAgent = @"Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko";
 
             req.Headers.Add("DNT", "1");

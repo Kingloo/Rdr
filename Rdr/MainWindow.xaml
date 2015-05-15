@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:this="clr-namespace:Rdr"
         xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
+        Loaded="Window_Loaded"
         KeyDown="Window_KeyDown"
         Closing="Window_Closing">
     
@@ -16,15 +17,7 @@
                               Source="{Binding Path=Feeds, Mode=OneWay}"
                               IsLiveSortingRequested="True">
             <CollectionViewSource.SortDescriptions>
-                <scm:SortDescription PropertyName="Name" Direction="Ascending" />
-            </CollectionViewSource.SortDescriptions>
-        </CollectionViewSource>
-        
-        <CollectionViewSource x:Key="sortedItems"
-                              Source="{Binding Path=Items, Mode=OneWay}"
-                              IsLiveSortingRequested="True">
-            <CollectionViewSource.SortDescriptions>
-                <scm:SortDescription PropertyName="PubDate" Direction="Descending" />
+                <scm:SortDescription PropertyName="SortId" Direction="Ascending" />
             </CollectionViewSource.SortDescriptions>
         </CollectionViewSource>
 
@@ -84,8 +77,8 @@
         </DataTemplate>
 
         <this:BoolToBrushConverter x:Key="labelForegroundConverter"
-                                               True="Black"
-                                               False="#FF7A7A7A" />
+                                   True="Black"
+                                   False="#FF7A7A7A" />
 
         <DataTemplate DataType="{x:Type this:RdrFeedItem}" x:Key="withEnclosureDataTemplate">
             <Grid>
@@ -127,7 +120,7 @@
 
                 <Label Grid.Column="0"
                        HorizontalAlignment="Left"
-                       ToolTip="{Binding Path=TitleOfFeed, Mode=OneWay}">
+                       ToolTip="{Binding Path=TitleOfFeed, Mode=OneTime}">
                     <Label.Content>
                         <TextBlock Text="{Binding Path=TitleOfFeed, Mode=OneWay}"
                                    TextTrimming="CharacterEllipsis" />
@@ -135,7 +128,8 @@
                 </Label>
 
                 <Label Grid.Column="1"
-                       HorizontalAlignment="Stretch">
+                       HorizontalAlignment="Stretch"
+                       ToolTip="{Binding Path=Name, Mode=OneTime}">
                     <Label.Content>
                         <TextBlock Text="{Binding Path=Name, Mode=OneTime}"
                                    TextTrimming="CharacterEllipsis" />
@@ -147,6 +141,7 @@
                         Width="130"
                         Height="34"
                         Content="{Binding Path=Enclosure.ButtonText, Mode=OneWay}"
+                        ToolTip="{Binding Path=Enclosure.DownloadLink.AbsoluteUri, Mode=OneTime}"
                         Command="{Binding Path=DataContext.DownloadEnclosureCommandAsync, RelativeSource={RelativeSource AncestorType={x:Type this:MainWindow}}}"
                         CommandParameter="{Binding Path=Enclosure}" />
 
@@ -197,15 +192,16 @@
 
                 <Label Grid.Column="0"
                        HorizontalAlignment="Left"
-                       ToolTip="{Binding Path=TitleOfFeed, Mode=OneWay}">
+                       ToolTip="{Binding Path=TitleOfFeed, Mode=OneTime}">
                     <Label.Content>
-                        <TextBlock Text="{Binding Path=TitleOfFeed, Mode=OneWay}"
+                        <TextBlock Text="{Binding Path=TitleOfFeed, Mode=OneTime}"
                                    TextTrimming="CharacterEllipsis" />
                     </Label.Content>
                 </Label>
 
                 <Label Grid.Column="1"
-                       HorizontalAlignment="Stretch">
+                       HorizontalAlignment="Stretch"
+                       ToolTip="{Binding Path=Name, Mode=OneTime}">
                     <Label.Content>
                         <TextBlock Text="{Binding Path=Name, Mode=OneTime}"
                                    TextTrimming="CharacterEllipsis" />
@@ -250,9 +246,9 @@
                     x:Name="MarkAllItemsAsReadKeyBinding"
                     Command="{Binding Path=MarkAllItemsAsReadCommand, Mode=OneTime}" />
         
-        <KeyBinding Key="F9"
+        <!--<KeyBinding Key="F9"
                     x:Name="MoveUnreadItemsToViewKeyBinding"
-                    Command="{Binding Path=MoveUnreadItemsToViewCommand, Mode=OneTime}" />
+                    Command="{Binding Path=MoveUnreadItemsToViewCommand, Mode=OneTime}" />-->
         
         <KeyBinding Key="F11"
                     x:Name="OpenFeedsFileKeyBinding"
@@ -277,19 +273,14 @@
                     VerticalAlignment="Stretch"
                     Orientation="Horizontal">
             
-            <Button Content="Refresh All"
+            <Button Content="Refresh"
                     Command="{Binding Path=RefreshAllFeedsCommandAsync}"
                     ToolTip="{Binding Path=Key, ElementName=RefreshAllFeedsKeyBinding, Mode=OneTime}"
                     Margin="25,0,0,0" />
 
-            <Button Content="Mark All As Read"
+            <Button Content="Mark As Read"
                     Command="{Binding Path=MarkAllItemsAsReadCommand}"
                     ToolTip="{Binding Path=Key, ElementName=MarkAllItemsAsReadKeyBinding, Mode=OneTime}"
-                    Margin="25,0,0,0" />
-
-            <Button Content="Restore Unread"
-                    Command="{Binding Path=MoveUnreadItemsToViewCommand}"
-                    ToolTip="{Binding Path=Key, ElementName=MoveUnreadItemsToViewKeyBinding, Mode=OneTime}"
                     Margin="25,0,0,0" />
 
             <Button Command="{Binding Path=OpenFeedsFileCommand}"
@@ -331,9 +322,9 @@
             </ItemsControl>
 
             <ItemsControl Grid.Column="1"
-                          ItemsSource="{Binding Source={StaticResource sortedItems}}"
+                          x:Name="ic_Items"
                           ItemTemplateSelector="{StaticResource feedItemDataTemplateSelector}">
-                
+
                 <ItemsControl.Template>
                     <ControlTemplate>
                         <ScrollViewer CanContentScroll="True">

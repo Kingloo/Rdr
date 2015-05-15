@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Net;
 using System.Text;
-using System.Threading.Tasks;
 using System.Xml.Linq;
 
 namespace Rdr
@@ -14,7 +12,10 @@ namespace Rdr
         private string _buttonText = "Download";
         public string ButtonText
         {
-            get { return this._buttonText; }
+            get
+            {
+                return this._buttonText;
+            }
             set
             {
                 this._buttonText = value;
@@ -26,10 +27,14 @@ namespace Rdr
         private string _duration = "00:00:00";
         public string Duration
         {
-            get { return this._duration; }
+            get
+            {
+                return this._duration;
+            }
             set
             {
                 this._duration = value;
+
                 OnNotifyPropertyChanged();
             }
         }
