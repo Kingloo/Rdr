@@ -84,6 +84,8 @@ namespace Rdr
             if (String.IsNullOrWhiteSpace(websiteAsString))
             {
                 feed.Updating = false;
+                this.Activity = activeTasks.Count<RdrFeed>() > 0;
+
                 return;
             }
 
@@ -94,6 +96,8 @@ namespace Rdr
             if (x == null)
             {
                 feed.Updating = false;
+                this.Activity = activeTasks.Count<RdrFeed>() > 0;
+
                 return;
             }
 
