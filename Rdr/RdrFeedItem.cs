@@ -137,39 +137,34 @@ namespace Rdr
 
         public bool Equals(RdrFeedItem other)
         {
-            if (this.Name.Equals(other.Name, StringComparison.InvariantCultureIgnoreCase) == false)
+            bool equals = false;
+
+            if (this.Name.Equals(other.Name)
+                && this.TitleOfFeed.Equals(other.TitleOfFeed)
+                && this.PubDate.Equals(other.PubDate)
+                && UriDifferenceIsOnlyScheme(this.Link, other.Link))
+            {
+                equals = true;
+            }
+
+            return equals;
+        }
+
+        private bool UriDifferenceIsOnlyScheme(Uri thisLink, Uri otherLink)
+        {
+            if (thisLink == null || otherLink == null) return false;
+
+            string thisLinkStr = string.Concat(thisLink.DnsSafeHost, thisLink.PathAndQuery);
+            string otherLinkStr = string.Concat(otherLink.DnsSafeHost, otherLink.PathAndQuery);
+
+            if (thisLinkStr.Equals(otherLinkStr))
+            {
+                return true;
+            }
+            else
             {
                 return false;
             }
-
-            if (this.Link != null && other.Link != null)
-            {
-                /*
-                 * we avoid AbsoluteUri because we do not want to treat http and https as different
-                 * 
-                 * sites have sometimes republished the exact same feed item with the only difference being the scheme
-                 * 
-                 */
-
-                string thisUriString = string.Concat(this.Link.DnsSafeHost, this.Link.PathAndQuery);
-                string otherUriString = string.Concat(other.Link.DnsSafeHost, other.Link.PathAndQuery);
-
-                if (thisUriString.Equals(otherUriString))
-                {
-                    // just in case two different feeds published a feed item with identical name and identical link
-
-                    if (this.TitleOfFeed.Equals(other.TitleOfFeed))
-                    {
-                        return true;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
         }
 
         public int CompareTo(RdrFeedItem other)

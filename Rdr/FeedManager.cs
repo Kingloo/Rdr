@@ -17,7 +17,7 @@ using System.Xml.Linq;
 
 namespace Rdr
 {
-    class FeedManager : RdrBase
+    internal class FeedManager : RdrBase
     {
         #region Events
         public event EventHandler FeedChanged;
@@ -83,6 +83,7 @@ namespace Rdr
 
             if (String.IsNullOrWhiteSpace(websiteAsString))
             {
+                feed.Updating = false;
                 return;
             }
 
@@ -92,6 +93,7 @@ namespace Rdr
 
             if (x == null)
             {
+                feed.Updating = false;
                 return;
             }
 
@@ -288,11 +290,11 @@ namespace Rdr
             IEnumerable<RdrFeed> loadedFeeds = await Program.LoadFeedsFromFile();
 
             Feeds.AddMissing<RdrFeed>(loadedFeeds);
-            Feeds.Add(unreadCollector);
 
-            List<RdrFeed> toBeRemoved = (from each in this.Feeds
-                                         where loadedFeeds.Contains<RdrFeed>(each) == false
-                                         select each).ToList<RdrFeed>();
+            List<RdrFeed> toBeRemoved = (from each in Feeds
+                                         where (loadedFeeds.Contains<RdrFeed>(each) == false) && (each.Name.Equals("Unread") == false)
+                                         select each)
+                                         .ToList<RdrFeed>();
 
             Feeds.RemoveList<RdrFeed>(toBeRemoved);
         }
