@@ -324,13 +324,15 @@ namespace Rdr
                         {
                             string fullLocalFilePath = DetermineFullLocalFilePath(arg.DownloadLink);
 
-                            using (FileStream fsAsync = new FileStream(fullLocalFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 6144, true)) // 4096 + 2048
+                            int bufferSize = 6144; // 4096 + 2048
+
+                            using (FileStream fsAsync = new FileStream(fullLocalFilePath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize, true))
                             {
                                 int bytesRead = 0;
                                 decimal totalBytesRead = 0;
                                 decimal totalBytes = Convert.ToDecimal(resp.ContentLength);
                                 int percentDone = 0;
-                                byte[] buffer = new byte[1024];
+                                byte[] buffer = new byte[bufferSize];
 
                                 while ((bytesRead = await input.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false)) > 0)
                                 {
