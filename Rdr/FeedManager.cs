@@ -83,6 +83,10 @@ namespace Rdr
 
             if (String.IsNullOrWhiteSpace(websiteAsString))
             {
+                string errorMessage = string.Format("{0}: website string was null or whitespace", feed.Name);
+
+                await Utils.LogMessageAsync(errorMessage);
+
                 feed.Updating = false;
                 this.Activity = activeTasks.Count<RdrFeed>() > 0;
 
@@ -95,6 +99,10 @@ namespace Rdr
 
             if (x == null)
             {
+                string errorMessage = string.Format("{0}: website string did not parse into XDocument", feed.Name);
+
+                await Utils.LogMessageAsync(errorMessage);
+
                 feed.Updating = false;
                 this.Activity = activeTasks.Count<RdrFeed>() > 0;
 

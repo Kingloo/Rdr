@@ -17,7 +17,7 @@ namespace Rdr
         public Uri Link { get { return this._link; } }
 
         private readonly DateTime _pubDate = DateTime.MinValue;
-        public DateTime PubDate { get { return this._pubDate; } }
+        public DateTime PubDate { get { return this._pubDate.ToLocalTime(); } }
 
         private bool _unread = true;
         public bool Unread
