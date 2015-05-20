@@ -14,7 +14,7 @@ namespace Rdr
     {
         private static int loggingRounds = 3;
         private static string logFilePath = string.Format(@"C:\Users\{0}\Documents\logfile.txt", Environment.UserName);
-        
+
 
         public static void SetWindowToMiddleOfScreen(Window window)
         {
@@ -173,7 +173,7 @@ namespace Rdr
             bool tryAgain = false;
 
             FileStream fs = null;
-            
+
             try
             {
                 fs = new FileStream(logFilePath, FileMode.Append, FileAccess.Write, FileShare.None, 1024, false);
@@ -339,11 +339,22 @@ namespace Rdr
                             {
                                 response = await sr.ReadToEndAsync().ConfigureAwait(false);
                             }
-                            catch (IOException)
+                            catch (IOException e)
                             {
+                                Utils.LogException(e, string.Format("IOException for {0}", req.RequestUri.AbsoluteUri));
+
                                 response = string.Empty;
                             }
+
+                            if (response.Equals(string.Empty))
+                            {
+                                await Utils.LogMessageAsync(string.Format("{0} ReadToEndAsync returned string.empty", req.RequestUri.AbsoluteUri)).ConfigureAwait(false);
+                            }
                         }
+                    }
+                    else if (resp.StatusCode == HttpStatusCode.NotModified)
+                    {
+                        await Utils.LogMessageAsync(string.Format("{0} not modified", req.RequestUri.AbsoluteUri)).ConfigureAwait(false);
                     }
                     else
                     {

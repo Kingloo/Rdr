@@ -17,7 +17,8 @@ namespace Rdr
         public Uri Link { get { return this._link; } }
 
         private readonly DateTime _pubDate = DateTime.MinValue;
-        public DateTime PubDate { get { return this._pubDate.ToLocalTime(); } }
+        //public DateTime PubDate { get { return this._pubDate.ToLocalTime(); } }
+        public DateTime PubDate { get { return this._pubDate; } }
 
         private bool _unread = true;
         public bool Unread
@@ -139,9 +140,16 @@ namespace Rdr
         {
             bool equals = false;
 
+            //if (this.Name.Equals(other.Name)
+            //    && this.TitleOfFeed.Equals(other.TitleOfFeed)
+            //    && this.PubDate.Equals(other.PubDate)
+            //    && UriDifferenceIsOnlyScheme(this.Link, other.Link))
+            //{
+            //    equals = true;
+            //}
+
             if (this.Name.Equals(other.Name)
                 && this.TitleOfFeed.Equals(other.TitleOfFeed)
-                && this.PubDate.Equals(other.PubDate)
                 && UriDifferenceIsOnlyScheme(this.Link, other.Link))
             {
                 equals = true;

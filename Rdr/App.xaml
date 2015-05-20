@@ -11,7 +11,7 @@
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
             <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
-            <Setter Property="Language" Value="en-GB" />
+            <!--<Setter Property="Language" Value="en-GB" />-->
         </Style>
         
         <Style TargetType="{x:Type Window}" BasedOn="{StaticResource {x:Type FrameworkElement}}" />

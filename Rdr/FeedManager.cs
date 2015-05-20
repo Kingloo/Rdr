@@ -58,8 +58,6 @@ namespace Rdr
                                                  select RefreshFeedAsync(each);
 
                 await Task.WhenAll(refreshTasks).ConfigureAwait(false);
-
-                this.Feeds.AlternativeSort<RdrFeed>(unreadCollector, null);
             }   
         }
 
@@ -83,9 +81,9 @@ namespace Rdr
 
             if (String.IsNullOrWhiteSpace(websiteAsString))
             {
-                string errorMessage = string.Format("{0}: website string was null or whitespace", feed.Name);
+                //string errorMessage = string.Format("{0}: website string was null or whitespace", feed.Name);
 
-                await Utils.LogMessageAsync(errorMessage);
+                //await Utils.LogMessageAsync(errorMessage);
 
                 feed.Updating = false;
                 this.Activity = activeTasks.Count<RdrFeed>() > 0;
@@ -115,6 +113,8 @@ namespace Rdr
 
             feed.Updating = false;
             this.Activity = activeTasks.Count<RdrFeed>() > 0;
+
+            Feeds.AlternativeSort<RdrFeed>(unreadCollector, null);
         }
 
         private async Task<string> GetFeed(Uri uri)
@@ -498,7 +498,7 @@ namespace Rdr
 
         private void StartUpdateTimer()
         {
-            this.updateAllTimer = new DispatcherTimer
+            updateAllTimer = new DispatcherTimer
             {
 #if DEBUG
                 Interval = new TimeSpan(0, 3, 0)
@@ -507,8 +507,8 @@ namespace Rdr
 #endif
             };
 
-            this.updateAllTimer.Tick += updateAllTimer_Tick;
-            this.updateAllTimer.Start();
+            updateAllTimer.Tick += updateAllTimer_Tick;
+            updateAllTimer.Start();
         }
 
         private async void updateAllTimer_Tick(object sender, EventArgs e)
