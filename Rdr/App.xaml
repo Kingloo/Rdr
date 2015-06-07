@@ -36,12 +36,8 @@
         <Style TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Control}}">
             <Setter Property="Width" Value="165" />
             <Setter Property="Height" Value="40" />
+            <Setter Property="Margin" Value="8,0,8,0" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
-        </Style>
-        
-        <Style x:Key="SquareButton" TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Control}}">
-            <Setter Property="Width" Value="40" />
-            <Setter Property="Height" Value="40" />
         </Style>
         
         <Style TargetType="{x:Type ItemsControl}" BasedOn="{StaticResource {x:Type Control}}">

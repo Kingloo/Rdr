@@ -271,23 +271,25 @@
             
             <Button Content="Refresh"
                     Command="{Binding Path=RefreshAllFeedsCommandAsync}"
-                    ToolTip="{Binding Path=Key, ElementName=RefreshAllFeedsKeyBinding, Mode=OneTime}"
-                    Margin="25,0,0,0" />
+                    ToolTip="{Binding Path=Key, ElementName=RefreshAllFeedsKeyBinding, Mode=OneTime}" />
 
             <Button Content="Mark As Read"
                     Command="{Binding Path=MarkAllItemsAsReadCommand}"
-                    ToolTip="{Binding Path=Key, ElementName=MarkAllItemsAsReadKeyBinding, Mode=OneTime}"
-                    Margin="25,0,0,0" />
+                    ToolTip="{Binding Path=Key, ElementName=MarkAllItemsAsReadKeyBinding, Mode=OneTime}" />
 
             <Button Command="{Binding Path=OpenFeedsFileCommand}"
-                    ToolTip="{Binding Path=Key, ElementName=OpenFeedsFileKeyBinding, Mode=OneTime}"
-                    Margin="25,0,0,0"
-                    Style="{StaticResource SquareButton}" />
+                    ToolTip="{Binding Path=Key, ElementName=OpenFeedsFileKeyBinding, Mode=OneTime}">
+                <Button.Style>
+                    <Style TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Button}}">
+                        <Setter Property="Width" Value="40" />
+                        <Setter Property="Height" Value="40" />
+                    </Style>
+                </Button.Style>
+            </Button>
             
             <Button Content="Reload"
                     Command="{Binding Path=ReloadFeedsCommandAsync}"
-                    ToolTip="{Binding Path=Key, ElementName=ReloadFeedsKeyBinding, Mode=OneTime}"
-                    Margin="25,0,0,0" />
+                    ToolTip="{Binding Path=Key, ElementName=ReloadFeedsKeyBinding, Mode=OneTime}" />
             
         </StackPanel>
 
