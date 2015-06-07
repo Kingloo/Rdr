@@ -81,10 +81,6 @@ namespace Rdr
 
             if (String.IsNullOrWhiteSpace(websiteAsString))
             {
-                //string errorMessage = string.Format("{0}: website string was null or whitespace", feed.Name);
-
-                //await Utils.LogMessageAsync(errorMessage);
-
                 feed.Updating = false;
                 this.Activity = activeTasks.Count<RdrFeed>() > 0;
 
@@ -171,25 +167,24 @@ namespace Rdr
 
         private void MarkAllItemsAsRead()
         {
-            int indexOfCollector = Feeds.IndexOf(unreadCollector);
+            unreadCollector.Items.Clear();
 
-            List<RdrFeedItem> unreadItems = (from each in Feeds[indexOfCollector].Items
-                                             select each)
-                                             .ToList<RdrFeedItem>();
-
-            foreach (RdrFeedItem each in unreadItems)
+            foreach (RdrFeed feed in Feeds)
             {
-                MarkItemAsUnread(each);
+                foreach (RdrFeedItem item in feed.Items)
+                {
+                    MarkItemAsRead(item);
+                }
             }
         }
 
-        private void MarkItemAsUnread(RdrFeedItem feedItem)
+        private void MarkItemAsRead(RdrFeedItem item)
         {
-            feedItem.Unread = false;
+            item.MarkAsRead();
 
-            if (unreadCollector.Items.Contains<RdrFeedItem>(feedItem))
+            if (unreadCollector.Items.Contains<RdrFeedItem>(item))
             {
-                unreadCollector.Items.Remove(feedItem);
+                unreadCollector.Items.Remove(item);
             }
         }
 
@@ -230,7 +225,7 @@ namespace Rdr
         {
             Utils.OpenUriInBrowser(feedItem.Link);
 
-            MarkItemAsUnread(feedItem);
+            MarkItemAsRead(feedItem);
         }
 
         private DelegateCommand<RdrFeed> _moveItemsToViewCommand = null;
@@ -493,7 +488,7 @@ namespace Rdr
                 await Task.WhenAll(refreshTasks).ConfigureAwait(false);
             }
 
-            this.Feeds.AlternativeSort<RdrFeed>(unreadCollector, null);
+            Feeds.AlternativeSort<RdrFeed>(unreadCollector, null);
         }
 
         private void StartUpdateTimer()
@@ -503,7 +498,7 @@ namespace Rdr
 #if DEBUG
                 Interval = new TimeSpan(0, 3, 0)
 #else
-                Interval = new TimeSpan(0, 20, 0)
+                Interval = new TimeSpan(0, 15, 0)
 #endif
             };
 

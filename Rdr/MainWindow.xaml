@@ -246,10 +246,6 @@
                     x:Name="MarkAllItemsAsReadKeyBinding"
                     Command="{Binding Path=MarkAllItemsAsReadCommand, Mode=OneTime}" />
         
-        <!--<KeyBinding Key="F9"
-                    x:Name="MoveUnreadItemsToViewKeyBinding"
-                    Command="{Binding Path=MoveUnreadItemsToViewCommand, Mode=OneTime}" />-->
-        
         <KeyBinding Key="F11"
                     x:Name="OpenFeedsFileKeyBinding"
                     Command="{Binding Path=OpenFeedsFileCommand, Mode=OneTime}" />

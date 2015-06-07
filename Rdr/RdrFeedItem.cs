@@ -17,16 +17,19 @@ namespace Rdr
         public Uri Link { get { return this._link; } }
 
         private readonly DateTime _pubDate = DateTime.MinValue;
-        //public DateTime PubDate { get { return this._pubDate.ToLocalTime(); } }
         public DateTime PubDate { get { return this._pubDate; } }
 
         private bool _unread = true;
         public bool Unread
         {
-            get { return this._unread; }
-            set
+            get
             {
-                this._unread = value;
+                return this._unread;
+            }
+            private set
+            {
+                _unread = value;
+
                 OnNotifyPropertyChanged();
             }
         }
@@ -133,7 +136,7 @@ namespace Rdr
 
         public void MarkAsRead()
         {
-            this.Unread = false;
+            Unread = false;
         }
 
         public bool Equals(RdrFeedItem other)

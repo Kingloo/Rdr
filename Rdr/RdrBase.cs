@@ -9,7 +9,7 @@ namespace Rdr
 
         protected void OnNotifyPropertyChanged([CallerMemberName] string propertyName = default(string))
         {
-            PropertyChangedEventHandler pceh = this.PropertyChanged;
+            PropertyChangedEventHandler pceh = PropertyChanged;
 
             if (pceh != null)
             {

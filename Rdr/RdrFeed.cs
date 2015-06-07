@@ -133,9 +133,13 @@ namespace Rdr
         private void LoadFromXElement(IEnumerable<XElement> e)
         {
             IEnumerable<RdrFeedItem> allItems = from each in e
-                                                select new RdrFeedItem(each, this.Name);
+                                                select new RdrFeedItem(each, Name);
 
-            this.Items.AddMissing<RdrFeedItem>(allItems);
+            IEnumerable<RdrFeedItem> fromLastSevenDays = from each in allItems
+                                                         where each.PubDate > (DateTime.Now - TimeSpan.FromDays(7))
+                                                         select each;
+
+            Items.AddMissing<RdrFeedItem>(fromLastSevenDays);
         }
 
         public void MarkAllItemsAsRead()
