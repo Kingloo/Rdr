@@ -316,8 +316,6 @@ namespace Rdr
                 {
                     if (req != null)
                     {
-                        sbLog.AppendLine(string.Format("Request for {0} was aborted", req.RequestUri.AbsoluteUri));
-
                         req.Abort();
                     }
                 }
@@ -331,9 +329,9 @@ namespace Rdr
                             {
                                 response = await sr.ReadToEndAsync().ConfigureAwait(false);
                             }
-                            catch (IOException e)
+                            catch (Exception e)
                             {
-                                sbLog.AppendLine("Reading the response failed with IOException");
+                                sbLog.AppendLine(string.Format("Reading the response failed with exception of type {0}", e.GetType().ToString()));
                                 sbLog.AppendLine(e.Message);
                                 sbLog.AppendLine(e.StackTrace);
 
