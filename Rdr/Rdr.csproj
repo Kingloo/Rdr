@@ -36,7 +36,7 @@
     <ProductName>Rdr</ProductName>
     <PublisherName>Kingloo Holdings Ltd.</PublisherName>
     <DisallowUrlActivation>true</DisallowUrlActivation>
-    <ApplicationRevision>102</ApplicationRevision>
+    <ApplicationRevision>107</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -137,6 +137,9 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Extensions\HttpWebRequest.cs" />
+    <Compile Include="Extensions\ICollectionT.cs" />
+    <Compile Include="Extensions\String.cs" />
     <Compile Include="Utils.cs" />
     <Page Include="App.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -144,7 +147,6 @@
     </Page>
     <Compile Include="Converters.cs" />
     <Compile Include="DelegateCommand.cs" />
-    <Compile Include="Extensions.cs" />
     <Compile Include="HelperMethods.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="RdrBase.cs" />

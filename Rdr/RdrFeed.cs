@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Xml.Linq;
+using Rdr.Extensions;
 
 namespace Rdr
 {
@@ -126,6 +127,13 @@ namespace Rdr
                     }
                 }
             }
+
+            toReturn = toReturn.RemoveUnicodeCategories(new List<UnicodeCategory>
+            {
+                UnicodeCategory.OtherSymbol
+            });
+
+            toReturn = toReturn.Trim();
 
             return toReturn;
         }

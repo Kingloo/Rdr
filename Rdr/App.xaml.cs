@@ -1,13 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Net;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace Rdr
 {
     public partial class App : Application
     {
-        private void Application_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+        public App()
+        {
+            ServicePointManager.DefaultConnectionLimit = 9;
+        }
+
+        private void Application_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
             Utils.LogException(e.Exception);
         }

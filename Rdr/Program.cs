@@ -4,6 +4,7 @@ using System.IO;
 using System.Security;
 using System.Threading.Tasks;
 using System.Windows;
+using Rdr.Extensions;
 
 namespace Rdr
 {
@@ -13,7 +14,11 @@ namespace Rdr
         private const string _appName = "Rdr";
         public static string AppName { get { return _appName; } }
 
+#if DEBUG
+        private static readonly string _feedsFile = string.Format(@"C:\Users\{0}\Documents\RdrFeeds-test.txt", Environment.UserName);
+#else
         private static readonly string _feedsFile = string.Format(@"C:\Users\{0}\Documents\RdrFeeds.txt", Environment.UserName);
+#endif
         public static string FeedsFile { get { return _feedsFile; } }
 
         private static readonly List<RdrFeed> _feeds = new List<RdrFeed>();

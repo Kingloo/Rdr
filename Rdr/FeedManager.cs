@@ -14,6 +14,7 @@ using System.Windows;
 using System.Windows.Threading;
 using System.Xml;
 using System.Xml.Linq;
+using Rdr.Extensions;
 
 namespace Rdr
 {
@@ -82,7 +83,7 @@ namespace Rdr
             if (String.IsNullOrWhiteSpace(websiteAsString))
             {
                 feed.Updating = false;
-                this.Activity = activeTasks.Count<RdrFeed>() > 0;
+                Activity = activeTasks.Count<RdrFeed>() > 0;
 
                 return;
             }

@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using System.Xml.Linq;
+using Rdr.Extensions;
 
 namespace Rdr
 {
@@ -58,7 +61,16 @@ namespace Rdr
             {
                 if (each.Name.LocalName.Equals("title", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    this._name = String.IsNullOrEmpty(each.Value) ? "no title" : each.Value.RemoveNewLines();
+                    string title = String.IsNullOrWhiteSpace(each.Value) ? "no title" : each.Value.RemoveNewLines();
+
+                    title = title.RemoveUnicodeCategories(new List<UnicodeCategory>
+                    {
+                        UnicodeCategory.OtherSymbol
+                    });
+
+                    title = title.Trim();
+
+                    this._name = title;
                 }
 
                 if (each.Name.LocalName.Equals("pubDate", StringComparison.InvariantCultureIgnoreCase))
