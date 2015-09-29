@@ -98,7 +98,6 @@ namespace Rdr
 
             sb.AppendLine(string.Format("{0} logged the following message at {1}", Process.GetCurrentProcess().MainModule.ModuleName, DateTime.Now));
             sb.AppendLine(message);
-            sb.AppendLine(string.Empty);
 
             WriteTextToFile(sb.ToString(), loggingRounds);
         }
@@ -109,7 +108,6 @@ namespace Rdr
 
             sb.AppendLine(string.Format("{0} logged the following message at {1}", Process.GetCurrentProcess().MainModule.ModuleName, DateTime.Now));
             sb.AppendLine(message);
-            sb.AppendLine(string.Empty);
 
             await WriteTextToFileAsync(sb.ToString(), loggingRounds).ConfigureAwait(false);
         }
@@ -122,7 +120,6 @@ namespace Rdr
             sb.AppendLine(string.Format("{0} occurred in {1} at {2}", e.GetType().ToString(), Process.GetCurrentProcess().MainModule.ModuleName, DateTime.Now));
             sb.AppendLine(e.Message);
             sb.AppendLine(e.StackTrace);
-            sb.AppendLine(string.Empty);
 
             WriteTextToFile(sb.ToString(), loggingRounds);
         }
@@ -135,7 +132,6 @@ namespace Rdr
             sb.AppendLine(message);
             sb.AppendLine(e.Message);
             sb.AppendLine(e.StackTrace);
-            sb.AppendLine(string.Empty);
 
             WriteTextToFile(sb.ToString(), loggingRounds);
         }
@@ -147,7 +143,6 @@ namespace Rdr
             sb.AppendLine(string.Format("{0} occurred in {1} at {2}", e.GetType().ToString(), Process.GetCurrentProcess().MainModule.ModuleName, DateTime.Now));
             sb.AppendLine(e.Message);
             sb.AppendLine(e.StackTrace);
-            sb.AppendLine(string.Empty);
 
             await WriteTextToFileAsync(sb.ToString(), loggingRounds).ConfigureAwait(false);
         }
@@ -160,7 +155,6 @@ namespace Rdr
             sb.AppendLine(message);
             sb.AppendLine(e.Message);
             sb.AppendLine(e.StackTrace);
-            sb.AppendLine(string.Empty);
 
             await WriteTextToFileAsync(sb.ToString(), loggingRounds).ConfigureAwait(false);
         }
