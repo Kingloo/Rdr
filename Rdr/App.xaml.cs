@@ -8,7 +8,7 @@ namespace Rdr
     {
         public App()
         {
-            ServicePointManager.DefaultConnectionLimit = 9;
+            ServicePointManager.DefaultConnectionLimit = 4;
         }
 
         private void Application_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

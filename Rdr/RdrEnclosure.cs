@@ -7,18 +7,24 @@ namespace Rdr
     class RdrEnclosure : RdrBase
     {
         private readonly Uri _downloadLink = null;
-        public Uri DownloadLink { get { return this._downloadLink; } }
+        public Uri DownloadLink
+        {
+            get
+            {
+                return _downloadLink;
+            }
+        }
 
         private string _buttonText = "Download";
         public string ButtonText
         {
             get
             {
-                return this._buttonText;
+                return _buttonText;
             }
             set
             {
-                this._buttonText = value;
+                _buttonText = value;
 
                 OnNotifyPropertyChanged();
             }
@@ -29,29 +35,35 @@ namespace Rdr
         {
             get
             {
-                return this._duration;
+                return _duration;
             }
             set
             {
-                this._duration = value;
+                _duration = value;
 
                 OnNotifyPropertyChanged();
             }
         }
 
         private readonly int _fileSize = 0;
-        public int FileSize { get { return this._fileSize; } }
+        public int FileSize
+        {
+            get
+            {
+                return _fileSize;
+            }
+        }
 
         private bool _downloading = false;
         public bool Downloading
         {
             get
             {
-                return this._downloading;
+                return _downloading;
             }
             set
             {
-                this._downloading = value;
+                _downloading = value;
 
                 OnNotifyPropertyChanged();
             }
@@ -63,23 +75,23 @@ namespace Rdr
             {
                 if (each.Name.LocalName.Equals("url"))
                 {
-                    if (this._downloadLink == null)
+                    if (_downloadLink == null)
                     {
-                        this._downloadLink = HelperMethods.ConvertStringToUri(each.Value);
+                        _downloadLink = HelperMethods.ConvertStringToUri(each.Value);
                     }
                 }
 
                 if (each.Name.LocalName.Equals("href"))
                 {
-                    if (this._downloadLink == null)
+                    if (_downloadLink == null)
                     {
-                        this._downloadLink = HelperMethods.ConvertStringToUri(each.Value);
+                        _downloadLink = HelperMethods.ConvertStringToUri(each.Value);
                     }
                 }
 
                 if (each.Name.LocalName.Equals("length"))
                 {
-                    this._fileSize = HelperMethods.ConvertStringToInt32(each.Value);
+                    _fileSize = HelperMethods.ConvertStringToInt32(each.Value);
                 }
             }
         }
@@ -89,9 +101,9 @@ namespace Rdr
             StringBuilder sb = new StringBuilder();
 
             sb.AppendLine(this.GetType().ToString());
-            sb.AppendLine(this.DownloadLink.AbsoluteUri);
-            sb.AppendLine(this.Duration);
-            sb.AppendLine(this.ButtonText);
+            sb.AppendLine(DownloadLink.AbsoluteUri);
+            sb.AppendLine(Duration);
+            sb.AppendLine(ButtonText);
 
             return sb.ToString();
         }

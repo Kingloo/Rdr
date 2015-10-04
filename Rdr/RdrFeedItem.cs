@@ -140,9 +140,9 @@ namespace Rdr
                 }
             }
 
-            if (this._enclosure != null)
+            if (_enclosure != null)
             {
-                this._enclosure.Duration = tmpDuration;
+                _enclosure.Duration = tmpDuration;
             }
         }
 
