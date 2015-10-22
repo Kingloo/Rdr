@@ -31,6 +31,8 @@
 
         <Style TargetType="{x:Type Label}" BasedOn="{StaticResource {x:Type Control}}">
             <Setter Property="MinHeight" Value="38" />
+            <Setter Property="ToolTipService.InitialShowDelay" Value="750" />
+            <Setter Property="ToolTipService.ShowDuration" Value="2000" />
         </Style>
         
         <Style TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Control}}">
