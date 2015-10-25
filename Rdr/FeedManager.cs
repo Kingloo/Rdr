@@ -484,6 +484,7 @@ namespace Rdr
             if (e.Action == NotifyCollectionChangedAction.Add)
             {
                 IEnumerable<Task> refreshTasks = from each in e.NewItems.Cast<RdrFeed>()
+                                                 where each.Updating == false
                                                  select RefreshFeedAsync(each);
 
                 await Task.WhenAll(refreshTasks).ConfigureAwait(false);

@@ -144,7 +144,7 @@ namespace Rdr
                                                 select new RdrFeedItem(each, Name);
 
             IEnumerable<RdrFeedItem> fromLastSevenDays = from each in allItems
-                                                         where each.PubDate > (DateTime.Now - TimeSpan.FromDays(7))
+                                                         where each.PubDate > (DateTime.Now - TimeSpan.FromDays(10))
                                                          select each;
 
             Items.AddMissing<RdrFeedItem>(fromLastSevenDays);
