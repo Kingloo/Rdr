@@ -10,6 +10,7 @@ using System.Net;
 using System.Net.Cache;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 using System.Windows;
 using System.Windows.Threading;
 using System.Xml;
@@ -94,12 +95,8 @@ namespace Rdr
 
             if (x == null)
             {
-                string errorMessage = string.Format("{0}: website string did not parse into XDocument", feed.Name);
-
-                await Utils.LogMessageAsync(errorMessage);
-
                 feed.Updating = false;
-                this.Activity = activeTasks.Count<RdrFeed>() > 0;
+                Activity = activeTasks.Count<RdrFeed>() > 0;
 
                 return;
             }
@@ -109,7 +106,7 @@ namespace Rdr
             AddUnreadItemsToUnreadCollector(feed.Items);
 
             feed.Updating = false;
-            this.Activity = activeTasks.Count<RdrFeed>() > 0;
+            Activity = activeTasks.Count<RdrFeed>() > 0;
 
             Feeds.AlternativeSort<RdrFeed>(unreadCollector, null);
         }
@@ -118,9 +115,7 @@ namespace Rdr
         {
             HttpWebRequest req = BuildHttpWebRequest(uri);
 
-            string websiteAsString = await Utils.DownloadWebsiteAsStringAsync(req).ConfigureAwait(false);
-
-            return websiteAsString;
+            return await Utils.DownloadWebsiteAsStringAsync(req).ConfigureAwait(false);
         }
 
         private XDocument ParseWebsiteStringIntoXDocument(string websiteAsString, Uri feedUri)
@@ -133,7 +128,7 @@ namespace Rdr
             }
             catch (XmlException e)
             {
-                string errorMessage = string.Format("XML parse exception in {0}", feedUri.AbsoluteUri);
+                string errorMessage = string.Format("{0}: website string did not parse into XDocument", feedUri.AbsoluteUri);
 
                 Utils.LogException(e, errorMessage);
 

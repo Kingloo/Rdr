@@ -172,7 +172,7 @@ namespace Rdr
                 {
                     using (StreamWriter sw = new StreamWriter(fs))
                     {
-                        sw.Write(text);
+                        sw.WriteLine(text);
                     }
                 }
             }
@@ -215,7 +215,7 @@ namespace Rdr
                 {
                     using (StreamWriter sw = new StreamWriter(fsAsync))
                     {
-                        await sw.WriteAsync(text).ConfigureAwait(false);
+                        await sw.WriteLineAsync(text).ConfigureAwait(false);
                     }
                 }
             }
@@ -259,8 +259,6 @@ namespace Rdr
                 {
                     if (req != null)
                     {
-                        sbLog.AppendLine(string.Format("Request for {0} was aborted", req.RequestUri.AbsoluteUri));
-
                         req.Abort();
                     }
                 }
@@ -276,7 +274,7 @@ namespace Rdr
                             }
                             catch (IOException e)
                             {
-                                sbLog.AppendLine("Reading the response failed with IOException");
+                                sbLog.AppendLine(string.Format("Reading the response failed with IOException: {0}", req.RequestUri.AbsoluteUri));
                                 sbLog.AppendLine(e.Message);
                                 sbLog.AppendLine(e.StackTrace);
 
@@ -284,7 +282,7 @@ namespace Rdr
                             }
                         }
                     }
-                    else
+                    else if (resp.StatusCode != HttpStatusCode.BadGateway)
                     {
                         sbLog.AppendLine(string.Format("Getting website {0} failed: {1}", req.RequestUri.AbsoluteUri, resp.StatusCode.ToString()));
                     }
@@ -334,7 +332,7 @@ namespace Rdr
                             }
                         }
                     }
-                    else
+                    else if (resp.StatusCode != HttpStatusCode.BadGateway)
                     {
                         sbLog.AppendLine(string.Format("Getting website {0} failed: {1}", req.RequestUri.AbsoluteUri, resp.StatusCode.ToString()));
                     }
