@@ -412,7 +412,7 @@ namespace Rdr
         private RdrFeed unreadCollector = new RdrFeed("Unread");
         private DispatcherTimer updateAllTimer = new DispatcherTimer
         {
-            Interval = new TimeSpan(0, 3, 0)
+            Interval = new TimeSpan(0, 25, 0)
         };
         #endregion
 
