@@ -32,7 +32,7 @@ namespace Rdr
         {
             if (action == null) throw new ArgumentNullException("Utils.SafeDispatcher: action was null");
 
-            Dispatcher disp = Application.Current.Dispatcher;
+            Dispatcher disp = System.Windows.Application.Current.Dispatcher;
 
             if (disp.CheckAccess())
             {
@@ -48,7 +48,7 @@ namespace Rdr
         {
             if (action == null) throw new ArgumentNullException("Utils.SafeDispatcherAsync: action was null");
 
-            Dispatcher disp = Application.Current.Dispatcher;
+            Dispatcher disp = System.Windows.Application.Current.Dispatcher;
 
             if (disp.CheckAccess())
             {

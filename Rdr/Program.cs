@@ -1,97 +1,29 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Security;
-using System.Threading.Tasks;
-using System.Windows;
-using Rdr.Extensions;
 
 namespace Rdr
 {
     public class Program
     {
-        #region Properties
-        private const string _appName = "Rdr";
-        public static string AppName { get { return _appName; } }
-
-#if DEBUG
-        private static readonly string _feedsFile = string.Format(@"C:\Users\{0}\Documents\RdrFeeds-test.txt", Environment.UserName);
-#else
-        private static readonly string _feedsFile = string.Format(@"C:\Users\{0}\Documents\RdrFeeds.txt", Environment.UserName);
-#endif
-        public static string FeedsFile { get { return _feedsFile; } }
-
-        private static readonly List<RdrFeed> _feeds = new List<RdrFeed>();
-        internal static List<RdrFeed> Feeds { get { return _feeds; } }
-        #endregion
-
         [STAThread]
-        public static int Main(string[] args)
+        public static int Main()
         {
-            if (File.Exists(_feedsFile) == false)
-            {
-                File.Create(_feedsFile);
-            }
+            string feedsFilePath = string.Concat(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), @"\RdrFeeds.txt");
 
-            IEnumerable<RdrFeed> loadedFeeds = LoadFeedsFromFile().Result;
+            IRepo feedsRepo = new TxtRepo(feedsFilePath);
 
-            if (loadedFeeds == null)
-            {
-                MessageBox.Show("There was a fatal problem with your feeds file.", "Fatal Error", MessageBoxButton.OK, MessageBoxImage.Error);
-
-                return 0;
-            }
-
-            Feeds.AddList<RdrFeed>(loadedFeeds);
-            
-            App app = new App();
+            App app = new App(feedsRepo);
             app.InitializeComponent();
 
-            return app.Run();
-        }
+            int exitCode = app.Run();
 
-        internal static async Task<IEnumerable<RdrFeed>> LoadFeedsFromFile()
-        {
-            List<RdrFeed> toReturn = new List<RdrFeed>();
-
-            FileStream fsAsync = null;
-
-            try
+            if (exitCode != 0)
             {
-                fsAsync = new FileStream(_feedsFile, FileMode.Open, FileAccess.Read, FileShare.None, 1024, true);
+                string errorMessage = $"exited with code {exitCode}";
+
+                Utils.LogMessage(errorMessage);
             }
-            catch (DirectoryNotFoundException) { return null; }
-            catch (FileNotFoundException) { return null; }
-            catch (UnauthorizedAccessException) { return null; }
-            catch (SecurityException) { return null; }
-            catch (IOException) { return null; }
 
-            using (StreamReader sr = new StreamReader(fsAsync))
-            {
-                string line = string.Empty;
-
-                while ((line = await sr.ReadLineAsync().ConfigureAwait(false)) != null)
-                {
-                    if (line.StartsWith("#") == false)
-                    {
-                        Uri uri = null;
-
-                        if (Uri.TryCreate(line, UriKind.Absolute, out uri))
-                        {
-                            RdrFeed feed = new RdrFeed(uri);
-
-                            toReturn.Add(feed);
-                        }
-                    }
-                }
-            }
-			
-			if (fsAsync != null)
-			{
-				fsAsync.Close();
-			}
-
-            return toReturn;
+            return exitCode;
         }
     }
 }

@@ -251,9 +251,8 @@
                     Command="{Binding Path=OpenFeedsFileCommand, Mode=OneTime}" />
         
         <KeyBinding Key="F12"
-                    x:Name="ReloadFeedsKeyBinding"
-                    Command="{Binding Path=ReloadFeedsCommandAsync, Mode=OneTime}" />
-        
+                    x:Name="LoadFeedsKeyBinding"
+                    Command="{Binding Path=LoadFeedsCommandAsync, Mode=OneTime}" />
     </Window.InputBindings>
 
     <Grid Margin="0,0,0,10">
@@ -288,8 +287,8 @@
             </Button>
             
             <Button Content="Reload"
-                    Command="{Binding Path=ReloadFeedsCommandAsync}"
-                    ToolTip="{Binding Path=Key, ElementName=ReloadFeedsKeyBinding, Mode=OneTime}" />
+                    Command="{Binding Path=LoadFeedsCommandAsync}"
+                    ToolTip="{Binding Path=Key, ElementName=LoadFeedsKeyBinding, Mode=OneTime}" />
             
         </StackPanel>
 

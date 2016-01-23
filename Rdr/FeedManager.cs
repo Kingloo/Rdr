@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -10,7 +9,6 @@ using System.Net;
 using System.Net.Cache;
 using System.Text;
 using System.Threading.Tasks;
-using System.Web;
 using System.Windows;
 using System.Windows.Threading;
 using System.Xml;
@@ -53,7 +51,7 @@ namespace Rdr
 
         public async Task RefreshAllFeedsAsync()
         {
-            if (this.Feeds.Count > 0)
+            if (Feeds.Count > 0)
             {
                 IEnumerable<Task> refreshTasks = from each in this.Feeds
                                                  where !each.Updating
@@ -240,7 +238,7 @@ namespace Rdr
 
         public void MoveItemsToView(RdrFeed feed)
         {
-            this.OnFeedChanged(feed);
+            OnFeedChanged(feed);
         }
 
         private DelegateCommand _openFeedsFileCommand = null;
@@ -261,45 +259,49 @@ namespace Rdr
         {
             try
             {
-                Process.Start("notepad.exe", Program.FeedsFile);
+                Process.Start("notepad.exe", (App.Current as App).Repo.FilePath);
             }
             catch (FileNotFoundException)
             {
-                Process.Start(Program.FeedsFile);
+                Process.Start((App.Current as App).Repo.FilePath);
             }
         }
 
-        private DelegateCommandAsync _reloadFeedsCommandAsync = null;
-        public DelegateCommandAsync ReloadFeedsCommandAsync
+        private DelegateCommandAsync _loadFeedsCommandAsync = null;
+        public DelegateCommandAsync LoadFeedsCommandAsync
         {
             get
             {
-                if (_reloadFeedsCommandAsync == null)
+                if (_loadFeedsCommandAsync == null)
                 {
-                    _reloadFeedsCommandAsync = new DelegateCommandAsync(ReloadFeedsAsync, canExecuteAsync);
+                    _loadFeedsCommandAsync = new DelegateCommandAsync(LoadFeedsAsync, canExecuteAsync);
                 }
 
-                return _reloadFeedsCommandAsync;
+                return _loadFeedsCommandAsync;
             }
         }
 
-        private async Task ReloadFeedsAsync()
+        private async Task LoadFeedsAsync()
         {
-            /*
-             * if add ConfigureAwait(false) would have to dispatch everything hereafter
-             * 
-             * whatever benefit ConfigureAwait(false) might bring is surely outweighed by having to dispatch the rest of the instructions
-             */
-            IEnumerable<RdrFeed> loadedFeeds = await Program.LoadFeedsFromFile();
+            IEnumerable<string> feedUris = await (App.Current as App).Repo.LoadAsync();
 
-            Feeds.AddMissing<RdrFeed>(loadedFeeds);
+            List<RdrFeed> feeds = new List<RdrFeed>();
+
+            foreach (string each in feedUris)
+            {
+                RdrFeed feed = new RdrFeed(new Uri(each));
+
+                feeds.Add(feed);
+            }
+            
+            Feeds.AddMissing(feeds);
 
             List<RdrFeed> toBeRemoved = (from each in Feeds
-                                         where (loadedFeeds.Contains<RdrFeed>(each) == false) && (each.Name.Equals("Unread") == false)
+                                         where (feeds.Contains<RdrFeed>(each) == false) && (each.Name.Equals("Unread") == false)
                                          select each)
-                                         .ToList<RdrFeed>();
+                                         .ToList();
 
-            Feeds.RemoveList<RdrFeed>(toBeRemoved);
+            Feeds.RemoveList(toBeRemoved);
         }
         
         // we deliberately don't cache this download command so that each enclosure gets its own
@@ -389,7 +391,7 @@ namespace Rdr
             // App.xaml:ShutdownMode->OnMainWindowClose
             // see MainWindow.xaml.cs for Closing event handler
 
-            Application.Current.MainWindow.Close();
+            System.Windows.Application.Current.MainWindow.Close();
         }
 
         private bool canExecute(object _)
@@ -404,10 +406,14 @@ namespace Rdr
         #endregion
 
         #region Fields
-        private readonly string downloadDirectory = string.Format(@"C:\Users\{0}\Documents\share\", Environment.UserName);
-        private DispatcherTimer updateAllTimer = null;
+        private const string appName = "Rdr";
+        private readonly string downloadDirectory = string.Concat(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @"\share\");
         private IEnumerable<RdrFeed> activeTasks;
         private RdrFeed unreadCollector = new RdrFeed("Unread");
+        private DispatcherTimer updateAllTimer = new DispatcherTimer
+        {
+            Interval = new TimeSpan(0, 3, 0)
+        };
         #endregion
 
         #region Properties
@@ -417,11 +423,11 @@ namespace Rdr
             {
                 if (this.Activity)
                 {
-                    return string.Format("{0} - updating", Program.AppName);
+                    return $"{appName} - updating";
                 }
                 else
                 {
-                    return Program.AppName;
+                    return appName;
                 }
             }
         }
@@ -451,27 +457,29 @@ namespace Rdr
         {
             RefreshAllFeedsCommandAsync.RaiseCanExecuteChanged();
             RefreshFeedCommandAsync.RaiseCanExecuteChanged();
-            ReloadFeedsCommandAsync.RaiseCanExecuteChanged();
+            LoadFeedsCommandAsync.RaiseCanExecuteChanged();
         }
 
-        private ObservableCollection<RdrFeed> _feeds = new ObservableCollection<RdrFeed>();
+        private readonly ObservableCollection<RdrFeed> _feeds = new ObservableCollection<RdrFeed>();
         public ObservableCollection<RdrFeed> Feeds { get { return _feeds; } }
 
-        private ObservableCollection<RdrFeedItem> _items = new ObservableCollection<RdrFeedItem>();
+        private readonly ObservableCollection<RdrFeedItem> _items = new ObservableCollection<RdrFeedItem>();
         public ObservableCollection<RdrFeedItem> Items { get { return _items; } }
         #endregion
 
         public FeedManager()
         {
+            Application.Current.MainWindow.Loaded += async (sender, e) => await LoadFeedsAsync();
+
             activeTasks = from each in Feeds
                           where each.Updating
                           select each;
 
             Feeds.Add(unreadCollector);
             Feeds.CollectionChanged += Feeds_CollectionChanged;
-            Feeds.AddList<RdrFeed>(Program.Feeds);
 
-            StartUpdateTimer();
+            updateAllTimer.Tick += async (sender, e) => await RefreshAllFeedsAsync();
+            updateAllTimer.Start();
         }
 
         private async void Feeds_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
@@ -487,27 +495,7 @@ namespace Rdr
 
             Feeds.AlternativeSort<RdrFeed>(unreadCollector, null);
         }
-
-        private void StartUpdateTimer()
-        {
-            updateAllTimer = new DispatcherTimer
-            {
-#if DEBUG
-                Interval = new TimeSpan(0, 3, 0)
-#else
-                Interval = new TimeSpan(0, 15, 0)
-#endif
-            };
-
-            updateAllTimer.Tick += updateAllTimer_Tick;
-            updateAllTimer.Start();
-        }
-
-        private async void updateAllTimer_Tick(object sender, EventArgs e)
-        {
-            await RefreshAllFeedsAsync().ConfigureAwait(false);
-        }
-
+        
         private HttpWebRequest BuildHttpWebRequest(Uri xmlUrl)
         {
             HttpWebRequest req = HttpWebRequest.CreateHttp(xmlUrl);
@@ -539,9 +527,8 @@ namespace Rdr
             StringBuilder sb = new StringBuilder();
 
             sb.AppendLine(this.GetType().ToString());
-            sb.AppendLine(string.Format("Feeds file: {0}", Program.FeedsFile));
-            sb.AppendLine(string.Format("Feeds: {0}", this.Feeds.Count));
-            sb.AppendLine(string.Format("Items: {0}", this.Items.Count));
+            sb.AppendLine(string.Format("Feeds: {0}", Feeds.Count));
+            sb.AppendLine(string.Format("Items: {0}", Items.Count));
 
             return sb.ToString();
         }

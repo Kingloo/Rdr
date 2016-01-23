@@ -6,8 +6,12 @@ namespace Rdr
 {
     public partial class App : Application
     {
-        public App()
+        public IRepo Repo { get; private set; }
+
+        public App(IRepo repo)
         {
+            Repo = repo;
+
             ServicePointManager.DefaultConnectionLimit = 4;
         }
 
