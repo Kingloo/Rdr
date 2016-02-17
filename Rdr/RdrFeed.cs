@@ -53,7 +53,7 @@ namespace Rdr
             {
                 StringBuilder sb = new StringBuilder();
 
-                sb.Append(string.Format("{0} items, {1} unread", this.Items.Count, UnreadItemsCount()));
+                sb.Append(string.Format(CultureInfo.CurrentCulture, "{0} items, {1} unread", this.Items.Count, UnreadItemsCount()));
 
                 if (this.XmlUrl != null)
                 {
@@ -164,16 +164,20 @@ namespace Rdr
                                                       where each.Unread
                                                       select each;
 
-            return allUnreadItems.Count<RdrFeedItem>();
+            return allUnreadItems.Count();
         }
 
         public int CompareTo(RdrFeed other)
         {
-            return this.Name.CompareTo(other.Name);
+            if (other == null) throw new ArgumentNullException(nameof(other));
+
+            return String.Compare(Name, other.Name, StringComparison.CurrentCulture);
         }
 
         public bool Equals(RdrFeed other)
         {
+            if (other == null) throw new ArgumentNullException(nameof(other));
+
             if ((this.XmlUrl != null) && (other.XmlUrl != null))
             {
                 return this.XmlUrl.AbsoluteUri.Equals(other.XmlUrl.AbsoluteUri);
@@ -193,7 +197,7 @@ namespace Rdr
             if (this.XmlUrl != null) sb.AppendLine(this.XmlUrl.AbsoluteUri);
             sb.AppendLine(this.Updating.ToString());
             sb.AppendLine(this.Tooltip);
-            sb.AppendLine(this.SortId.ToString());
+            sb.AppendLine(this.SortId.ToString(CultureInfo.CurrentCulture));
 
             return sb.ToString();
         }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -75,14 +76,14 @@ namespace Rdr
             if (feed.Name.Equals("Unread")) return;
 
             feed.Updating = true;
-            this.Activity = activeTasks.Count<RdrFeed>() > 0;
+            Activity = activeTasks.Count() > 0;
 
             string websiteAsString = await GetFeed(feed.XmlUrl);
 
             if (String.IsNullOrWhiteSpace(websiteAsString))
             {
                 feed.Updating = false;
-                Activity = activeTasks.Count<RdrFeed>() > 0;
+                Activity = activeTasks.Count() > 0;
 
                 return;
             }
@@ -94,7 +95,7 @@ namespace Rdr
             if (x == null)
             {
                 feed.Updating = false;
-                Activity = activeTasks.Count<RdrFeed>() > 0;
+                Activity = activeTasks.Count() > 0;
 
                 return;
             }
@@ -104,19 +105,19 @@ namespace Rdr
             AddUnreadItemsToUnreadCollector(feed.Items);
 
             feed.Updating = false;
-            Activity = activeTasks.Count<RdrFeed>() > 0;
+            Activity = activeTasks.Count() > 0;
 
-            Feeds.AlternativeSort<RdrFeed>(unreadCollector, null);
+            Feeds.AlternativeSort(unreadCollector, null);
         }
 
-        private async Task<string> GetFeed(Uri uri)
+        private static async Task<string> GetFeed(Uri uri)
         {
             HttpWebRequest req = BuildHttpWebRequest(uri);
 
             return await Utils.DownloadWebsiteAsStringAsync(req).ConfigureAwait(false);
         }
 
-        private XDocument ParseWebsiteStringIntoXDocument(string websiteAsString, Uri feedUri)
+        private static XDocument ParseWebsiteStringIntoXDocument(string websiteAsString, Uri feedUri)
         {
             XDocument x = null;
 
@@ -126,7 +127,7 @@ namespace Rdr
             }
             catch (XmlException e)
             {
-                string errorMessage = string.Format("{0}: website string did not parse into XDocument", feedUri.AbsoluteUri);
+                string errorMessage = string.Format(CultureInfo.CurrentCulture, "{0}: website string did not parse into XDocument", feedUri.AbsoluteUri);
 
                 Utils.LogException(e, errorMessage);
 
@@ -423,7 +424,7 @@ namespace Rdr
             {
                 if (this.Activity)
                 {
-                    return $"{appName} - updating";
+                    return string.Format(CultureInfo.CurrentCulture, "{0} - updating", appName);
                 }
                 else
                 {
@@ -496,9 +497,9 @@ namespace Rdr
             Feeds.AlternativeSort<RdrFeed>(unreadCollector, null);
         }
         
-        private HttpWebRequest BuildHttpWebRequest(Uri xmlUrl)
+        private static HttpWebRequest BuildHttpWebRequest(Uri xmlUrl)
         {
-            HttpWebRequest req = HttpWebRequest.CreateHttp(xmlUrl);
+            HttpWebRequest req = WebRequest.CreateHttp(xmlUrl);
 
             req.AllowAutoRedirect = true;
             req.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
@@ -507,7 +508,7 @@ namespace Rdr
             req.KeepAlive = false;
             req.Method = "GET";
             req.ProtocolVersion = HttpVersion.Version11;
-            req.Referer = string.Format("{0}{1}/", xmlUrl.GetLeftPart(UriPartial.Scheme), xmlUrl.DnsSafeHost);
+            req.Referer = string.Format(CultureInfo.CurrentCulture, "{0}{1}/", xmlUrl.GetLeftPart(UriPartial.Scheme), xmlUrl.DnsSafeHost);
             req.Timeout = 2500;
             req.UserAgent = @"Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko";
 
@@ -527,8 +528,8 @@ namespace Rdr
             StringBuilder sb = new StringBuilder();
 
             sb.AppendLine(this.GetType().ToString());
-            sb.AppendLine(string.Format("Feeds: {0}", Feeds.Count));
-            sb.AppendLine(string.Format("Items: {0}", Items.Count));
+            sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "Feeds: {0}", Feeds.Count));
+            sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "Items: {0}", Items.Count));
 
             return sb.ToString();
         }

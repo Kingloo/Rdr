@@ -1,17 +1,20 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Rdr.Extensions
 {
-    public static class HttpWebRequestExt
+    public static class WebRequestExtensions
     {
-        public static WebResponse GetResponseExt(this HttpWebRequest req)
+        public static WebResponse GetResponseExt(this WebRequest request)
         {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+
             WebResponse webResp = null;
 
             try
             {
-                webResp = req.GetResponse();
+                webResp = request.GetResponse();
             }
             catch (WebException e)
             {
@@ -24,13 +27,15 @@ namespace Rdr.Extensions
             return webResp;
         }
 
-        public static async Task<WebResponse> GetResponseAsyncExt(this HttpWebRequest req)
+        public static async Task<WebResponse> GetResponseAsyncExt(this WebRequest request)
         {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+
             WebResponse webResp = null;
 
             try
             {
-                webResp = await req.GetResponseAsync().ConfigureAwait(false);
+                webResp = await request.GetResponseAsync().ConfigureAwait(false);
             }
             catch (WebException e)
             {

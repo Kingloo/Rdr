@@ -18,19 +18,19 @@ namespace Rdr.Extensions
             }
         }
 
-        private string _resultString = string.Empty;
-        public string ResultString
+        private string _resultValue = string.Empty;
+        public string ResultValue
         {
             get
             {
-                return _resultString;
+                return _resultValue;
             }
         }
 
-        public FromBetweenResult(Result result, string resultString)
+        public FromBetweenResult(Result result, string resultValue)
         {
-            this._result = result;
-            this._resultString = resultString;
+            _result = result;
+            _resultValue = resultValue;
         }
     }
 
@@ -38,12 +38,16 @@ namespace Rdr.Extensions
     {
         public static bool ContainsExt(this string target, string toFind, StringComparison comparison)
         {
+            if (target == null) throw new ArgumentNullException(nameof(target));
+
             return (target.IndexOf(toFind, comparison) > -1);
         }
 
-        public static string RemoveNewLines(this string s)
+        public static string RemoveNewLines(this string value)
         {
-            string toReturn = s;
+            if (value == null) throw new ArgumentNullException(nameof(value));
+
+            string toReturn = value;
 
             if (toReturn.Contains("\r\n"))
             {
@@ -70,13 +74,17 @@ namespace Rdr.Extensions
 
         public static FromBetweenResult FromBetween(this string whole, string beginning, string ending)
         {
+            if (whole == null) throw new ArgumentNullException(nameof(whole));
+            if (beginning == null) throw new ArgumentNullException(nameof(beginning));
+            if (ending == null) throw new ArgumentNullException(nameof(ending));
+
             if (whole.Contains(beginning) == false)
             {
                 return new FromBetweenResult(Result.BeginningNotFound, string.Empty);
             }
 
-            int firstAppearanceOfBeginning = whole.IndexOf(beginning);
-            int lastAppearanceOfBeginning = whole.LastIndexOf(beginning);
+            int firstAppearanceOfBeginning = whole.IndexOf(beginning, StringComparison.OrdinalIgnoreCase);
+            int lastAppearanceOfBeginning = whole.LastIndexOf(beginning, StringComparison.OrdinalIgnoreCase);
 
             if (firstAppearanceOfBeginning != lastAppearanceOfBeginning)
             {
@@ -94,7 +102,7 @@ namespace Rdr.Extensions
 
             try
             {
-                indexOfEnding = whole.IndexOf(ending, indexOfBeginning);
+                indexOfEnding = whole.IndexOf(ending, indexOfBeginning, StringComparison.OrdinalIgnoreCase);
             }
             catch (ArgumentOutOfRangeException)
             {
@@ -109,11 +117,14 @@ namespace Rdr.Extensions
             return new FromBetweenResult(Result.Success, result);
         }
 
-        public static string RemoveUnicodeCategories(this string orig, IEnumerable<UnicodeCategory> categories)
+        public static string RemoveUnicodeCategories(this string self, IEnumerable<UnicodeCategory> categories)
         {
+            if (self == null) throw new ArgumentNullException(nameof(self));
+            if (categories == null) throw new ArgumentNullException(nameof(categories));
+
             StringBuilder sb = new StringBuilder();
 
-            foreach (char c in orig)
+            foreach (char c in self)
             {
                 if (IsCharInCatergories(c, categories) == false)
                 {
@@ -126,6 +137,8 @@ namespace Rdr.Extensions
 
         private static bool IsCharInCatergories(char c, IEnumerable<UnicodeCategory> categories)
         {
+            if (categories == null) throw new ArgumentNullException(nameof(categories));
+
             foreach (UnicodeCategory category in categories)
             {
                 if (Char.GetUnicodeCategory(c) == category)

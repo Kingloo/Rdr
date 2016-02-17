@@ -8,37 +8,37 @@ namespace Rdr
     {
         internal enum FeedType { None, Atom, RSS };
 
-        internal static FeedType DetermineFeedType(string websiteAsString)
-        {
-            XDocument xDoc = null;
+        //internal static FeedType DetermineFeedType(string websiteAsString)
+        //{
+        //    XDocument xDoc = null;
 
-            try
-            {
-                xDoc = XDocument.Parse(websiteAsString);
-            }
-            catch (XmlException)
-            {
-                xDoc = null;
-            }
+        //    try
+        //    {
+        //        xDoc = XDocument.Parse(websiteAsString);
+        //    }
+        //    catch (XmlException)
+        //    {
+        //        xDoc = null;
+        //    }
 
-            if (xDoc != null)
-            {
-                if (xDoc.Root.Name.LocalName.Equals("feed"))
-                {
-                    return FeedType.Atom;
-                }
-                else if (xDoc.Root.Name.LocalName.Equals("rss"))
-                {
-                    return FeedType.RSS;
-                }
-                else
-                {
-                    return FeedType.None;
-                }
-            }
+        //    if (xDoc != null)
+        //    {
+        //        if (xDoc.Root.Name.LocalName.Equals("feed"))
+        //        {
+        //            return FeedType.Atom;
+        //        }
+        //        else if (xDoc.Root.Name.LocalName.Equals("rss"))
+        //        {
+        //            return FeedType.RSS;
+        //        }
+        //        else
+        //        {
+        //            return FeedType.None;
+        //        }
+        //    }
 
-            return FeedType.None;
-        }
+        //    return FeedType.None;
+        //}
 
         internal static DateTime TryParseAndTrim(string s)
         {
@@ -73,19 +73,19 @@ namespace Rdr
             }
         }
 
-        internal static DateTime ConvertStringToDateTime(string p)
-        {
-            DateTime dt = DateTime.MinValue;
+        //internal static DateTime ConvertStringToDateTime(string p)
+        //{
+        //    DateTime dt = DateTime.MinValue;
 
-            if (DateTime.TryParse(p, out dt))
-            {
-                return dt;
-            }
-            else
-            {
-                return HelperMethods.TryParseAndTrim(p);
-            }
-        }
+        //    if (DateTime.TryParse(p, out dt))
+        //    {
+        //        return dt;
+        //    }
+        //    else
+        //    {
+        //        return HelperMethods.TryParseAndTrim(p);
+        //    }
+        //}
 
         internal static Uri ConvertXElementToUri(XElement each)
         {
@@ -115,19 +115,19 @@ namespace Rdr
             }
         }
 
-        internal static int ConvertXElementToInt32(XElement each)
-        {
-            int i = 0;
+        //internal static int ConvertXElementToInt32(XElement each)
+        //{
+        //    int i = 0;
 
-            if (Int32.TryParse(each.Value, out i))
-            {
-                return i;
-            }
-            else
-            {
-                return -1;
-            }
-        }
+        //    if (Int32.TryParse(each.Value, out i))
+        //    {
+        //        return i;
+        //    }
+        //    else
+        //    {
+        //        return -1;
+        //    }
+        //}
 
         internal static int ConvertStringToInt32(string p)
         {

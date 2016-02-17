@@ -59,7 +59,7 @@ namespace Rdr
 
             foreach (XElement each in e.Elements())
             {
-                if (each.Name.LocalName.Equals("title", StringComparison.InvariantCultureIgnoreCase))
+                if (each.Name.LocalName.Equals("title", StringComparison.OrdinalIgnoreCase))
                 {
                     string title = String.IsNullOrWhiteSpace(each.Value) ? "no title" : each.Value.RemoveNewLines();
 
@@ -73,7 +73,7 @@ namespace Rdr
                     this._name = title;
                 }
 
-                if (each.Name.LocalName.Equals("pubDate", StringComparison.InvariantCultureIgnoreCase))
+                if (each.Name.LocalName.Equals("pubDate", StringComparison.OrdinalIgnoreCase))
                 {
                     if (this._pubDate == DateTime.MinValue)
                     {
@@ -81,7 +81,7 @@ namespace Rdr
                     }
                 }
 
-                if (each.Name.LocalName.Equals("published", StringComparison.InvariantCultureIgnoreCase))
+                if (each.Name.LocalName.Equals("published", StringComparison.OrdinalIgnoreCase))
                 {
                     if (this._pubDate == DateTime.MinValue)
                     {
@@ -89,7 +89,7 @@ namespace Rdr
                     }
                 }
 
-                if (each.Name.LocalName.Equals("updated", StringComparison.InvariantCultureIgnoreCase))
+                if (each.Name.LocalName.Equals("updated", StringComparison.OrdinalIgnoreCase))
                 {
                     if (this._pubDate == DateTime.MinValue)
                     {
@@ -97,7 +97,7 @@ namespace Rdr
                     }
                 }
 
-                if (each.Name.LocalName.Equals("enclosure", StringComparison.InvariantCultureIgnoreCase))
+                if (each.Name.LocalName.Equals("enclosure", StringComparison.OrdinalIgnoreCase))
                 {
                     if (this._enclosure == null)
                     {
@@ -105,7 +105,7 @@ namespace Rdr
                     }
                 }
 
-                if (each.Name.LocalName.Equals("link", StringComparison.InvariantCultureIgnoreCase))
+                if (each.Name.LocalName.Equals("link", StringComparison.OrdinalIgnoreCase))
                 {
                     this._link = HelperMethods.ConvertXElementToUri(each);
 
@@ -134,7 +134,7 @@ namespace Rdr
                     }
                 }
 
-                if (each.Name.LocalName.Equals("duration", StringComparison.InvariantCultureIgnoreCase))
+                if (each.Name.LocalName.Equals("duration", StringComparison.OrdinalIgnoreCase))
                 {
                     tmpDuration = each.Value;
                 }
@@ -153,6 +153,8 @@ namespace Rdr
 
         public bool Equals(RdrFeedItem other)
         {
+            if (other == null) throw new ArgumentNullException(nameof(other));
+
             bool equals = false;
 
             //if (this.Name.Equals(other.Name)
@@ -173,7 +175,7 @@ namespace Rdr
             return equals;
         }
 
-        private bool UriDifferenceIsOnlyScheme(Uri thisLink, Uri otherLink)
+        private static bool UriDifferenceIsOnlyScheme(Uri thisLink, Uri otherLink)
         {
             if (thisLink == null || otherLink == null) return false;
 
@@ -192,6 +194,8 @@ namespace Rdr
 
         public int CompareTo(RdrFeedItem other)
         {
+            if (other == null) throw new ArgumentNullException(nameof(other));
+
             if (other.PubDate > this.PubDate)
             {
                 return 1;
@@ -211,8 +215,8 @@ namespace Rdr
             StringBuilder sb = new StringBuilder();
 
             sb.AppendLine(this.GetType().ToString());
-            sb.AppendLine(string.Format("Name: {0}", Name));
-            sb.AppendLine(string.Format("TitleOfFeed: {0}", TitleOfFeed));
+            sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "Name: {0}", Name));
+            sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "TitleOfFeed: {0}", TitleOfFeed));
 
             if (Link == null)
             {
@@ -220,16 +224,16 @@ namespace Rdr
             }
             else
             {
-                sb.AppendLine(string.Format("Link: {0}", Link.AbsoluteUri));
+                sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "Link: {0}", Link.AbsoluteUri));
             }
 
-            sb.AppendLine(string.Format("PubDate: {0}", PubDate.ToString()));
-            sb.AppendLine(string.Format("Unread: {0}", Unread.ToString()));
-            sb.AppendLine(string.Format("Has enclosure: {0}", HasEnclosure.ToString()));
+            sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "PubDate: {0}", PubDate.ToString()));
+            sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "Unread: {0}", Unread.ToString()));
+            sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "Has enclosure: {0}", HasEnclosure.ToString()));
 
             if (HasEnclosure)
             {
-                sb.AppendLine(string.Format("Enclosure:{0}", Environment.NewLine));
+                sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "Enclosure:{0}", Environment.NewLine));
                 sb.AppendLine(Enclosure.ToString());
             }
 

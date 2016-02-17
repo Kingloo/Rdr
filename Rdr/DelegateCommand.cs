@@ -12,7 +12,7 @@ namespace Rdr
 
         public void RaiseCanExecuteChanged()
         {
-            EventHandler handler = this.CanExecuteChanged;
+            EventHandler handler = CanExecuteChanged;
             if (handler != null)
             {
                 handler(this, new EventArgs());
@@ -29,19 +29,19 @@ namespace Rdr
         {
             if (execute == null)
             {
-                throw new ArgumentNullException("execute", "execute was null");
+                throw new ArgumentNullException(nameof(execute));
             }
 
             if (canExecute == null)
             {
-                throw new ArgumentNullException("canExecute", "canExecute was null");
+                throw new ArgumentNullException(nameof(canExecute));
             }
 
-            this._execute = execute;
-            this._canExecute = canExecute;
+            _execute = execute;
+            _canExecute = canExecute;
         }
 
-        public override void Execute(object _)
+        public override void Execute(object parameter)
         {
             this._execute();
         }
@@ -75,12 +75,12 @@ namespace Rdr
 
         public override void Execute(object parameter)
         {
-            this._execute((T)parameter);
+            _execute((T)parameter);
         }
 
         public override bool CanExecute(object parameter)
         {
-            return this._canExecute((T)parameter);
+            return _canExecute((T)parameter);
         }
     }
 
@@ -94,16 +94,16 @@ namespace Rdr
         {
             if (executeAsync == null)
             {
-                throw new ArgumentNullException("executeAsync is null");
+                throw new ArgumentNullException(nameof(executeAsync));
             }
 
             if (canExecute == null)
             {
-                throw new ArgumentNullException("canExecute is null");
+                throw new ArgumentNullException(nameof(canExecute));
             }
 
-            this._executeAsync = executeAsync;
-            this._canExecute = canExecute;
+            _executeAsync = executeAsync;
+            _canExecute = canExecute;
         }
 
         public async override void Execute(object parameter)
@@ -145,12 +145,12 @@ namespace Rdr
         {
             if (executeAsync == null)
             {
-                throw new ArgumentNullException("executeAsync is null");
+                throw new ArgumentNullException(nameof(executeAsync));
             }
 
             if (canExecute == null)
             {
-                throw new ArgumentNullException("canExecute is null");
+                throw new ArgumentNullException(nameof(canExecute));
             }
 
             this._executeAsync = executeAsync;

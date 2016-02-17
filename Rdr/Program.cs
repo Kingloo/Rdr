@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Globalization;
 
+[assembly:CLSCompliant(true)]
 namespace Rdr
 {
-    public class Program
+    public static class Program
     {
         [STAThread]
         public static int Main()
@@ -18,7 +20,7 @@ namespace Rdr
 
             if (exitCode != 0)
             {
-                string errorMessage = $"exited with code {exitCode}";
+                string errorMessage = string.Format(CultureInfo.CurrentCulture, "exited with code {0}", exitCode);
 
                 Utils.LogMessage(errorMessage);
             }
