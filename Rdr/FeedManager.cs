@@ -317,8 +317,6 @@ namespace Rdr
 
         private async Task DownloadEnclosureAsync(RdrEnclosure arg)
         {
-            arg.Downloading = true;
-
             if (arg.DownloadLink != null)
             {
                 Utils.LogMessage("enclosure download link is null");
@@ -326,6 +324,8 @@ namespace Rdr
                 return;
             }
 
+            arg.Downloading = true;
+            
             HttpWebRequest req = HttpWebRequest.CreateHttp(arg.DownloadLink);
 
             using (HttpWebResponse resp = (HttpWebResponse)await req.GetResponseAsyncExt().ConfigureAwait(false))
