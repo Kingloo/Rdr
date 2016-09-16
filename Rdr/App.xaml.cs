@@ -12,7 +12,7 @@ namespace Rdr
         {
             Repo = repo;
 
-            ServicePointManager.DefaultConnectionLimit = 4;
+            ServicePointManager.DefaultConnectionLimit = 10;
         }
 
         private void Application_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

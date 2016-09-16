@@ -28,9 +28,7 @@ namespace Rdr
 
             if (eh != null)
             {
-                EventArgs args = new EventArgs();
-
-                eh(feed, args);
+                eh(feed, new EventArgs());
             }
         }
         #endregion
@@ -107,7 +105,7 @@ namespace Rdr
             feed.Updating = false;
             Activity = activeTasks.Count() > 0;
 
-            Feeds.AlternativeSort(unreadCollector, null);
+            _feeds.AlternativeSort(unreadCollector, null);
         }
 
         private static async Task<string> GetFeed(Uri uri)
@@ -284,7 +282,7 @@ namespace Rdr
 
         private async Task LoadFeedsAsync()
         {
-            IEnumerable<string> feedUris = await (App.Current as App).Repo.LoadAsync();
+            IEnumerable<string> feedUris = await ((App)(App.Current)).Repo.LoadAsync();
 
             List<RdrFeed> feeds = new List<RdrFeed>();
 
@@ -295,14 +293,14 @@ namespace Rdr
                 feeds.Add(feed);
             }
             
-            Feeds.AddMissing(feeds);
+            _feeds.AddMissing(feeds);
 
             List<RdrFeed> toBeRemoved = (from each in Feeds
                                          where (feeds.Contains<RdrFeed>(each) == false) && (each.Name.Equals("Unread") == false)
                                          select each)
                                          .ToList();
 
-            Feeds.RemoveList(toBeRemoved);
+            _feeds.RemoveList(toBeRemoved);
         }
         
         // we deliberately don't cache this download command so that each enclosure gets its own
@@ -317,7 +315,7 @@ namespace Rdr
 
         private async Task DownloadEnclosureAsync(RdrEnclosure arg)
         {
-            if (arg.DownloadLink != null)
+            if (arg.DownloadLink == null)
             {
                 Utils.LogMessage("enclosure download link is null");
 
@@ -470,10 +468,12 @@ namespace Rdr
         }
 
         private readonly ObservableCollection<RdrFeed> _feeds = new ObservableCollection<RdrFeed>();
-        public ObservableCollection<RdrFeed> Feeds { get { return _feeds; } }
+        //public ObservableCollection<RdrFeed> Feeds { get { return _feeds; } }
+        public IReadOnlyCollection<RdrFeed> Feeds { get { return _feeds; } }
 
         private readonly ObservableCollection<RdrFeedItem> _items = new ObservableCollection<RdrFeedItem>();
-        public ObservableCollection<RdrFeedItem> Items { get { return _items; } }
+        //public ObservableCollection<RdrFeedItem> Items { get { return _items; } }
+        public IReadOnlyCollection<RdrFeedItem> Items { get { return _items; } }
         #endregion
 
         public FeedManager()
@@ -484,8 +484,8 @@ namespace Rdr
                           where each.Updating
                           select each;
 
-            Feeds.Add(unreadCollector);
-            Feeds.CollectionChanged += Feeds_CollectionChanged;
+            _feeds.Add(unreadCollector);
+            _feeds.CollectionChanged += Feeds_CollectionChanged;
 
             updateAllTimer.Tick += async (sender, e) => await RefreshAllFeedsAsync();
             updateAllTimer.Start();
@@ -502,7 +502,7 @@ namespace Rdr
                 await Task.WhenAll(refreshTasks).ConfigureAwait(false);
             }
 
-            Feeds.AlternativeSort<RdrFeed>(unreadCollector, null);
+            _feeds.AlternativeSort<RdrFeed>(unreadCollector, null);
         }
         
         private static HttpWebRequest BuildHttpWebRequest(Uri xmlUrl)

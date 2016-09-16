@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Rdr.Extensions
@@ -8,7 +9,7 @@ namespace Rdr.Extensions
     {
         public static WebResponse GetResponseExt(this WebRequest request)
         {
-            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (request == null) { throw new ArgumentNullException(nameof(request)); }
 
             WebResponse webResp = null;
 
@@ -29,13 +30,19 @@ namespace Rdr.Extensions
 
         public static async Task<WebResponse> GetResponseAsyncExt(this WebRequest request)
         {
-            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (request == null) { throw new ArgumentNullException(nameof(request)); }
 
             WebResponse webResp = null;
+
+            //CancellationTokenSource source = new CancellationTokenSource();
+
+            //source.CancelAfter(TimeSpan.FromSeconds(120));
 
             try
             {
                 webResp = await request.GetResponseAsync().ConfigureAwait(false);
+
+                //webResp = await Task.Run(() => request.GetResponse(), source.Token).ConfigureAwait(false);
             }
             catch (WebException e)
             {
@@ -44,6 +51,10 @@ namespace Rdr.Extensions
                     webResp = e.Response;
                 }
             }
+            //finally
+            //{
+            //    source?.Dispose();
+            //}
 
             return webResp;
         }

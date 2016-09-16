@@ -379,10 +379,7 @@ namespace Rdr
             {
                 if (resp == null)
                 {
-                    if (request != null)
-                    {
-                        request.Abort();
-                    }
+                    request?.Abort();
                 }
                 else
                 {
@@ -413,7 +410,7 @@ namespace Rdr
 
             if (sbLog.Length > 0)
             {
-                await Utils.LogMessageAsync(sbLog.ToString()).ConfigureAwait(false);
+                await LogMessageAsync(sbLog.ToString()).ConfigureAwait(false);
             }
 
             return response;

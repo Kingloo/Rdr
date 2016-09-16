@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Linq;
 using System.ComponentModel;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Input;
 
 namespace Rdr
 {
@@ -18,7 +20,7 @@ namespace Rdr
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            RdrFeed unreadCollector = feedManager.Feeds[0];
+            RdrFeed unreadCollector = feedManager.Feeds.First();
 
             SetFeedItemsBinding(unreadCollector);
         }
@@ -49,7 +51,7 @@ namespace Rdr
             BindingOperations.SetBinding(ic_Items, ItemsControl.ItemsSourceProperty, itemsBinding);
         }
 
-        private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        private void Window_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == System.Windows.Input.Key.F1)
             {

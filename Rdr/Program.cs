@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Globalization;
+using System.IO;
 
-[assembly:CLSCompliant(true)]
 namespace Rdr
 {
     public static class Program
@@ -9,7 +9,15 @@ namespace Rdr
         [STAThread]
         public static int Main()
         {
-            string feedsFilePath = string.Concat(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), @"\RdrFeeds.txt");
+            string userDocsDir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            
+#if DEBUG
+            string feedsFileName = "RdrFeeds-test.txt";
+#else
+            string feedsFileName = "RdrFeeds.txt";
+#endif
+
+            string feedsFilePath = Path.Combine(userDocsDir, feedsFileName);
 
             IRepo feedsRepo = new TxtRepo(feedsFilePath);
 
