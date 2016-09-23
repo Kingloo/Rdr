@@ -9,15 +9,7 @@ namespace Rdr
         [STAThread]
         public static int Main()
         {
-            string userDocsDir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            
-#if DEBUG
-            string feedsFileName = "RdrFeeds-test.txt";
-#else
-            string feedsFileName = "RdrFeeds.txt";
-#endif
-
-            string feedsFilePath = Path.Combine(userDocsDir, feedsFileName);
+            string feedsFilePath = GetFeedsFilePath();
 
             IRepo feedsRepo = new TxtRepo(feedsFilePath);
 
@@ -34,6 +26,19 @@ namespace Rdr
             }
 
             return exitCode;
+        }
+
+        private static string GetFeedsFilePath()
+        {
+            string dir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+#if DEBUG
+            string filename = "RdrFeeds-test.txt";
+#else
+            string filename = "RdrFeeds.txt";
+#endif
+
+            return Path.Combine(dir, filename);
         }
     }
 }

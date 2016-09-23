@@ -7,49 +7,52 @@ using Rdr.Extensions;
 
 namespace Rdr
 {
-    internal class RdrFeedItem : RdrBase, IEquatable<RdrFeedItem>, IComparable<RdrFeedItem>
+    public class RdrFeedItem : ViewModelBase, IEquatable<RdrFeedItem>, IComparable<RdrFeedItem>
     {
         #region Properties
         private readonly string _name = "no name";
-        public string Name { get { return this._name; } }
+        public string Name { get { return _name; } }
 
         private readonly string _titleOfFeed = "no feed title";
-        public string TitleOfFeed { get { return this._titleOfFeed; } }
+        public string TitleOfFeed { get { return _titleOfFeed; } }
 
         private readonly Uri _link = null;
-        public Uri Link { get { return this._link; } }
+        public Uri Link { get { return _link; } }
 
         private readonly DateTime _pubDate = DateTime.MinValue;
-        public DateTime PubDate { get { return this._pubDate; } }
+        public DateTime PubDate { get { return _pubDate; } }
 
         private bool _unread = true;
         public bool Unread
         {
             get
             {
-                return this._unread;
+                return _unread;
             }
             private set
             {
-                _unread = value;
+                if (_unread != value)
+                {
+                    _unread = value;
 
-                OnNotifyPropertyChanged();
+                    RaisePropertyChanged(nameof(Unread));
+                }
             }
         }
 
         public bool HasEnclosure
         {
-            get { return (this._enclosure != null); }
+            get { return (_enclosure != null); }
         }
 
         private readonly RdrEnclosure _enclosure = null;
-        public RdrEnclosure Enclosure { get { return this._enclosure; } }
+        public RdrEnclosure Enclosure { get { return _enclosure; } }
         #endregion
 
         public RdrFeedItem(string name, string titleOfFeed)
         {
-            this._name = name;
-            this._titleOfFeed = titleOfFeed;
+            _name = name;
+            _titleOfFeed = titleOfFeed;
         }
 
         public RdrFeedItem(XElement e, string titleOfFeed)
@@ -194,13 +197,13 @@ namespace Rdr
 
         public int CompareTo(RdrFeedItem other)
         {
-            if (other == null) throw new ArgumentNullException(nameof(other));
+            if (other == null) { throw new ArgumentNullException(nameof(other)); }
 
-            if (other.PubDate > this.PubDate)
+            if (other.PubDate > PubDate)
             {
                 return 1;
             }
-            else if (other.PubDate < this.PubDate)
+            else if (other.PubDate < PubDate)
             {
                 return -1;
             }
@@ -214,7 +217,7 @@ namespace Rdr
         {
             StringBuilder sb = new StringBuilder();
 
-            sb.AppendLine(this.GetType().ToString());
+            sb.AppendLine(GetType().ToString());
             sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "Name: {0}", Name));
             sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "TitleOfFeed: {0}", TitleOfFeed));
 

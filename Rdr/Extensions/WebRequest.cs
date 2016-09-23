@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Net;
-using System.Threading;
 using System.Threading.Tasks;
 
-namespace Rdr.Extensions
+namespace Rdr
 {
-    public static class WebRequestExtensions
+    public static class WebRequestExt
     {
         public static WebResponse GetResponseExt(this WebRequest request)
         {
@@ -17,12 +16,11 @@ namespace Rdr.Extensions
             {
                 webResp = request.GetResponse();
             }
-            catch (WebException e)
+            catch (WebException ex)
             {
-                if (e.Response != null)
-                {
-                    webResp = e.Response;
-                }
+                Utils.LogException(ex);
+
+                webResp = ex?.Response;
             }
 
             return webResp;
@@ -34,27 +32,16 @@ namespace Rdr.Extensions
 
             WebResponse webResp = null;
 
-            //CancellationTokenSource source = new CancellationTokenSource();
-
-            //source.CancelAfter(TimeSpan.FromSeconds(120));
-
             try
             {
                 webResp = await request.GetResponseAsync().ConfigureAwait(false);
-
-                //webResp = await Task.Run(() => request.GetResponse(), source.Token).ConfigureAwait(false);
             }
-            catch (WebException e)
+            catch (WebException ex)
             {
-                if (e.Response != null)
-                {
-                    webResp = e.Response;
-                }
+                Utils.LogException(ex);
+
+                webResp = ex?.Response;
             }
-            //finally
-            //{
-            //    source?.Dispose();
-            //}
 
             return webResp;
         }

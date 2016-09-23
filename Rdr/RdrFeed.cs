@@ -9,7 +9,7 @@ using Rdr.Extensions;
 
 namespace Rdr
 {
-    class RdrFeed : RdrBase, IEquatable<RdrFeed>, IComparable<RdrFeed>, IAlternativeSort
+    class RdrFeed : ViewModelBase, IEquatable<RdrFeed>, IComparable<RdrFeed>, IAlternativeSort
     {
         private enum FeedType { None, Atom, RSS };
 
@@ -23,9 +23,12 @@ namespace Rdr
             }
             set
             {
-                this._name = value;
+                if (_name != value)
+                {
+                    _name = value;
 
-                OnNotifyPropertyChanged();
+                    RaisePropertyChanged(nameof(Name));
+                }
             }
         }
 
@@ -41,9 +44,12 @@ namespace Rdr
             }
             set
             {
-                this._updating = value;
+                if (_updating != value)
+                {
+                    _updating = value;
 
-                OnNotifyPropertyChanged();
+                    RaisePropertyChanged(nameof(Updating));
+                }
             }
         }
 
@@ -74,9 +80,12 @@ namespace Rdr
             }
             set
             {
-                _sortId = value;
+                if (_sortId != value)
+                {
+                    _sortId = value;
 
-                OnNotifyPropertyChanged();
+                    RaisePropertyChanged(nameof(SortId));
+                }
             }
         }
 

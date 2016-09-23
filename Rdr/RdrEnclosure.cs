@@ -4,7 +4,7 @@ using System.Xml.Linq;
 
 namespace Rdr
 {
-    class RdrEnclosure : RdrBase
+    public class RdrEnclosure : ViewModelBase
     {
         private readonly Uri _downloadLink = null;
         public Uri DownloadLink
@@ -24,9 +24,12 @@ namespace Rdr
             }
             set
             {
-                _buttonText = value;
+                if (_buttonText != value)
+                {
+                    _buttonText = value;
 
-                OnNotifyPropertyChanged();
+                    RaisePropertyChanged(nameof(ButtonText));
+                }
             }
         }
 
@@ -39,9 +42,12 @@ namespace Rdr
             }
             set
             {
-                _duration = value;
+                if (_duration != value)
+                {
+                    _duration = value;
 
-                OnNotifyPropertyChanged();
+                    RaisePropertyChanged(nameof(Duration));
+                }
             }
         }
 
@@ -63,9 +69,12 @@ namespace Rdr
             }
             set
             {
-                _downloading = value;
+                if (_downloading != value)
+                {
+                    _downloading = value;
 
-                OnNotifyPropertyChanged();
+                    RaisePropertyChanged(nameof(Downloading));
+                }
             }
         }
 

@@ -18,7 +18,7 @@ using Rdr.Extensions;
 
 namespace Rdr
 {
-    internal class FeedManager : RdrBase
+    internal class FeedManager : ViewModelBase
     {
         #region Events
         public event EventHandler FeedChanged;
@@ -448,14 +448,14 @@ namespace Rdr
             }
             set
             {
-                if (this._activity != value)
+                if (_activity != value)
                 {
-                    this._activity = value;
+                    _activity = value;
 
-                    OnNotifyPropertyChanged();
-                    OnNotifyPropertyChanged("WindowTitle");
+                    RaisePropertyChanged(nameof(Activity));
+                    RaisePropertyChanged(nameof(WindowTitle));
 
-                    this.RaiseAllAsyncCanExecuteChangedCommands();
+                    RaiseAllAsyncCanExecuteChangedCommands();
                 }
             }
         }
@@ -468,11 +468,9 @@ namespace Rdr
         }
 
         private readonly ObservableCollection<RdrFeed> _feeds = new ObservableCollection<RdrFeed>();
-        //public ObservableCollection<RdrFeed> Feeds { get { return _feeds; } }
         public IReadOnlyCollection<RdrFeed> Feeds { get { return _feeds; } }
 
         private readonly ObservableCollection<RdrFeedItem> _items = new ObservableCollection<RdrFeedItem>();
-        //public ObservableCollection<RdrFeedItem> Items { get { return _items; } }
         public IReadOnlyCollection<RdrFeedItem> Items { get { return _items; } }
         #endregion
 
