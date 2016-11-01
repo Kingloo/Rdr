@@ -18,8 +18,6 @@ namespace Rdr
             }
             catch (WebException ex)
             {
-                Utils.LogException(ex);
-
                 webResp = ex?.Response;
             }
 
@@ -38,8 +36,6 @@ namespace Rdr
             }
             catch (WebException ex)
             {
-                Utils.LogException(ex);
-
                 webResp = ex?.Response;
             }
 

@@ -156,31 +156,22 @@ namespace Rdr
 
         public bool Equals(RdrFeedItem other)
         {
-            if (other == null) throw new ArgumentNullException(nameof(other));
-
-            bool equals = false;
-
-            //if (this.Name.Equals(other.Name)
-            //    && this.TitleOfFeed.Equals(other.TitleOfFeed)
-            //    && this.PubDate.Equals(other.PubDate)
-            //    && UriDifferenceIsOnlyScheme(this.Link, other.Link))
-            //{
-            //    equals = true;
-            //}
-
-            if (this.Name.Equals(other.Name)
-                && this.TitleOfFeed.Equals(other.TitleOfFeed)
-                && UriDifferenceIsOnlyScheme(this.Link, other.Link))
+            if (other == null) { throw new ArgumentNullException(nameof(other)); }
+            
+            if (Name.Equals(other.Name)
+                && TitleOfFeed.Equals(other.TitleOfFeed)
+                && IsUriSchemeOnlyDifference(Link, other.Link))
             {
-                equals = true;
+                return true;
             }
 
-            return equals;
+            return false;
         }
 
-        private static bool UriDifferenceIsOnlyScheme(Uri thisLink, Uri otherLink)
+        private static bool IsUriSchemeOnlyDifference(Uri thisLink, Uri otherLink)
         {
-            if (thisLink == null || otherLink == null) return false;
+            if (thisLink == null && otherLink == null) { return true; }
+            if (thisLink == null || otherLink == null) { return false; }
 
             string thisLinkStr = string.Concat(thisLink.DnsSafeHost, thisLink.PathAndQuery);
             string otherLinkStr = string.Concat(otherLink.DnsSafeHost, otherLink.PathAndQuery);
@@ -194,7 +185,7 @@ namespace Rdr
                 return false;
             }
         }
-
+        
         public int CompareTo(RdrFeedItem other)
         {
             if (other == null) { throw new ArgumentNullException(nameof(other)); }

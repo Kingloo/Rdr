@@ -80,6 +80,8 @@ namespace Rdr
 
         public RdrEnclosure(XElement e)
         {
+            if (e == null) { throw new ArgumentNullException(nameof(e)); }
+
             foreach (XAttribute each in e.Attributes())
             {
                 if (each.Name.LocalName.Equals("url"))
