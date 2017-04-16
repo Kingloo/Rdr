@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
+using Rdr.Model;
 
 namespace Rdr
 {
@@ -11,24 +13,11 @@ namespace Rdr
         public T True { get; set; }
         public T False { get; set; }
 
-        public virtual object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-        {
-            bool b = (bool)value;
+        public virtual object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+            => (bool)value ? True : False;
 
-            if (b)
-            {
-                return this.True;
-            }
-            else
-            {
-                return this.False;
-            }
-        }
-
-        public virtual object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-        {
-            return default(T);
-        }
+        public virtual object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => default(T);
     }
 
     [ValueConversion(typeof(bool), typeof(Style))]
@@ -43,18 +32,11 @@ namespace Rdr
         public DataTemplate WithEnclosure { get; set; }
         public DataTemplate NoEnclosure { get; set; }
 
-        public override DataTemplate SelectTemplate(object item, System.Windows.DependencyObject container)
+        public override DataTemplate SelectTemplate(object item, DependencyObject container)
         {
             RdrFeedItem feedItem = (RdrFeedItem)item;
 
-            if (feedItem.HasEnclosure)
-            {
-                return WithEnclosure;
-            }
-            else
-            {
-                return NoEnclosure;
-            }
+            return feedItem.HasEnclosure ? WithEnclosure : NoEnclosure;
         }
     }
 }

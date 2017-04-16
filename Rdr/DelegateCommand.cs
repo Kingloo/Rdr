@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Threading.Tasks;
+using System.Windows.Input;
 
 namespace Rdr
 {
-    public abstract class Command : System.Windows.Input.ICommand
+    public abstract class Command : ICommand
     {
         public event EventHandler CanExecuteChanged;
 
@@ -11,13 +12,7 @@ namespace Rdr
         public abstract bool CanExecute(object parameter);
 
         public void RaiseCanExecuteChanged()
-        {
-            EventHandler handler = CanExecuteChanged;
-            if (handler != null)
-            {
-                handler(this, new EventArgs());
-            }
-        }
+            => CanExecuteChanged?.Invoke(this, new EventArgs());
     }
 
     public class DelegateCommand : Command
@@ -27,29 +22,15 @@ namespace Rdr
 
         public DelegateCommand(Action execute, Predicate<object> canExecute)
         {
-            if (execute == null)
-            {
-                throw new ArgumentNullException(nameof(execute));
-            }
-
-            if (canExecute == null)
-            {
-                throw new ArgumentNullException(nameof(canExecute));
-            }
-
-            _execute = execute;
-            _canExecute = canExecute;
+            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
+            _canExecute = canExecute ?? throw new ArgumentNullException(nameof(canExecute));
         }
 
         public override void Execute(object parameter)
-        {
-            this._execute();
-        }
+            => _execute();
 
         public override bool CanExecute(object parameter)
-        {
-            return this._canExecute(parameter);
-        }
+            => _canExecute(parameter);
     }
 
     public class DelegateCommand<T> : Command
@@ -59,29 +40,15 @@ namespace Rdr
 
         public DelegateCommand(Action<T> execute, Predicate<T> canExecute)
         {
-            if (execute == null)
-            {
-                throw new ArgumentNullException("execute", "execute was null");
-            }
-
-            if (canExecute == null)
-            {
-                throw new ArgumentNullException("canExecute", "canExecute was null");
-            }
-
-            this._execute = execute;
-            this._canExecute = canExecute;
+            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
+            _canExecute = canExecute ?? throw new ArgumentNullException(nameof(canExecute));
         }
 
         public override void Execute(object parameter)
-        {
-            _execute((T)parameter);
-        }
+            => _execute((T)parameter);
 
         public override bool CanExecute(object parameter)
-        {
-            return _canExecute((T)parameter);
-        }
+            => _canExecute((T)parameter);
     }
 
     public class DelegateCommandAsync : Command
@@ -92,97 +59,55 @@ namespace Rdr
 
         public DelegateCommandAsync(Func<Task> executeAsync, Predicate<object> canExecute)
         {
-            if (executeAsync == null)
-            {
-                throw new ArgumentNullException(nameof(executeAsync));
-            }
-
-            if (canExecute == null)
-            {
-                throw new ArgumentNullException(nameof(canExecute));
-            }
-
-            _executeAsync = executeAsync;
-            _canExecute = canExecute;
+            _executeAsync = executeAsync ?? throw new ArgumentNullException(nameof(executeAsync));
+            _canExecute = canExecute ?? throw new ArgumentNullException(nameof(canExecute));
         }
 
         public async override void Execute(object parameter)
-        {
-            await ExecuteAsync();
-        }
+            => await ExecuteAsync();
 
         private async Task ExecuteAsync()
         {
-            this._isExecuting = true;
-            this.RaiseCanExecuteChanged();
+            _isExecuting = true;
+            RaiseCanExecuteChanged();
 
-            await this._executeAsync();
+            await _executeAsync();
 
-            this._isExecuting = false;
-            this.RaiseCanExecuteChanged();
+            _isExecuting = false;
+            RaiseCanExecuteChanged();
         }
 
         public override bool CanExecute(object parameter)
-        {
-            if (this._isExecuting == true)
-            {
-                return false;
-            }
-            else
-            {
-                return this._canExecute(parameter);
-            }
-        }
+            => _isExecuting ? false : _canExecute(parameter);
     }
 
     public class DelegateCommandAsync<T> : Command
     {
-        private readonly Func<T, Task> _executeAsync;
-        private readonly Predicate<T> _canExecute;
+        private readonly Func<T, Task> _executeAsync = null;
+        private readonly Predicate<T> _canExecute = null;
         private bool _isExecuting = false;
 
         public DelegateCommandAsync(Func<T, Task> executeAsync, Predicate<T> canExecute)
         {
-            if (executeAsync == null)
-            {
-                throw new ArgumentNullException(nameof(executeAsync));
-            }
-
-            if (canExecute == null)
-            {
-                throw new ArgumentNullException(nameof(canExecute));
-            }
-
-            this._executeAsync = executeAsync;
-            this._canExecute = canExecute;
+            _executeAsync = executeAsync ?? throw new ArgumentNullException(nameof(executeAsync));
+            _canExecute = canExecute ?? throw new ArgumentNullException(nameof(canExecute));
         }
 
         public override async void Execute(object parameter)
-        {
-            await this.ExecuteAsync((T)parameter);
-        }
+            => await ExecuteAsync((T)parameter);
 
         private async Task ExecuteAsync(T parameter)
         {
-            this._isExecuting = true;
-            this.RaiseCanExecuteChanged();
+            _isExecuting = true;
+            RaiseCanExecuteChanged();
 
-            await this._executeAsync(parameter);
+            await _executeAsync(parameter);
 
-            this._isExecuting = false;
-            this.RaiseCanExecuteChanged();
+            _isExecuting = false;
+            RaiseCanExecuteChanged();
         }
 
         public override bool CanExecute(object parameter)
-        {
-            if (this._isExecuting == true)
-            {
-                return false;
-            }
-            else
-            {
-                return this._canExecute((T)parameter);
-            }
-        }
+            => _isExecuting ? false : _canExecute((T)parameter);
     }
 }

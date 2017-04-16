@@ -1,31 +1,53 @@
 ﻿using System;
-using System.Linq;
 using System.ComponentModel;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
+using Rdr.Model;
 
 namespace Rdr
 {
     public partial class MainWindow : Window
     {
-        public MainWindow()
+        private FeedManager feedManager = null;
+        
+        public MainWindow(FeedManager viewModel)
         {
             InitializeComponent();
 
-            feedManager.FeedChanged += feedManager_FeedChanged;
-        }
+            Loaded += MainWindow_Loaded;
+            KeyUp += Window_KeyUp;
+            Closing += Window_Closing;
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+            feedManager = viewModel;
+            feedManager.FeedChanged += FeedManager_FeedChanged;
+
+            DataContext = feedManager;
+        }
+        
+        private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            RdrFeed unreadCollector = feedManager.Feeds.First();
+            await feedManager.LoadFeedsAsync();
+            
+            var unreadCollector = feedManager.Feeds.SortFirst;
 
             SetFeedItemsBinding(unreadCollector);
         }
 
-        private void feedManager_FeedChanged(object sender, EventArgs e)
+        private void Window_KeyUp(object sender, KeyEventArgs e)
+        {
+            switch (e.Key)
+            {
+                case Key.Escape:
+                    Close();
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private void FeedManager_FeedChanged(object sender, EventArgs e)
         {
             RdrFeed feed = (RdrFeed)sender;
 
@@ -39,33 +61,23 @@ namespace Rdr
                 IsLiveSortingRequested = true,
                 Source = feed.Items
             };
-
-            sortByDate.SortDescriptions.Add(new SortDescription("PubDate", ListSortDirection.Descending));
-
+            
+            sortByDate.SortDescriptions.Add(
+                new SortDescription(
+                    nameof(RdrFeedItem.PubDate),
+                    ListSortDirection.Descending));
+            
             Binding itemsBinding = new Binding
             {
                 Source = sortByDate,
                 Mode = BindingMode.OneWay
             };
 
-            BindingOperations.SetBinding(ic_Items, ItemsControl.ItemsSourceProperty, itemsBinding);
+            BindingOperations.SetBinding(ic_Items,
+                ItemsControl.ItemsSourceProperty,
+                itemsBinding);
         }
-
-        private void Window_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == System.Windows.Input.Key.F1)
-            {
-                StringBuilder sb = new StringBuilder();
-
-                foreach (RdrFeedItem each in feedManager.Items)
-                {
-                    sb.AppendLine(each.ToString());
-                }
-
-                Utils.LogMessage(sb.ToString());
-            }
-        }
-
+        
         private void Window_Closing(object sender, CancelEventArgs e)
         {
             MessageBoxResult mbr = MessageBox.Show("Do you really want to Quit?", "Quit", MessageBoxButton.YesNo, MessageBoxImage.Question);

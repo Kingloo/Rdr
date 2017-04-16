@@ -1,6 +1,7 @@
 ﻿using System;
-using System.Globalization;
 using System.IO;
+
+using static System.FormattableString;
 
 namespace Rdr
 {
@@ -14,15 +15,14 @@ namespace Rdr
             IRepo feedsRepo = new TxtRepo(feedsFilePath);
 
             App app = new App(feedsRepo);
-            app.InitializeComponent();
 
             int exitCode = app.Run();
 
             if (exitCode != 0)
             {
-                string errorMessage = string.Format(CultureInfo.CurrentCulture, "exited with code {0}", exitCode);
+                string errorMessage = Invariant($"exited with code {exitCode}");
 
-                Utils.LogMessage(errorMessage);
+                Log.LogMessage(errorMessage);
             }
 
             return exitCode;

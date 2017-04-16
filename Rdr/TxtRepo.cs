@@ -7,63 +7,71 @@ namespace Rdr
 {
     public interface IRepo
     {
-        string FilePath { get; set; }
+        string FilePath { get; }
 
-        Task<IEnumerable<string>> LoadAsync();
+        Task<IReadOnlyList<Uri>> LoadAsync();
     }
 
     public class TxtRepo : IRepo
     {
-        private string _filePath = string.Empty;
-        public string FilePath
-        {
-            get
-            {
-                return _filePath;
-            }
-            set
-            {
-                _filePath = value;
-            }
-        }
+        private readonly string _filePath = string.Empty;
+        public string FilePath => _filePath;
 
         public TxtRepo(string filePath)
         {
-            if (String.IsNullOrWhiteSpace(filePath)) throw new ArgumentException("filePath was null or whitespace");
+            if (String.IsNullOrWhiteSpace(filePath))
+            {
+                throw new ArgumentNullException(nameof(filePath));
+            }
 
-            FilePath = filePath;
+            _filePath = filePath;
         }
         
-        public async Task<IEnumerable<string>> LoadAsync()
+        public async Task<IReadOnlyList<Uri>> LoadAsync()
         {
-            List<string> feeds = new List<string>();
+            var feeds = new List<Uri>();
+
+            FileStream fsAsync = null;
 
             try
             {
-                using (FileStream fsAsync = new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.None, 1024, true))
+                fsAsync = new FileStream(FilePath,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.None,
+                    4096,
+                    true);
+                
                 using (StreamReader sr = new StreamReader(fsAsync))
                 {
+                    fsAsync = null;
+
                     string line = string.Empty;
 
-                    while ((line = await sr.ReadLineAsync()) != null)
+                    while ((line = await sr.ReadLineAsync().ConfigureAwait(false)) != null)
                     {
-                        if (line.StartsWith("#") == false)
+                        if (line.StartsWith("#", StringComparison.OrdinalIgnoreCase))
                         {
-                            Uri tmp = null;
-                            if (Uri.TryCreate(line, UriKind.Absolute, out tmp))
-                            {
-                                feeds.Add(line);
-                            }
+                            continue;
+                        }
+                        
+                        if (Uri.TryCreate(line, UriKind.Absolute, out Uri uri))
+                        {
+                            feeds.Add(uri);
                         }
                     }
                 }
             }
-            catch (FileNotFoundException e)
+            catch (FileNotFoundException ex)
             {
-                Utils.LogException(e);
+                Log.LogException(ex);
+            }
+            finally
+            {
+                fsAsync?.Dispose();
             }
 
-            return feeds;
+            return feeds.AsReadOnly();
         }
     }
 }

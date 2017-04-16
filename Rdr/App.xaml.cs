@@ -6,18 +6,22 @@ namespace Rdr
 {
     public partial class App : Application
     {
-        public IRepo Repo { get; private set; }
-
-        public App(IRepo repo)
+        public App(IRepo feedsRepo)
         {
-            Repo = repo;
+            InitializeComponent();
 
             ServicePointManager.DefaultConnectionLimit = 10;
-        }
 
-        private void Application_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+            DispatcherUnhandledException += App_DispatcherUnhandledException;
+            
+            MainWindow = new MainWindow(new FeedManager(feedsRepo));
+
+            MainWindow.Show();
+        }
+        
+        private void App_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
-            Utils.LogException(e.Exception);
+            Log.LogException(e.Exception);
         }
     }
 }

@@ -2,14 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:this="clr-namespace:Rdr"
-        xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
-        Loaded="Window_Loaded"
-        KeyDown="Window_KeyDown"
-        Closing="Window_Closing">
-    
-    <Window.DataContext>
-        <this:FeedManager x:Name="feedManager" />
-    </Window.DataContext>
+        xmlns:model="clr-namespace:Rdr.Model"
+        xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase">
 
     <Window.Resources>
 
@@ -21,7 +15,7 @@
             </CollectionViewSource.SortDescriptions>
         </CollectionViewSource>
 
-        <DataTemplate DataType="{x:Type this:RdrFeed}">
+        <DataTemplate DataType="{x:Type model:RdrFeed}">
             
             <DataTemplate.Resources>
                 
@@ -80,7 +74,7 @@
                                    True="Black"
                                    False="#FF7A7A7A" />
 
-        <DataTemplate DataType="{x:Type this:RdrFeedItem}" x:Key="withEnclosureDataTemplate">
+        <DataTemplate DataType="{x:Type model:RdrFeedItem}" x:Key="withEnclosureDataTemplate">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="200" />
@@ -154,7 +148,7 @@
             </Grid>
         </DataTemplate>
 
-        <DataTemplate DataType="{x:Type this:RdrFeedItem}" x:Key="noEnclosureDataTemplate">
+        <DataTemplate DataType="{x:Type model:RdrFeedItem}" x:Key="noEnclosureDataTemplate">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="200" />
@@ -235,9 +229,6 @@
     </Window.Style>
 
     <Window.InputBindings>
-        <KeyBinding Key="Escape"
-                    Command="{Binding Path=ExitCommand, Mode=OneTime}" />
-        
         <KeyBinding Key="F5"
                     x:Name="RefreshAllFeedsKeyBinding"
                     Command="{Binding Path=RefreshAllFeedsCommandAsync, Mode=OneTime}" />
