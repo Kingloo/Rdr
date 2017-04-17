@@ -2,7 +2,7 @@
 using System.Net;
 using System.Threading.Tasks;
 
-namespace Rdr
+namespace Rdr.Extensions
 {
     public static class WebRequestExt
     {

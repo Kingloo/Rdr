@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Configuration;
-using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Cache;
 using System.Net.Http;
 using System.Threading.Tasks;
-
+using Rdr.Extensions;
 using static System.FormattableString;
 
 namespace Rdr
@@ -38,56 +37,14 @@ namespace Rdr
 
     public class Download
     {
-        public static string Website(Uri uri)
+        public static async Task<string> WebsiteAsync(HttpWebRequest request)
         {
-            if (uri == null) { throw new ArgumentNullException(nameof(uri)); }
-            
+            if (request == null) { throw new ArgumentNullException(nameof(request)); }
+
             string website = string.Empty;
-
-            HttpWebRequest request = BuildWebRequest(uri);
-            HttpWebResponse response = (HttpWebResponse)request.GetResponseExt();
-
-            if (response == null)
-            {
-                request?.Abort();
-            }
-            else
-            {
-                if (response.StatusCode == HttpStatusCode.OK)
-                {
-                    using (StreamReader sr
-                        = new StreamReader(response.GetResponseStream()))
-                    {
-                        try
-                        {
-                            website = sr.ReadToEnd();
-                        }
-                        catch (IOException ex)
-                        {
-                            string message = Invariant($"Requesting {request.RequestUri.AbsoluteUri} failed: {response.StatusCode}");
-
-                            Log.LogException(ex, message);
-                        }
-                        finally
-                        {
-                            response?.Dispose();
-                        }
-                    }
-                }
-            }
             
-            return website;
-        }
-        
-        public static async Task<string> WebsiteAsync(Uri uri)
-        {
-            if (uri == null) { throw new ArgumentNullException(nameof(uri)); }
-            
-            string website = string.Empty;
-
-            HttpWebRequest request = BuildWebRequest(uri);
             HttpWebResponse response = (HttpWebResponse)await request.GetResponseAsyncExt();
-            
+
             if (response == null)
             {
                 request?.Abort();
@@ -122,7 +79,17 @@ namespace Rdr
             return website;
         }
 
-        private static HttpWebRequest BuildWebRequest(Uri uri)
+        public static async Task<string> WebsiteAsync(Uri uri)
+        {
+            if (uri == null) { throw new ArgumentNullException(nameof(uri)); }
+            
+            HttpWebRequest request = BuildStandardRequest(uri);
+
+            return await WebsiteAsync(request)
+                .ConfigureAwait(false);
+        }
+
+        private static HttpWebRequest BuildStandardRequest(Uri uri)
         {
             HttpWebRequest req = WebRequest.CreateHttp(uri);
 
@@ -181,7 +148,7 @@ namespace Rdr
         {
             if (_file.Exists) { return DownloadResult.FileAlreadyExists; }
 
-            int memoryAndFileBuffer = 1024 * 1024 * 3;
+            int memoryAndFileBuffer = 1024 * 1024 * 3; // 3 MiB
 
             var fsAsync = new FileStream(_file.FullName,
                 FileMode.CreateNew,
@@ -195,7 +162,8 @@ namespace Rdr
                 Timeout = TimeSpan.FromSeconds(5)
             };
 
-            HttpResponseMessage response = await client.GetAsync(_uri,
+            HttpResponseMessage response = await client.GetAsync(
+                _uri,
                 HttpCompletionOption.ResponseHeadersRead)
                 .ConfigureAwait(false);
 
@@ -221,7 +189,9 @@ namespace Rdr
                     percent = totalBytesRead / length;
 
                     totalBytesRead += bytesRead;
-                    
+
+                    // without this limiter,
+                    // the event would be invoked thousands of times unnecessarily
                     if (totalBytesRead > (lastTotalBytesRead + NotifyEveryBytes))
                     {
                         OnDownloadProgress(totalBytesRead, percent);
