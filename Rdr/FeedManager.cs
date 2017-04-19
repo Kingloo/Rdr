@@ -272,7 +272,7 @@ namespace Rdr
         public async Task LoadFeedsAsync()
         {
             var feedUris = await feedsRepo.LoadAsync();
-
+            
             var feeds = feedUris
                 .Select(x => new RdrFeed(x))
                 .ToList();
