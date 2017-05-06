@@ -284,8 +284,24 @@ namespace Rdr
                 .ToList();
             
             _feeds.RemoveRange(toBeRemoved);
+
+            RemoveAFeedsUnreadItemsFromCollector(toBeRemoved);
         }
-        
+
+        private void RemoveAFeedsUnreadItemsFromCollector(List<RdrFeed> toBeRemoved)
+        {
+            foreach (var feed in toBeRemoved)
+            {
+                foreach (var item in feed.Items)
+                {
+                    if (_feeds.SortFirst.Items.Contains(item))
+                    {
+                        _feeds.SortFirst.RemoveItem(item);
+                    }
+                }
+            }
+        }
+
         // we deliberately don't cache this download command so that each enclosure gets its own
         // otherwise starting a single download would prevent starting any other
         public DelegateCommandAsync<RdrEnclosure> DownloadEnclosureCommandAsync
@@ -377,7 +393,7 @@ namespace Rdr
 
         private readonly DispatcherTimer updateAllTimer = new DispatcherTimer
         {
-            Interval = new TimeSpan(0, 25, 0)
+            Interval = TimeSpan.FromMinutes(25)
         };
         #endregion
 

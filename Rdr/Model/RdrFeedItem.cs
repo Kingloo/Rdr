@@ -204,20 +204,23 @@ namespace Rdr.Model
         {
             if (other == null) { return false; }
 
-            return Name.Equals(other.Name)
-                && TitleOfFeed.Equals(other.TitleOfFeed)
-                && IsUriSchemeOnlyDifference(Link, other.Link);
+            bool sameName = Name.Equals(other.Name);
+            bool sameFeedTitle = TitleOfFeed.Equals(other.TitleOfFeed);
+            bool sameLink = AreLinksTheSame(Link, other.Link);
+
+            return sameName && sameFeedTitle && sameLink;
         }
 
-        private static bool IsUriSchemeOnlyDifference(Uri thisLink, Uri otherLink)
+        private static bool AreLinksTheSame(Uri me, Uri other)
         {
-            //if (thisLink == null && otherLink == null) { return true; }
-            if (thisLink == null || otherLink == null) { return false; }
+            if (me == null && other == null) { return true; }
+            
+            if ((me == null) != (other == null))
+            {
+                return false;
+            }
 
-            string thisLinkStr = string.Concat(thisLink.DnsSafeHost, thisLink.PathAndQuery);
-            string otherLinkStr = string.Concat(otherLink.DnsSafeHost, otherLink.PathAndQuery);
-
-            return thisLinkStr.Equals(otherLinkStr);
+            return me.AbsolutePath.Equals(other.AbsolutePath);
         }
         
         public int CompareTo(RdrFeedItem other)
