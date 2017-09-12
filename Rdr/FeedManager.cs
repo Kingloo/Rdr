@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Windows.Threading;
 using System.Xml;
 using System.Xml.Linq;
+using Rdr.Common;
 using Rdr.Extensions;
 using Rdr.Model;
 
@@ -22,8 +23,7 @@ namespace Rdr
         #region Events
         public event EventHandler FeedChanged;
 
-        private void OnFeedChanged(RdrFeed feed)
-            => FeedChanged?.Invoke(feed, new EventArgs());
+        private void OnFeedChanged(RdrFeed feed) => FeedChanged?.Invoke(feed, new EventArgs());
         #endregion
 
         #region Commands
@@ -49,18 +49,14 @@ namespace Rdr
                     .Where(x => !x.Updating)
                     .Select(x => RefreshFeedAsync(x));
 
-                await Task.WhenAll(refreshTasks)
-                    .ConfigureAwait(false);
+                await Task.WhenAll(refreshTasks).ConfigureAwait(false);
             }   
         }
 
         // we do not cache so that we can refresh a second feed manually before the first one has finished
         public DelegateCommandAsync<RdrFeed> RefreshFeedCommandAsync
         {
-            get
-            {
-                return new DelegateCommandAsync<RdrFeed>(RefreshFeedAsync, (_) => { return true; });
-            }
+            get => new DelegateCommandAsync<RdrFeed>(RefreshFeedAsync, _ => true);
         }
 
         private async Task RefreshFeedAsync(RdrFeed feed)
@@ -72,40 +68,25 @@ namespace Rdr
 
             string websiteAsString = await GetFeed(feed.XmlUrl);
 
-            if (String.IsNullOrWhiteSpace(websiteAsString))
+            if (!String.IsNullOrWhiteSpace(websiteAsString))
             {
-                feed.Updating = false;
-                Activity = activeTasks.Any();
+                // removing this breaks something
+                //websiteAsString = websiteAsString.Replace((char)(0x1F), (char)(0x20));
 
-                return;
+                if (ParseIntoXDocument(websiteAsString, feed.XmlUrl) is XDocument x)
+                {
+                    feed.Load(x);
+
+                    AddUnreadItemsToUnreadCollector(feed.Items);
+                }
             }
-
-            // removing this breaks something
-            //websiteAsString = websiteAsString.Replace((char)(0x1F), (char)(0x20));
-
-            XDocument x = ParseIntoXDocument(websiteAsString, feed.XmlUrl);
-
-            if (x == null)
-            {
-                feed.Updating = false;
-                Activity = activeTasks.Any();
-
-                return;
-            }
-
-            feed.Load(x);
-
-            AddUnreadItemsToUnreadCollector(feed.Items);
-
+            
             feed.Updating = false;
             Activity = activeTasks.Any();
         }
 
         private static async Task<string> GetFeed(Uri uri)
-        {
-            return await Download.WebsiteAsync(uri)
-                .ConfigureAwait(false);
-        }
+            => await Download.WebsiteAsync(uri).ConfigureAwait(false);
 
         private static XDocument ParseIntoXDocument(string websiteAsString, Uri feedUri)
         {
@@ -117,9 +98,9 @@ namespace Rdr
             }
             catch (XmlException ex)
             {
-                string errorMessage = Invariant($"Parsing to XDocument failed: {feedUri.AbsoluteUri}");
+                string errorMessage = string.Format(CultureInfo.CurrentCulture, "Parsing of XML document failed: {0}", feedUri.AbsoluteUri);
 
-                Log.LogException(ex, errorMessage);
+                Log.LogException(ex, errorMessage, includeStackTrace: false);
             }
 
             return x;
@@ -201,15 +182,17 @@ namespace Rdr
 
         private void GoToItem(RdrFeedItem feedItem)
         {
-            if (feedItem.Link != null)
+            if (feedItem == null) { throw new ArgumentNullException(nameof(feedItem)); }
+
+            if (feedItem.Link is Uri uri)
             {
-                Utils.OpenUriInBrowser(feedItem.Link);
+                Utils.OpenUriInBrowser(uri);
             }
             else
             {
                 Log.LogMessage("link was null");
             }
-
+            
             MarkItemAsRead(feedItem);
         }
 
@@ -247,11 +230,13 @@ namespace Rdr
         {
             try
             {
-                Process.Start("notepad.exe", feedsRepo.FilePath);
+                Process.Start("notepad.exe", _feedsRepo.FilePath);
             }
-            catch (FileNotFoundException)
+            catch (FileNotFoundException ex)
             {
-                Process.Start(feedsRepo.FilePath);
+                Log.LogException(ex, includeStackTrace: false);
+
+                Process.Start(_feedsRepo.FilePath);
             }
         }
 
@@ -271,13 +256,11 @@ namespace Rdr
 
         public async Task LoadFeedsAsync()
         {
-            var feedUris = await feedsRepo.LoadAsync();
+            var feedUris = await _feedsRepo.LoadAsync();
+
+            var feeds = feedUris.Select(x => new RdrFeed(x));
             
-            var feeds = feedUris
-                .Select(x => new RdrFeed(x))
-                .ToList();
-            
-            _feeds.AddMissing(feeds);
+            _feeds.AddMissing(feeds.ToList());
             
             var toBeRemoved = Feeds
                 .Where(x => !feeds.Contains(x) && !x.Name.Equals("Unread"))
@@ -306,10 +289,7 @@ namespace Rdr
         // otherwise starting a single download would prevent starting any other
         public DelegateCommandAsync<RdrEnclosure> DownloadEnclosureCommandAsync
         {
-            get
-            {
-                return new DelegateCommandAsync<RdrEnclosure>(DownloadEnclosureAsync, (enclosure) => { return !enclosure.Downloading; });
-            }
+            get => new DelegateCommandAsync<RdrEnclosure>(DownloadEnclosureAsync, enclosure => !enclosure.Downloading);
         }
 
         private async Task DownloadEnclosureAsync(RdrEnclosure enclosure)
@@ -325,20 +305,13 @@ namespace Rdr
 
             FileInfo file = DetermineLocalFile(enclosure.DownloadLink);
             
-            Download dl = new Download(enclosure.DownloadLink, file, 1024 * 256); // 512 KiB
-
-            dl.DownloadProgress += (s, e) =>
-            {
-                Utils.DispatchSafely(Dispatcher.CurrentDispatcher, () =>
-                {
-                    enclosure.ButtonText = e.Percent.ToString(format);
-                },
-                DispatcherPriority.ApplicationIdle);
-            };
-
+            var download = new Download(enclosure.DownloadLink, file);
+            
             enclosure.Downloading = true;
 
-            var result = await dl.ToFileAsync(false);
+            var result = await download.ToFileAsync(
+                false,
+                new Progress<decimal>(percent => enclosure.ButtonText = percent.ToString(format)));
 
             enclosure.Downloading = false;
 
@@ -362,8 +335,9 @@ namespace Rdr
         private FileInfo DetermineLocalFile(Uri uri)
         {
             string filename = uri.Segments.Last();
+            string filePath = Path.Combine(downloadDirectory, filename);
 
-            return new FileInfo(Path.Combine(downloadDirectory, filename));
+            return new FileInfo(filePath);
         }
 
         private static string GetPercentFormat()
@@ -373,7 +347,8 @@ namespace Rdr
             string separator = numberFormat.PercentDecimalSeparator;
             string symbol = numberFormat.PercentSymbol;
 
-            return $"0{separator}0 {symbol}";
+            //return $"0{separator}0 {symbol}";
+            return string.Format(CultureInfo.CurrentCulture, "0{0}0 {1}", separator, symbol);
         }
 
         private bool CanExecute(object _) => true;
@@ -383,7 +358,7 @@ namespace Rdr
 
         #region Fields
         private const string appName = "Rdr";
-        private readonly IRepo feedsRepo = null;
+        private readonly IRepo _feedsRepo = null;
         private IEnumerable<RdrFeed> activeTasks;
 
         private readonly string downloadDirectory
@@ -406,10 +381,7 @@ namespace Rdr
         private bool _activity = false;
         public bool Activity
         {
-            get
-            {
-                return this._activity;
-            }
+            get => _activity;
             set
             {
                 if (_activity != value)
@@ -438,7 +410,7 @@ namespace Rdr
 
         public FeedManager(IRepo feedsRepo)
         {
-            this.feedsRepo = feedsRepo;
+            _feedsRepo = feedsRepo ?? throw new ArgumentNullException(nameof(feedsRepo));
 
             activeTasks = Feeds.Where(x => x.Updating);
             
@@ -456,8 +428,7 @@ namespace Rdr
                     .Where(x => !x.Updating)
                     .Select(x => RefreshFeedAsync(x));
 
-                await Task.WhenAll(refreshTasks)
-                    .ConfigureAwait(false);
+                await Task.WhenAll(refreshTasks).ConfigureAwait(false);
             }
 
             _feeds.DoSorting();
@@ -470,7 +441,7 @@ namespace Rdr
         {
             StringBuilder sb = new StringBuilder();
 
-            sb.AppendLine(GetType().ToString());
+            sb.AppendLine(GetType().FullName);
             sb.AppendLine(Invariant($"Feeds: {Feeds.Count}"));
 
             return sb.ToString();

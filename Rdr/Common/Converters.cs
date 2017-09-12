@@ -6,7 +6,7 @@ using System.Windows.Data;
 using System.Windows.Media;
 using Rdr.Model;
 
-namespace Rdr
+namespace Rdr.Common
 {
     public abstract class GenericBooleanConverter<T> : IValueConverter
     {

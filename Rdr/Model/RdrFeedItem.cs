@@ -55,6 +55,8 @@ namespace Rdr.Model
 
         public RdrFeedItem(XElement element, string titleOfFeed)
         {
+            if (element == null) { throw new ArgumentNullException(nameof(element)); }
+
             _titleOfFeed = titleOfFeed;
 
             _name = GetName(element.Elements()
@@ -245,7 +247,7 @@ namespace Rdr.Model
         {
             StringBuilder sb = new StringBuilder();
 
-            sb.AppendLine(GetType().Name);
+            sb.AppendLine(GetType().FullName);
             sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "Name: {0}", Name));
             sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "TitleOfFeed: {0}", TitleOfFeed));
 
@@ -258,7 +260,7 @@ namespace Rdr.Model
                 sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "Link: {0}", Link.AbsoluteUri));
             }
 
-            sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "PubDate: {0}", PubDate.ToString()));
+            sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "PubDate: {0}", PubDate.ToString(CultureInfo.CurrentCulture)));
             sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "Unread: {0}", Unread.ToString()));
             sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "Has enclosure: {0}", HasEnclosure.ToString()));
 

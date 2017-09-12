@@ -112,3 +112,4 @@ UpgradeLog*.XML
 Service References/
 *.pfx
 BuildProcessTemplates/
+.vs/

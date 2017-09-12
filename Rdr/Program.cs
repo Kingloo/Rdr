@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-
+using Rdr.Common;
 using static System.FormattableString;
 
 namespace Rdr

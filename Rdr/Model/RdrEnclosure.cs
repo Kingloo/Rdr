@@ -66,9 +66,9 @@ namespace Rdr.Model
 
         public RdrEnclosure(RdrFeedItem parent, XElement element)
         {
-            if (element == null) { throw new ArgumentNullException(nameof(element)); }
-
             _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+            if (element == null) { throw new ArgumentNullException(nameof(element)); }
+            
             _downloadLink = GetDownloadLink(element.Attributes());
             _fileSize = GetFileSize(element.Attributes());
         }

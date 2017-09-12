@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using System.Windows.Input;
 
-namespace Rdr
+namespace Rdr.Common
 {
     public abstract class Command : ICommand
     {

@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Windows;
 using System.Windows.Threading;
+using Rdr.Common;
 
 namespace Rdr
 {
@@ -21,7 +22,7 @@ namespace Rdr
         
         private void App_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
-            Log.LogException(e.Exception);
+            Log.LogException(e.Exception, includeStackTrace: true);
         }
     }
 }

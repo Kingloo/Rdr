@@ -108,12 +108,14 @@ namespace Rdr.Model
 
         public RdrFeed(Uri xmlUrl)
         {
-            _xmlUrl = xmlUrl;
+            _xmlUrl = xmlUrl ?? throw new ArgumentNullException(nameof(xmlUrl));
             _name = xmlUrl.AbsoluteUri;
         }
 
         public void Load(XDocument doc)
         {
+            if (doc == null) { throw new ArgumentNullException(nameof(doc)); }
+
             if (doc.Root.Name.LocalName.Equals("feed"))
             {
                 Name = GetTitle(doc.Root);
@@ -159,7 +161,7 @@ namespace Rdr.Model
                 .Select(x => new RdrFeedItem(x, Name))
                 .Where(x => x.PubDate > (DateTime.Now - daysWorthOfItemsToKeep))
                 .ToList();
-
+            
             _items.AddMissing(itemsFromLastFewDays);
         }
 

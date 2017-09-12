@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Rdr.Common;
 
 namespace Rdr
 {
@@ -40,7 +41,7 @@ namespace Rdr
                     FileAccess.Read,
                     FileShare.None,
                     4096,
-                    true);
+                    useAsync: true);
                 
                 using (StreamReader sr = new StreamReader(fsAsync))
                 {
@@ -64,7 +65,7 @@ namespace Rdr
             }
             catch (FileNotFoundException ex)
             {
-                Log.LogException(ex);
+                Log.LogException(ex, includeStackTrace: false);
             }
             finally
             {

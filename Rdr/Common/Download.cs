@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Configuration;
+using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Cache;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Rdr.Extensions;
-using static System.FormattableString;
 
-namespace Rdr
+namespace Rdr.Common
 {
     public enum DownloadResult
     {
@@ -19,22 +19,7 @@ namespace Rdr
         FileError = 4,
         FileAlreadyExists = 5
     }
-
-    public class DownloadEventArgs : EventArgs
-    {
-        private readonly int _totalBytes = 0;
-        public int TotalBytes => _totalBytes;
-
-        private readonly decimal _percent = 0m;
-        public decimal Percent => _percent;
-
-        public DownloadEventArgs(int totalBytes, decimal percent)
-        {
-            _totalBytes = totalBytes;
-            _percent = percent;
-        }
-    }
-
+    
     public class Download
     {
         public static async Task<string> WebsiteAsync(HttpWebRequest request)
@@ -53,20 +38,17 @@ namespace Rdr
             {
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
-                    using (StreamReader sr
-                        = new StreamReader(response.GetResponseStream()))
+                    using (StreamReader sr = new StreamReader(response.GetResponseStream()))
                     {
                         try
                         {
-                            website = await sr.ReadToEndAsync()
-                                .ConfigureAwait(false);
+                            website = await sr.ReadToEndAsync().ConfigureAwait(false);
                         }
                         catch (IOException ex)
                         {
-                            string message = Invariant($"Requesting {request.RequestUri.AbsoluteUri} failed: {response.StatusCode}");
+                            string message = string.Format(CultureInfo.CurrentCulture, "Requesting {0} failed: {1}", request.RequestUri.AbsoluteUri, response.StatusCode);
 
-                            await Log.LogExceptionAsync(ex, message)
-                                .ConfigureAwait(false);
+                            await Log.LogExceptionAsync(ex, message, includeStackTrace: false).ConfigureAwait(false);
                         }
                         finally
                         {
@@ -85,8 +67,7 @@ namespace Rdr
             
             HttpWebRequest request = BuildStandardRequest(uri);
 
-            return await WebsiteAsync(request)
-                .ConfigureAwait(false);
+            return await WebsiteAsync(request).ConfigureAwait(false);
         }
 
         private static HttpWebRequest BuildStandardRequest(Uri uri)
@@ -120,31 +101,15 @@ namespace Rdr
 
         private readonly FileInfo _file = null;
         public FileInfo File => _file;
-
-        private int _notifyEveryBytes = 1024 * 100; // 100 KiB default
-        public int NotifyEveryBytes => _notifyEveryBytes;
         #endregion
-
-        #region Events
-        public event EventHandler<DownloadEventArgs> DownloadProgress;
-
-        private void OnDownloadProgress(int totalBytes, decimal percent)
-            => DownloadProgress?.Invoke(this, new DownloadEventArgs(totalBytes, percent));
-        #endregion
-
+        
         public Download(Uri uri, FileInfo file)
         {
             _uri = uri ?? throw new ArgumentNullException(nameof(uri));
             _file = file ?? throw new ArgumentNullException(nameof(file));
         }
-
-        public Download(Uri uri, FileInfo file, int notifyEveryBytes)
-            : this(uri, file)
-        {
-            _notifyEveryBytes = notifyEveryBytes;
-        }
-
-        public async Task<DownloadResult> ToFileAsync(bool deleteOnFailure)
+        
+        public async Task<DownloadResult> ToFileAsync(bool deleteOnFailure, IProgress<decimal> progress)
         {
             if (_file.Exists) { return DownloadResult.FileAlreadyExists; }
 
@@ -171,7 +136,6 @@ namespace Rdr
             
             int bytesRead = 0;
             int totalBytesRead = 0;
-            int lastTotalBytesRead = 0;
             decimal length = Convert.ToDecimal(response.Content.Headers.ContentLength);
             decimal percent = 0m;
             byte[] buffer = new byte[memoryAndFileBuffer];
@@ -188,19 +152,11 @@ namespace Rdr
                 {
                     percent = totalBytesRead / length;
 
+                    progress.Report(percent);
+
                     totalBytesRead += bytesRead;
-
-                    // without this limiter,
-                    // the event would be invoked thousands of times unnecessarily
-                    if (totalBytesRead > (lastTotalBytesRead + NotifyEveryBytes))
-                    {
-                        OnDownloadProgress(totalBytesRead, percent);
-
-                        lastTotalBytesRead = totalBytesRead;
-                    }
                     
-                    await fsAsync.WriteAsync(buffer, 0, bytesRead)
-                        .ConfigureAwait(false);
+                    await fsAsync.WriteAsync(buffer, 0, bytesRead).ConfigureAwait(false);
                 }
             }
             catch (IOException)
@@ -216,8 +172,7 @@ namespace Rdr
             {
                 if (fsAsync != null)
                 {
-                    await fsAsync.FlushAsync()
-                        .ConfigureAwait(false);
+                    await fsAsync.FlushAsync().ConfigureAwait(false);
 
                     fsAsync.Dispose();
                 }

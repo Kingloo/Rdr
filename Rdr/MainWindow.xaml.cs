@@ -10,20 +10,22 @@ namespace Rdr
 {
     public partial class MainWindow : Window
     {
-        private FeedManager feedManager = null;
+        private readonly FeedManager feedManager = null;
         
         public MainWindow(FeedManager viewModel)
         {
+            feedManager = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
+
             InitializeComponent();
 
             Loaded += MainWindow_Loaded;
-            KeyUp += Window_KeyUp;
+            //KeyUp += Window_KeyUp;
+            KeyDown += MainWindow_KeyDown;
             Closing += Window_Closing;
-
-            feedManager = viewModel;
-            feedManager.FeedChanged += FeedManager_FeedChanged;
-
+            
             DataContext = feedManager;
+
+            feedManager.FeedChanged += FeedManager_FeedChanged;
         }
         
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -35,7 +37,7 @@ namespace Rdr
             SetFeedItemsBinding(unreadCollector);
         }
 
-        private void Window_KeyUp(object sender, KeyEventArgs e)
+        private void MainWindow_KeyDown(object sender, KeyEventArgs e)
         {
             switch (e.Key)
             {
@@ -49,9 +51,10 @@ namespace Rdr
 
         private void FeedManager_FeedChanged(object sender, EventArgs e)
         {
-            RdrFeed feed = (RdrFeed)sender;
-
-            SetFeedItemsBinding(feed);
+            if (sender is RdrFeed feed)
+            {
+                SetFeedItemsBinding(feed);
+            }
         }
 
         private void SetFeedItemsBinding(RdrFeed feed)
@@ -80,19 +83,15 @@ namespace Rdr
         
         private void Window_Closing(object sender, CancelEventArgs e)
         {
-            MessageBoxResult mbr = MessageBox.Show("Do you really want to Quit?", "Quit", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            MessageBoxResult mbr = MessageBox.Show(
+                "Do you really want to Quit?",
+                "Quit",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
 
-            switch (mbr)
+            if (mbr == MessageBoxResult.No)
             {
-                case MessageBoxResult.Yes:
-                    e.Cancel = false;
-                    break;
-                case MessageBoxResult.No:
-                    e.Cancel = true;
-                    break;
-                default:
-                    e.Cancel = true;
-                    break;
+                e.Cancel = true;
             }
         }
     }
