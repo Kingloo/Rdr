@@ -27,34 +27,42 @@ namespace Rdr.Common
             if (request == null) { throw new ArgumentNullException(nameof(request)); }
 
             string website = string.Empty;
-            
-            HttpWebResponse response = (HttpWebResponse)await request.GetResponseAsyncExt();
+
+            HttpWebResponse response = (HttpWebResponse)await request.GetResponseAsyncExt().ConfigureAwait(false);
 
             if (response == null)
             {
                 request?.Abort();
-            }
-            else
-            {
-                if (response.StatusCode == HttpStatusCode.OK)
-                {
-                    using (StreamReader sr = new StreamReader(response.GetResponseStream()))
-                    {
-                        try
-                        {
-                            website = await sr.ReadToEndAsync().ConfigureAwait(false);
-                        }
-                        catch (IOException ex)
-                        {
-                            string message = string.Format(CultureInfo.CurrentCulture, "Requesting {0} failed: {1}", request.RequestUri.AbsoluteUri, response.StatusCode);
 
-                            await Log.LogExceptionAsync(ex, message, includeStackTrace: false).ConfigureAwait(false);
-                        }
-                        finally
-                        {
-                            response?.Dispose();
-                        }
-                    }
+                return website;
+            }
+
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                response.Dispose();
+
+                return website;
+            }
+
+            using (StreamReader sr = new StreamReader(response.GetResponseStream()))
+            {
+                try
+                {
+                    website = await sr.ReadToEndAsync().ConfigureAwait(false);
+                }
+                catch (IOException ex)
+                {
+                    string message = string.Format(
+                        CultureInfo.CurrentCulture,
+                        "Requesting {0} failed: {1}",
+                        request.RequestUri.AbsoluteUri,
+                        response.StatusCode);
+
+                    await Log.LogExceptionAsync(ex, message, includeStackTrace: false).ConfigureAwait(false);
+                }
+                finally
+                {
+                    response?.Dispose();
                 }
             }
 
@@ -111,28 +119,26 @@ namespace Rdr.Common
         
         public async Task<DownloadResult> ToFileAsync(bool deleteOnFailure, IProgress<decimal> progress)
         {
-            if (_file.Exists) { return DownloadResult.FileAlreadyExists; }
+            if (_file.Exists)
+            {
+                return DownloadResult.FileAlreadyExists;
+            }
 
             int memoryAndFileBuffer = 1024 * 1024 * 3; // 3 MiB
+            
+            var fsAsync = CreateFileStream(_file, memoryAndFileBuffer);
 
-            var fsAsync = new FileStream(_file.FullName,
-                FileMode.CreateNew,
-                FileAccess.Write,
-                FileShare.None,
-                memoryAndFileBuffer,
-                FileOptions.Asynchronous);
-
-            var client = new HttpClient
-            {
-                Timeout = TimeSpan.FromSeconds(5)
-            };
+            var client = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
 
             HttpResponseMessage response = await client.GetAsync(
                 _uri,
                 HttpCompletionOption.ResponseHeadersRead)
                 .ConfigureAwait(false);
 
-            if (!response.IsSuccessStatusCode) { return DownloadResult.UriError; }
+            if (!response.IsSuccessStatusCode)
+            {
+                return DownloadResult.UriError;
+            }
             
             int bytesRead = 0;
             int totalBytesRead = 0;
@@ -140,15 +146,11 @@ namespace Rdr.Common
             decimal percent = 0m;
             byte[] buffer = new byte[memoryAndFileBuffer];
 
-            Stream input = await response.Content.ReadAsStreamAsync()
-                .ConfigureAwait(false);
+            Stream input = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
             
             try
             {
-                while ((bytesRead = await input
-                .ReadAsync(buffer, 0, buffer.Length)
-                .ConfigureAwait(false))
-                > 0)
+                while ((bytesRead = await input.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false)) > 0)
                 {
                     percent = totalBytesRead / length;
 
@@ -183,6 +185,21 @@ namespace Rdr.Common
             }
 
             return DownloadResult.Success;
+        }
+
+
+        private static FileStream CreateFileStream(FileInfo file)
+            => CreateFileStream(file, 1024);
+
+        private static FileStream CreateFileStream(FileInfo file, int bufferSize)
+        {
+            return new FileStream(
+                file.FullName,
+                FileMode.CreateNew,
+                FileAccess.Write,
+                FileShare.None,
+                bufferSize,
+                FileOptions.Asynchronous);
         }
     }
 }

@@ -111,7 +111,7 @@ namespace Rdr.Model
             _xmlUrl = xmlUrl ?? throw new ArgumentNullException(nameof(xmlUrl));
             _name = xmlUrl.AbsoluteUri;
         }
-
+        
         public void Load(XDocument doc)
         {
             if (doc == null) { throw new ArgumentNullException(nameof(doc)); }
@@ -185,7 +185,7 @@ namespace Rdr.Model
             }
         }
 
-        private int UnreadItemsCount() => _items.Where(x => !x.Unread).Count();
+        private int UnreadItemsCount() => _items.Where(x => x.Unread).Count();
 
         public int CompareTo(RdrFeed other)
         {
