@@ -3,231 +3,194 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Rdr.Common
 {
     public static class Log
     {
-        private static int rounds = 5;
-        private static string logFilePath = GetLogFilePath();
+        private static FileInfo logFile = GetLogFile();
 
-        private static string GetLogFilePath()
+        private static FileInfo GetLogFile()
         {
-            string dir = string.Empty;
+            string directory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
-            try
+            if (!Directory.Exists(directory))
             {
-                dir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            }
-            catch (PlatformNotSupportedException)
-            {
-                dir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                throw new DirectoryNotFoundException(nameof(directory));
             }
 
             string filename = "logfile.txt";
+            
+            string fullPath = Path.Combine(directory, filename);
 
-            return Path.Combine(dir, filename);
+            return File.Exists(fullPath) ? new FileInfo(fullPath) : CreateLogFile(fullPath);
         }
+
+        private static FileInfo CreateLogFile(string fullPath)
+        {
+            using (StreamWriter sw = File.CreateText(fullPath))
+            {
+                return new FileInfo(fullPath);
+            }
+        }
+
 
         public static void LogMessage(string message)
         {
-            if (message == null) { throw new ArgumentNullException(nameof(message)); }
+            string text = FormatMessage(message);
 
-            WriteTextToFile(message, rounds);
+            WriteToFile(text);
         }
 
         public static async Task LogMessageAsync(string message)
         {
-            if (message == null) { throw new ArgumentNullException(nameof(message)); }
+            string text = FormatMessage(message);
 
-            await WriteTextToFileAsync(message, rounds)
-                .ConfigureAwait(false);
+            await WriteToFileAsync(text).ConfigureAwait(false);
         }
 
+
+        public static void LogException(Exception ex)
+            => LogException(ex, string.Empty, false);
+
+        public static void LogException(Exception ex, string message)
+            => LogException(ex, message, false);
 
         public static void LogException(Exception ex, bool includeStackTrace)
             => LogException(ex, string.Empty, includeStackTrace);
 
         public static void LogException(Exception ex, string message, bool includeStackTrace)
         {
-            if (ex == null) { throw new ArgumentNullException(nameof(ex)); }
-            if (message == null) { throw new ArgumentNullException(nameof(message)); }
+            if (ex == null) { return; }
 
             StringBuilder sb = new StringBuilder();
 
-            if (!String.IsNullOrWhiteSpace(message))
+            if (String.IsNullOrWhiteSpace(message))
             {
-                sb.AppendLine(message);
+                sb.AppendLine(
+                    string.Format(
+                        CultureInfo.CurrentCulture,
+                        "{0} - {1}",
+                        ex.GetType().FullName,
+                        ex.Message));
             }
-
-            sb.AppendLine(ex.GetType().Name);
-            sb.AppendLine(ex.Message);
+            else
+            {
+                sb.AppendLine(
+                    string.Format(
+                        CultureInfo.CurrentCulture,
+                        "{0} - {1} - {2}",
+                        ex.GetType().FullName,
+                        ex.Message,
+                        message));
+            }
 
             if (includeStackTrace)
             {
                 sb.AppendLine(ex.StackTrace);
             }
-            
-            WriteTextToFile(sb.ToString(), rounds);
+
+            LogMessage(sb.ToString());
         }
+
+        public static async Task LogExceptionAsync(Exception ex)
+            => await LogExceptionAsync(ex, string.Empty, false).ConfigureAwait(false);
+
+        public static async Task LogExceptionAsync(Exception ex, string message)
+            => await LogExceptionAsync(ex, message, false).ConfigureAwait(false);
 
         public static async Task LogExceptionAsync(Exception ex, bool includeStackTrace)
             => await LogExceptionAsync(ex, string.Empty, includeStackTrace).ConfigureAwait(false);
 
         public static async Task LogExceptionAsync(Exception ex, string message, bool includeStackTrace)
         {
-            if (ex == null) { throw new ArgumentNullException(nameof(ex)); }
-            if (message == null) { throw new ArgumentNullException(nameof(message)); }
+            if (ex == null) { return; }
 
             StringBuilder sb = new StringBuilder();
-
-            if (!String.IsNullOrWhiteSpace(message))
+            
+            if (String.IsNullOrWhiteSpace(message))
             {
-                sb.AppendLine(message);
+                sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "{0} - {1}", ex.GetType().FullName, ex.Message));
             }
-
-            sb.AppendLine(ex.GetType().Name);
-            sb.AppendLine(ex.Message);
-
+            else
+            {
+                sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "{0} - {1} - {2}", ex.GetType().FullName, ex.Message, message));
+            }
+            
             if (includeStackTrace)
             {
                 sb.AppendLine(ex.StackTrace);
             }
             
-            await WriteTextToFileAsync(sb.ToString(), rounds).ConfigureAwait(false);
+            await LogMessageAsync(sb.ToString()).ConfigureAwait(false);
         }
 
 
-        private static string PrepareLogMessage(string text)
+        private static string FormatMessage(string message)
         {
-            StringBuilder sb = new StringBuilder();
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss (zzz)", CultureInfo.CurrentCulture);
+            string processName = Process.GetCurrentProcess().MainModule.ModuleName;
 
-            DateTime time = DateTime.Now;
-            string process = Process.GetCurrentProcess().MainModule.ModuleName;
-
-            string log = string.Format(CultureInfo.CurrentCulture, "{0} - {1}", time, process);
-
-            sb.AppendLine(log);
-            sb.AppendLine(text);
-
-            return sb.ToString();
+            return string.Format(CultureInfo.CurrentCulture, "{0} - {1} - {2}", timestamp, processName, message);
         }
-        
-        private static void WriteTextToFile(string text, int rounds)
+
+
+        private static void WriteToFile(string text)
         {
-            if (text == null) { throw new ArgumentNullException(nameof(text)); }
-            if (rounds < 1) { throw new ArgumentException("WriteTextToFile: rounds cannot be < 1"); }
-
-            string log = PrepareLogMessage(text);
-
-            bool tryAgain = false;
-
             FileStream fs = null;
 
             try
             {
-                fs = new FileStream(logFilePath,
+                fs = new FileStream(
+                    logFile.FullName,
                     FileMode.Append,
                     FileAccess.Write,
                     FileShare.None,
                     4096,
-                    useAsync: false);
+                    FileOptions.None);
 
                 using (StreamWriter sw = new StreamWriter(fs))
                 {
                     fs = null;
 
-                    sw.WriteLine(log);
+                    sw.Write(text);
                 }
             }
-            catch (IOException)
-            {
-                tryAgain = (rounds > 1);
-            }
+            catch (FileNotFoundException) { }
+            catch (IOException) { }
             finally
             {
-                fs?.Dispose();
-            }
-
-            if (tryAgain)
-            {
-                int variation = DateTime.UtcNow.Millisecond;
-
-                /*
-                 * we want the delay to increase as the number of attempts left decreases
-                 * as rounds increases, (1 / rounds) decreases
-                 * => as (1 / rounds) decreases, (25 / (1 / rounds)) increases 
-                 * 
-                 * we convert rounds to decimal because otherwise it would do integer division
-                 * e.g. 1 / 3 = 0
-                 */
-                decimal fixedWait = 25 / (1 / Convert.ToDecimal(rounds));
-
-                int toWait = Convert.ToInt32(fixedWait) + variation;
-
-                Thread.Sleep(toWait);
-
-                WriteTextToFile(log, rounds - 1);
+                fs?.Close();
             }
         }
-        
-        private static async Task WriteTextToFileAsync(string text, int rounds)
+
+        private static async Task WriteToFileAsync(string text)
         {
-            if (text == null) { throw new ArgumentNullException(nameof(text)); }
-            if (rounds < 1) { throw new ArgumentException("WriteTextToFileAsync: rounds cannot be < 1"); }
-
-            string log = PrepareLogMessage(text);
-
-            bool tryAgain = false;
-
             FileStream fsAsync = null;
 
             try
             {
-                fsAsync = new FileStream(logFilePath,
+                fsAsync = new FileStream(
+                    logFile.FullName,
                     FileMode.Append,
                     FileAccess.Write,
                     FileShare.None,
                     4096,
-                    useAsync: true);
+                    FileOptions.Asynchronous);
 
                 using (StreamWriter sw = new StreamWriter(fsAsync))
                 {
                     fsAsync = null;
 
-                    await sw.WriteLineAsync(log).ConfigureAwait(false);
+                    await sw.WriteAsync(text).ConfigureAwait(false);
                 }
             }
-            catch (IOException)
-            {
-                tryAgain = (rounds > 1);
-            }
+            catch (FileNotFoundException) { }
+            catch (IOException) { }
             finally
             {
-                fsAsync?.Dispose();
-            }
-
-            if (tryAgain)
-            {
-                int variation = DateTime.UtcNow.Millisecond;
-
-                /*
-                 * we want the delay to increase as the number of attempts left decreases
-                 * as rounds increases, (1 / rounds) decreases
-                 * => as (1 / rounds) decreases, (25 / (1 / rounds)) increases 
-                 * 
-                 * we convert rounds to decimal because otherwise it would do integer division
-                 * e.g. 1 / 3 = 0
-                 */
-                decimal fixedWait = 25 / (1 / Convert.ToDecimal(rounds));
-
-                int toWait = Convert.ToInt32(fixedWait) + variation;
-
-                await Task.Delay(toWait).ConfigureAwait(false);
-
-                await WriteTextToFileAsync(log, rounds - 1).ConfigureAwait(false);
+                fsAsync?.Close();
             }
         }
     }

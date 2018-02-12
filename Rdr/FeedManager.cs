@@ -230,13 +230,13 @@ namespace Rdr
         {
             try
             {
-                Process.Start("notepad.exe", _feedsRepo.FilePath);
+                Process.Start("notepad.exe", _feedsRepo.File.FullName);
             }
             catch (FileNotFoundException ex)
             {
                 Log.LogException(ex, includeStackTrace: false);
 
-                Process.Start(_feedsRepo.FilePath);
+                Process.Start(_feedsRepo.File.FullName);
             }
         }
 

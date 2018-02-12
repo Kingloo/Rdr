@@ -8,24 +8,19 @@ namespace Rdr
 {
     public interface IRepo
     {
-        string FilePath { get; }
+        FileInfo File { get; }
 
         Task<IReadOnlyList<Uri>> LoadAsync();
     }
 
     public class TxtRepo : IRepo
     {
-        private readonly string _filePath = string.Empty;
-        public string FilePath => _filePath;
+        private readonly FileInfo _file = null;
+        public FileInfo File => _file;
 
-        public TxtRepo(string filePath)
+        public TxtRepo(FileInfo file)
         {
-            if (String.IsNullOrWhiteSpace(filePath))
-            {
-                throw new ArgumentNullException(nameof(filePath));
-            }
-
-            _filePath = filePath;
+            _file = file ?? throw new ArgumentNullException(nameof(file));
         }
         
         public async Task<IReadOnlyList<Uri>> LoadAsync()
@@ -36,12 +31,13 @@ namespace Rdr
 
             try
             {
-                fsAsync = new FileStream(FilePath,
+                fsAsync = new FileStream(
+                    File.FullName,
                     FileMode.Open,
                     FileAccess.Read,
                     FileShare.None,
                     4096,
-                    useAsync: true);
+                    FileOptions.Asynchronous | FileOptions.SequentialScan);
                 
                 using (StreamReader sr = new StreamReader(fsAsync))
                 {
