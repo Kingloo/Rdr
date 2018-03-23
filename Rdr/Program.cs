@@ -1,61 +1,43 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using Rdr.Common;
-using static System.FormattableString;
 
 namespace Rdr
 {
     public static class Program
     {
+        private static string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+        private static string myDocuments = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+#if DEBUG
+        private static string filename = "RdrFeeds-test.txt";
+#else
+        private static string filename = "RdrFeeds.txt";
+#endif
+
         [STAThread]
         public static int Main()
         {
-            FileInfo feedsFile = GetFeedsFile();
+            string feedsFilePath = Path.Combine(myDocuments, filename);
+            FileInfo feedsFile = new FileInfo(feedsFilePath);
 
-            if (feedsFile == null)
-            {
-                return -1;
-            }
+            string downloadDirectoryPath = Path.Combine(userProfile, "share");
+            DirectoryInfo downloadDirectory = new DirectoryInfo(downloadDirectoryPath);
 
-            IRepo feedsRepo = new TxtRepo(feedsFile);
-
-            App app = new App(feedsRepo);
+            App app = new App(feedsFile, downloadDirectory);
 
             int exitCode = app.Run();
 
             if (exitCode != 0)
             {
-                string errorMessage = Invariant($"exited with code {exitCode}");
+                string errorMessage = string.Format(CultureInfo.CurrentCulture, "exited with code {0}", exitCode);
 
                 Log.LogMessage(errorMessage);
             }
 
             return exitCode;
-        }
-
-        private static FileInfo GetFeedsFile()
-        {
-            string dir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-
-            if (String.IsNullOrWhiteSpace(dir))
-            {
-                return null;
-            }
-
-#if DEBUG
-            string filename = "RdrFeeds-test.txt";
-#else
-            string filename = "RdrFeeds.txt";
-#endif
-
-            string fullPath = Path.Combine(dir, filename);
-            
-            if (!File.Exists(fullPath))
-            {
-                using (StreamWriter sw = File.CreateText(fullPath)) { }
-            }
-            
-            return new FileInfo(fullPath);
         }
     }
 }

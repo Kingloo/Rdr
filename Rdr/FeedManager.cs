@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -11,10 +10,9 @@ using System.Windows.Threading;
 using System.Xml;
 using System.Xml.Linq;
 using Rdr.Common;
+using Rdr.DataAccess;
 using Rdr.Extensions;
 using Rdr.Model;
-
-using static System.FormattableString;
 
 namespace Rdr
 {
@@ -65,15 +63,15 @@ namespace Rdr
 
             feed.Updating = true;
             Activity = activeTasks.Any();
+            
+            string website = await Download.WebsiteAsync(feed.XmlUrl);
 
-            string websiteAsString = await GetFeed(feed.XmlUrl);
-
-            if (!String.IsNullOrWhiteSpace(websiteAsString))
+            if (!String.IsNullOrWhiteSpace(website))
             {
                 // removing this breaks something
                 //websiteAsString = websiteAsString.Replace((char)(0x1F), (char)(0x20));
 
-                if (ParseIntoXDocument(websiteAsString, feed.XmlUrl) is XDocument x)
+                if (ParseIntoXDocument(website, feed.XmlUrl) is XDocument x)
                 {
                     feed.Load(x);
 
@@ -84,10 +82,7 @@ namespace Rdr
             feed.Updating = false;
             Activity = activeTasks.Any();
         }
-
-        private static async Task<string> GetFeed(Uri uri)
-            => await Download.WebsiteAsync(uri).ConfigureAwait(false);
-
+        
         private static XDocument ParseIntoXDocument(string websiteAsString, Uri feedUri)
         {
             XDocument x = null;
@@ -226,20 +221,8 @@ namespace Rdr
             }
         }
 
-        private void OpenFeedsFile()
-        {
-            try
-            {
-                Process.Start("notepad.exe", _feedsRepo.File.FullName);
-            }
-            catch (FileNotFoundException ex)
-            {
-                Log.LogException(ex, includeStackTrace: false);
-
-                Process.Start(_feedsRepo.File.FullName);
-            }
-        }
-
+        private void OpenFeedsFile() => feedsFile.Launch();
+        
         private DelegateCommandAsync _loadFeedsCommandAsync = null;
         public DelegateCommandAsync LoadFeedsCommandAsync
         {
@@ -256,14 +239,27 @@ namespace Rdr
 
         public async Task LoadFeedsAsync()
         {
-            var feedUris = await _feedsRepo.LoadAsync();
+            string[] feedUris = await FileSystem.GetLinesAsync(feedsFile, true);
 
-            var feeds = feedUris.Select(x => new RdrFeed(x));
-            
-            _feeds.AddMissing(feeds.ToList());
+            var feedsOnThisLoad = new List<RdrFeed>();
+
+            foreach (string each in feedUris)
+            {
+                if (each.StartsWith("#"))
+                {
+                    continue;
+                }
+
+                if (Uri.TryCreate(each, UriKind.Absolute, out Uri uri))
+                {
+                    feedsOnThisLoad.Add(new RdrFeed(uri));
+                }
+            }
+
+            _feeds.AddMissing(feedsOnThisLoad);
             
             var toBeRemoved = Feeds
-                .Where(x => !feeds.Contains(x) && !x.Name.Equals("Unread"))
+                .Where(x => !feedsOnThisLoad.Contains(x) && !x.Name.Equals("Unread"))
                 .ToList();
             
             _feeds.RemoveRange(toBeRemoved);
@@ -296,7 +292,9 @@ namespace Rdr
         {
             if (enclosure.DownloadLink == null)
             {
-                Log.LogMessage($"{enclosure.Parent.Name}: enclosure download link is null");
+                string errorMessage = string.Format(CultureInfo.CurrentCulture, "{0} - download link is null", enclosure.Parent.Name);
+
+                Log.LogMessage(errorMessage);
 
                 return;
             }
@@ -320,7 +318,7 @@ namespace Rdr
                 case DownloadResult.Success:
                     enclosure.ButtonText = "Downloaded";
                     break;
-                case DownloadResult.UriError:
+                case DownloadResult.HttpError:
                     enclosure.ButtonText = "Link error";
                     break;
                 case DownloadResult.FileAlreadyExists:
@@ -335,7 +333,7 @@ namespace Rdr
         private FileInfo DetermineLocalFile(Uri uri)
         {
             string filename = uri.Segments.Last();
-            string filePath = Path.Combine(downloadDirectory, filename);
+            string filePath = Path.Combine(downloadDir.FullName, filename);
 
             return new FileInfo(filePath);
         }
@@ -347,7 +345,6 @@ namespace Rdr
             string separator = numberFormat.PercentDecimalSeparator;
             string symbol = numberFormat.PercentSymbol;
 
-            //return $"0{separator}0 {symbol}";
             return string.Format(CultureInfo.CurrentCulture, "0{0}0 {1}", separator, symbol);
         }
 
@@ -358,17 +355,13 @@ namespace Rdr
 
         #region Fields
         private const string appName = "Rdr";
-        private readonly IRepo _feedsRepo = null;
-        private IEnumerable<RdrFeed> activeTasks;
-
-        private readonly string downloadDirectory
-            = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                @"share");
+        private readonly FileInfo feedsFile = default;
+        private readonly DirectoryInfo downloadDir = default;
+        private IEnumerable<RdrFeed> activeTasks = default;
 
         private readonly DispatcherTimer updateAllTimer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromMinutes(25)
+            Interval = TimeSpan.FromMinutes(25d)
         };
         #endregion
 
@@ -408,9 +401,10 @@ namespace Rdr
         public ObservableSortingCollection<RdrFeed> Feeds => _feeds;
         #endregion
 
-        public FeedManager(IRepo feedsRepo)
+        public FeedManager(FileInfo file, DirectoryInfo directory)
         {
-            _feedsRepo = feedsRepo ?? throw new ArgumentNullException(nameof(feedsRepo));
+            feedsFile = file ?? throw new ArgumentNullException(nameof(file));
+            downloadDir = directory ?? throw new ArgumentNullException(nameof(directory));
 
             activeTasks = Feeds.Where(x => x.Updating);
             
@@ -434,15 +428,15 @@ namespace Rdr
             _feeds.DoSorting();
         }
 
-        private async void UpdateAllTimer_Tick(object sender, EventArgs e)
-            => await RefreshAllFeedsAsync();
+        private async void UpdateAllTimer_Tick(object sender, EventArgs e) => await RefreshAllFeedsAsync();
 
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
 
             sb.AppendLine(GetType().FullName);
-            sb.AppendLine(Invariant($"Feeds: {Feeds.Count}"));
+            sb.Append("Feeds: ");
+            sb.AppendLine(Feeds.Count.ToString(CultureInfo.CurrentCulture));
 
             return sb.ToString();
         }

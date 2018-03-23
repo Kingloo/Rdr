@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.IO;
+using System.Net;
 using System.Windows;
 using System.Windows.Threading;
 using Rdr.Common;
@@ -7,15 +8,16 @@ namespace Rdr
 {
     public partial class App : Application
     {
-        public App(IRepo feedsRepo)
+        public App(FileInfo file, DirectoryInfo directory)
         {
             InitializeComponent();
 
             ServicePointManager.DefaultConnectionLimit = 10;
 
-            DispatcherUnhandledException += App_DispatcherUnhandledException;
-            
-            MainWindow = new MainWindow(new FeedManager(feedsRepo));
+            MainWindow = new MainWindow
+            {
+                DataContext = new FeedManager(file, directory)
+            };
 
             MainWindow.Show();
         }

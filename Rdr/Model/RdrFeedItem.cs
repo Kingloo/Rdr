@@ -17,7 +17,7 @@ namespace Rdr.Model
         private readonly string _titleOfFeed = "no feed title";
         public string TitleOfFeed => _titleOfFeed;
 
-        private readonly Uri _link = null;
+        private readonly Uri _link = default;
         public Uri Link => _link;
 
         private readonly DateTime _pubDate = DateTime.MinValue;
@@ -43,7 +43,7 @@ namespace Rdr.Model
 
         public bool HasEnclosure => _enclosure != null;
 
-        private readonly RdrEnclosure _enclosure = null;
+        private readonly RdrEnclosure _enclosure = default;
         public RdrEnclosure Enclosure => _enclosure;
         #endregion
 
@@ -57,16 +57,19 @@ namespace Rdr.Model
         {
             if (element == null) { throw new ArgumentNullException(nameof(element)); }
 
+            var sc = StringComparison.OrdinalIgnoreCase;
+
             _titleOfFeed = titleOfFeed;
 
             _name = GetName(element.Elements()
-                .Where(x => x.Name.LocalName.Equals("title", StringComparison.OrdinalIgnoreCase))
+                .Where(x => x.Name.LocalName.Equals("title", sc))
                 .FirstOrDefault());
             
             _pubDate = GetPubDate(from each in element.Elements()
-                                  where each.Name.LocalName.Equals("pubDate", StringComparison.OrdinalIgnoreCase)
-                                  || each.Name.LocalName.Equals("published", StringComparison.OrdinalIgnoreCase)
-                                  || each.Name.LocalName.Equals("updated", StringComparison.OrdinalIgnoreCase)
+                                  let local = each.Name.LocalName
+                                  where local.Equals("pubDate", sc)
+                                  || local.Equals("published", sc)
+                                  || local.Equals("updated", sc)
                                   select each);
             
             _enclosure = GetEnclosure(from each in element.Elements()
@@ -75,7 +78,7 @@ namespace Rdr.Model
                                       select each);
 
             _link = GetLink(element.Elements()
-                .Where(x => x.Name.LocalName.Equals("link", StringComparison.OrdinalIgnoreCase))
+                .Where(x => x.Name.LocalName.Equals("link", sc))
                 .FirstOrDefault());
             
             if (_enclosure != null)
@@ -143,22 +146,20 @@ namespace Rdr.Model
 
         private RdrEnclosure GetEnclosure(IEnumerable<XElement> elements)
         {
-            foreach (var each in elements)
+            foreach (XElement each in elements.Where(x => x != default(XElement)))
             {
-                if (each == default(XElement))
-                {
-                    continue;
-                }
-
                 if (each.Name.LocalName.Equals("enclosure"))
                 {
                     return new RdrEnclosure(this, each);
                 }
                 else if (each.Name.LocalName.Equals("link"))
                 {
-                    if (each.Attribute("rel").Value.Equals("enclosure"))
+                    if (each.Attribute("rel") is XAttribute rel)
                     {
-                        return new RdrEnclosure(this, each);
+                        if (rel.Value.Equals("enclosure"))
+                        {
+                            return new RdrEnclosure(this, each);
+                        }
                     }
                 }
             }
@@ -170,23 +171,22 @@ namespace Rdr.Model
         {
             if (element == default(XElement)) { return null; }
 
-            if (!Uri.TryCreate(element.Value, UriKind.Absolute, out Uri uri))
+            if (Uri.TryCreate(element.Value, UriKind.Absolute, out Uri uri))
             {
-                if (element.Attribute("href") != null)
+                return uri;
+            }
+            else
+            {
+                if (element.Attribute("href") is XAttribute href)
                 {
-                    string href = element.Attribute("href").Value;
-
-                    if (!String.IsNullOrWhiteSpace(href))
+                    if (Uri.TryCreate(href.Value, UriKind.Absolute, out Uri hrefUri))
                     {
-                        if (Uri.TryCreate(href, UriKind.Absolute, out Uri hrefUri))
-                        {
-                            uri = hrefUri;
-                        }
+                        return hrefUri;
                     }
                 }
             }
 
-            return uri;
+            return null;
         }
 
         private static string GetDuration(XElement element)

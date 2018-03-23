@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -62,13 +61,18 @@ namespace Rdr.Model
             {
                 StringBuilder sb = new StringBuilder();
 
-                sb.Append(string.Format(CultureInfo.CurrentCulture, "{0} items, {1} unread", Items.Count, UnreadItemsCount()));
+                sb.Append(Items.Count);
+                sb.Append(" items, ");
+                sb.Append(_items.Count(x => x.Unread));
+                sb.Append(" unread");
 
                 if (XmlUrl != null)
                 {
-                    sb.Append(Environment.NewLine);
+                    sb.Append(" - ");
                     sb.Append(XmlUrl.AbsoluteUri);
                 }
+
+                sb.AppendLine();
 
                 return sb.ToString();
             }
@@ -96,7 +100,7 @@ namespace Rdr.Model
             }
         }
 
-        private ObservableCollection<RdrFeedItem> _items
+        private readonly ObservableCollection<RdrFeedItem> _items
             = new ObservableCollection<RdrFeedItem>();
         public IReadOnlyCollection<RdrFeedItem> Items => _items;
         #endregion
@@ -184,8 +188,6 @@ namespace Rdr.Model
                 each.MarkAsRead();
             }
         }
-
-        private int UnreadItemsCount() => _items.Where(x => x.Unread).Count();
 
         public int CompareTo(RdrFeed other)
         {

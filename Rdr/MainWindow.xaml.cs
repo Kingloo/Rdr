@@ -10,24 +10,25 @@ namespace Rdr
 {
     public partial class MainWindow : Window
     {
-        private readonly FeedManager feedManager = null;
+        private FeedManager feedManager = null;
         
-        public MainWindow(FeedManager viewModel)
+        public MainWindow()
         {
-            feedManager = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
-
             InitializeComponent();
 
+            DataContextChanged += MainWindow_DataContextChanged;
             Loaded += MainWindow_Loaded;
-            //KeyUp += Window_KeyUp;
             KeyDown += MainWindow_KeyDown;
             Closing += Window_Closing;
-            
-            DataContext = feedManager;
+        }
+
+        private void MainWindow_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            feedManager = (FeedManager)e.NewValue;
 
             feedManager.FeedChanged += FeedManager_FeedChanged;
         }
-        
+
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             await feedManager.LoadFeedsAsync();
@@ -39,13 +40,9 @@ namespace Rdr
 
         private void MainWindow_KeyDown(object sender, KeyEventArgs e)
         {
-            switch (e.Key)
+            if (e.Key == Key.Escape)
             {
-                case Key.Escape:
-                    Close();
-                    break;
-                default:
-                    break;
+                Close();
             }
         }
 
