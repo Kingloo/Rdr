@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -55,28 +56,13 @@ namespace Rdr.Extensions
 
             foreach (char c in self)
             {
-                if (!IsCharInCatergories(c, categories))
+                if (!categories.Any(category => Char.GetUnicodeCategory(c) == category))
                 {
                     sb.Append(c);
                 }
             }
 
             return sb.ToString();
-        }
-
-        private static bool IsCharInCatergories(char c, IEnumerable<UnicodeCategory> categories)
-        {
-            if (categories == null) { throw new ArgumentNullException(nameof(categories)); }
-
-            foreach (UnicodeCategory category in categories)
-            {
-                if (Char.GetUnicodeCategory(c) == category)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
 

@@ -11,10 +11,15 @@ namespace Rdr.Model
 {
     public class RdrFeed : ViewModelBase, IEquatable<RdrFeed>, IComparable<RdrFeed>, IAlternativeSort
     {
-        private enum FeedType { None, Atom, RSS };
+        private enum FeedType
+        {
+            None,
+            Atom,
+            RSS
+        };
 
         #region Fields
-        private readonly TimeSpan daysWorthOfItemsToKeep = TimeSpan.FromDays(9);
+        private readonly TimeSpan daysWorthOfItemsToKeep = TimeSpan.FromDays(9d);
         #endregion
 
         #region Properties
@@ -37,7 +42,7 @@ namespace Rdr.Model
             }
         }
 
-        private readonly Uri _xmlUrl = null;
+        private readonly Uri _xmlUrl = default;
         public Uri XmlUrl => _xmlUrl;
 
         private bool _updating = false;
@@ -71,8 +76,6 @@ namespace Rdr.Model
                     sb.Append(" - ");
                     sb.Append(XmlUrl.AbsoluteUri);
                 }
-
-                sb.AppendLine();
 
                 return sb.ToString();
             }
@@ -136,25 +139,35 @@ namespace Rdr.Model
 
         private string GetTitle(XElement e)
         {
-            var titles = e.Elements()
-                .Where(x => x.Name.LocalName.Equals("title", StringComparison.OrdinalIgnoreCase)
-                && !String.IsNullOrWhiteSpace(x.Value));
+            //var titles = e.Elements()
+            //    .Where(x => x.Name.LocalName.Equals("title", StringComparison.OrdinalIgnoreCase)
+            //    && !String.IsNullOrWhiteSpace(x.Value));
 
-            string title = XmlUrl.AbsoluteUri;
+            //string title = XmlUrl.AbsoluteUri;
 
-            if (titles.Any())
-            {
-                title = titles
-                    .First()
-                    .Value
-                    .RemoveUnicodeCategories(new List<UnicodeCategory>
-                    {
-                        UnicodeCategory.OtherSymbol
-                    })
-                    .Trim();
-            }
+            //if (titles.Any())
+            //{
+            //    title = titles
+            //        .First()
+            //        .Value
+            //        .RemoveUnicodeCategories(new List<UnicodeCategory>
+            //        {
+            //            UnicodeCategory.OtherSymbol
+            //        })
+            //        .Trim();
+            //}
 
-            return title;
+            //return title;
+
+            return e
+                .Elements()
+                .Where(x => x.Name.LocalName.Equals("title", StringComparison.OrdinalIgnoreCase) && !String.IsNullOrWhiteSpace(x.Value))
+                .FirstOrDefault()
+                ?.Value
+                .RemoveUnicodeCategories(new [] { UnicodeCategory.OtherSymbol })
+                .Trim()
+                ??
+                XmlUrl.AbsoluteUri;
         }
 
         private void LoadFromXElement(IEnumerable<XElement> e)
