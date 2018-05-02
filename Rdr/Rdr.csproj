@@ -40,7 +40,7 @@
     <PublisherName>Kingloo Holdings Ltd.</PublisherName>
     <DisallowUrlActivation>true</DisallowUrlActivation>
     <ApplicationRevision>1</ApplicationRevision>
-    <ApplicationVersion>1.4.0.%2a</ApplicationVersion>
+    <ApplicationVersion>1.5.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
     <BootstrapperEnabled>true</BootstrapperEnabled>

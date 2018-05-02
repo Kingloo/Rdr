@@ -1,24 +1,57 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Rdr.Common
 {
     public enum DownloadResult
     {
-        None = 0,
-        Success = 1,
-        Failure = 2,
-        HttpError = 3,
-        FileError = 4,
-        FileAlreadyExists = 5
+        None,
+        Success,
+        Failure,
+        Canceled,
+        FileAlreadyExists,
+        WebError
     }
-    
+
+    public class DownloadProgress
+    {
+        private readonly Int64 _bytesRead = 0L;
+        public Int64 BytesRead => _bytesRead;
+
+        private readonly Int64 _totalBytesReceived = 0L;
+        public Int64 TotalBytesReceived => _totalBytesReceived;
+
+        private readonly Int64? _contentLength = null;
+        public Int64? ContentLength => _contentLength;
+
+        private readonly Uri _uri = null;
+        public Uri Uri => _uri;
+
+        private readonly string _filePath = string.Empty;
+        public string FilePath => _filePath;
+
+        public DownloadProgress(Uri uri, string filePath, Int64 bytesRead, Int64 totalBytesReceived)
+            : this(uri, filePath, bytesRead, totalBytesReceived, null)
+        { }
+
+        public DownloadProgress(Uri uri, string filePath, Int64 bytesRead, Int64 totalBytesReceived, Int64? contentLength)
+        {
+            _uri = uri ?? throw new ArgumentNullException(nameof(uri));
+            _filePath = filePath;
+            _bytesRead = bytesRead;
+            _totalBytesReceived = totalBytesReceived;
+            _contentLength = contentLength;
+        }
+    }
+
     public class Download
     {
-        private const string userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:58.0) Gecko/20100101 Firefox/58.0";
+        private const string userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:59.0) Gecko/20100101 Firefox/59.0";
 
         private static HttpClientHandler handler = new HttpClientHandler
         {
@@ -27,128 +60,191 @@ namespace Rdr.Common
             MaxAutomaticRedirections = 3
         };
 
-        private static HttpClient client = new HttpClient(handler, false)
+        private static HttpClient client = new HttpClient(handler)
         {
-            Timeout = TimeSpan.FromSeconds(20d)
+            Timeout = TimeSpan.FromSeconds(5d)
         };
 
-        public static Task<string> WebsiteAsync(Uri uri)
-        {
-            if (uri == null) { throw new ArgumentNullException(nameof(uri)); }
-
-            return WebsiteAsyncImpl(new HttpRequestMessage(HttpMethod.Get, uri));
-        }
-
-        public static Task<string> WebsiteAsync(HttpRequestMessage request)
-        {
-            if (request == null) { throw new ArgumentNullException(nameof(request)); }
-
-            return WebsiteAsyncImpl(request);
-        }
-
-        private static async Task<string> WebsiteAsyncImpl(HttpRequestMessage request)
-        {
-            request.Headers.Add("User-Agent", userAgent);
-            
-            string text = string.Empty;
-
-            try
-            {
-                using (var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false))
-                {
-                    if (response.IsSuccessStatusCode)
-                    {
-                        text = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    }
-                }
-            }
-            catch (HttpRequestException ex)
-            {
-                await Log.LogExceptionAsync(ex, request.RequestUri.AbsoluteUri).ConfigureAwait(false);
-            }
-            catch (TaskCanceledException) { }
-
-            return text;
-        }
-        
 
         #region Properties
-        private readonly Uri _uri = null;
-        public Uri SourceUri => _uri;
+        private readonly Uri _uri = default;
+        public Uri Uri => _uri;
 
-        private readonly FileInfo _file = null;
-        public FileInfo TargetFile => _file;
+        private readonly FileInfo _file = default;
+        public FileInfo File => _file;
         #endregion
-        
+
         public Download(Uri uri, FileInfo file)
         {
             _uri = uri ?? throw new ArgumentNullException(nameof(uri));
             _file = file ?? throw new ArgumentNullException(nameof(file));
         }
-        
-        public async Task<DownloadResult> ToFileAsync(bool deleteOnFailure, IProgress<decimal> progress)
-        {
-            if (TargetFile.Exists) { return DownloadResult.FileAlreadyExists; }
 
-            HttpResponseMessage response = default;
-            FileStream fsAsync = default;
+        public Task<DownloadResult> ToFileAsync(IProgress<DownloadProgress> progress)
+            => ToFileAsync(progress, CancellationToken.None);
+
+        public async Task<DownloadResult> ToFileAsync(IProgress<DownloadProgress> progress, CancellationToken token)
+        {
+            if (File.Exists) { return DownloadResult.FileAlreadyExists; }
+
+            var request = new HttpRequestMessage(HttpMethod.Get, Uri);
+            
+            if (!request.Headers.UserAgent.TryParseAdd(userAgent))
+            {
+                string message = string.Format(
+                    CultureInfo.CurrentCulture,
+                    "User-Agent ({0}) could not be added",
+                    userAgent);
+
+                await Log.LogMessageAsync(message).ConfigureAwait(false);
+            }
+
+            var response = await client
+                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token)
+                .ConfigureAwait(false);
+
+            Stream receive = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+
+            Stream save = new FileStream(
+                File.FullName,
+                FileMode.Create,
+                FileAccess.Write,
+                FileShare.None,
+                1024 * 1024 * 5, // 5 MiB
+                FileOptions.Asynchronous);
+
+            Int64? contentLength = response.Content.Headers.ContentLength;
+
+            int bytesRead = 0;
+            Int64 totalBytesReceived = 0L;
+            Int64 prevTotalBytesReceived = 0L;
+            Int64 reportingThreshold = 1024 * 333; // 333 KiB
+
+            byte[] buffer = new byte[1024 * 1024 * 5]; // 5 MiB
 
             try
             {
-                response = await client.GetAsync(SourceUri, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
-
-                if (!response.IsSuccessStatusCode) { return DownloadResult.HttpError; }
-
-                int bytesRead = 0;
-                int totalBytesRead = 0;
-                decimal length = Convert.ToDecimal(response.Content.Headers.ContentLength);
-                decimal percent = 0m;
-                byte[] buffer = new byte[1024 * 1024 * 1]; // 1 MiB
-
-                fsAsync = new FileStream(
-                    _file.FullName,
-                    FileMode.CreateNew,
-                    FileAccess.Write,
-                    FileShare.None,
-                    4096,
-                    FileOptions.Asynchronous);
-
-                using (Stream input = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
+                while ((bytesRead = await receive.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false)) > 0)
                 {
-                    while ((bytesRead = await input.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false)) > 0)
+                    totalBytesReceived += bytesRead;
+
+                    if ((totalBytesReceived - prevTotalBytesReceived) > reportingThreshold)
                     {
-                        percent = totalBytesRead / length;
+                        progress.Report(
+                            new DownloadProgress(
+                                request.RequestUri,
+                                File.FullName,
+                                bytesRead,
+                                totalBytesReceived,
+                                contentLength));
 
-                        progress.Report(percent);
-
-                        totalBytesRead += bytesRead;
-
-                        await fsAsync.WriteAsync(buffer, 0, bytesRead).ConfigureAwait(false);
+                        prevTotalBytesReceived = totalBytesReceived;
                     }
 
-                    await fsAsync.FlushAsync().ConfigureAwait(false);
+                    await save.WriteAsync(buffer, 0, bytesRead).ConfigureAwait(false);
                 }
+
+                await save.FlushAsync().ConfigureAwait(false);
             }
-            catch (HttpRequestException ex)
+            catch (HttpRequestException)
             {
-                await Log.LogExceptionAsync(ex).ConfigureAwait(false);
+                return DownloadResult.WebError;
             }
             catch (IOException)
             {
-                if (deleteOnFailure && File.Exists(_file.FullName))
-                {
-                    File.Delete(_file.FullName);
-                }
-
                 return DownloadResult.Failure;
+            }
+            catch (TaskCanceledException)
+            {
+                return DownloadResult.Canceled;
             }
             finally
             {
-                fsAsync?.Dispose();
+                request?.Dispose();
                 response?.Dispose();
+                receive?.Dispose();
+                save?.Dispose();
             }
 
             return DownloadResult.Success;
+        }
+
+
+        public static Task<string> WebsiteAsync(Uri uri)
+            => WebsiteAsync(uri, CancellationToken.None);
+
+        public static Task<string> WebsiteAsync(Uri uri, CancellationToken token)
+        {
+            if (uri == null) { throw new ArgumentNullException(nameof(uri)); }
+
+            var request = new HttpRequestMessage(HttpMethod.Get, uri);
+            
+            if (!request.Headers.UserAgent.TryParseAdd(userAgent))
+            {
+                string message = string.Format(
+                    CultureInfo.CurrentCulture,
+                    "User-Agent ({0}) could not be added",
+                    userAgent);
+
+                Log.LogMessage(message);
+            }
+
+            return DownloadStringAsync(request, token);
+        }
+
+        public static Task<string> WebsiteAsync(HttpRequestMessage request)
+            => WebsiteAsync(request, CancellationToken.None);
+
+        public static Task<string> WebsiteAsync(HttpRequestMessage request, CancellationToken token)
+        {
+            if (request == null) { throw new ArgumentNullException(nameof(request)); }
+
+            return DownloadStringAsync(request, token);
+        }
+
+
+        private static async Task<string> DownloadStringAsync(HttpRequestMessage request, CancellationToken token)
+        {
+            string text = string.Empty;
+
+            try
+            {
+                using (var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
+                {
+                    if (response.IsSuccessStatusCode)
+                    {
+                        text = await Task.Run(response.Content.ReadAsStringAsync, token).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        string message = string.Format(
+                            CultureInfo.CurrentCulture,
+                            "downloading {0}: {1}",
+                            request.RequestUri.AbsoluteUri,
+                            response.StatusCode);
+
+                        await Log.LogMessageAsync(message).ConfigureAwait(false);
+                    }
+                }
+            }
+            catch (HttpRequestException) { }
+            catch (TaskCanceledException) { }
+            finally
+            {
+                request?.Dispose();
+            }
+
+            if (token.IsCancellationRequested)
+            {
+                string message = string.Format(
+                    CultureInfo.CurrentCulture,
+                    "user cancelled download of {0}",
+                    request.RequestUri.AbsoluteUri);
+
+                await Log.LogMessageAsync(message).ConfigureAwait(false);
+            }
+
+            return text;
         }
     }
 }

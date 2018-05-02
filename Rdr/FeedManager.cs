@@ -294,12 +294,10 @@ namespace Rdr
             {
                 string errorMessage = string.Format(CultureInfo.CurrentCulture, "{0} - download link is null", enclosure.Parent.Name);
 
-                Log.LogMessage(errorMessage);
+                await Log.LogMessageAsync(errorMessage).ConfigureAwait(false);
 
                 return;
             }
-
-            string format = GetPercentFormat();
 
             FileInfo file = DetermineLocalFile(enclosure.DownloadLink);
             
@@ -307,9 +305,24 @@ namespace Rdr
             
             enclosure.Downloading = true;
 
-            var result = await download.ToFileAsync(
-                false,
-                new Progress<decimal>(percent => enclosure.ButtonText = percent.ToString(format)));
+            var progress = new Progress<DownloadProgress>(p =>
+            {
+                if (p.ContentLength.HasValue)
+                {
+                    decimal current = Convert.ToDecimal(p.TotalBytesReceived);
+                    decimal total = Convert.ToDecimal(p.ContentLength);
+
+                    decimal percent = current / total;
+
+                    enclosure.ButtonText = percent.ToString(GetPercentFormat());
+                }
+                else
+                {
+                    enclosure.ButtonText = p.TotalBytesReceived.ToString(CultureInfo.CurrentUICulture);
+                }
+            });
+
+            var result = await download.ToFileAsync(progress);
 
             enclosure.Downloading = false;
 
@@ -318,7 +331,7 @@ namespace Rdr
                 case DownloadResult.Success:
                     enclosure.ButtonText = "Downloaded";
                     break;
-                case DownloadResult.HttpError:
+                case DownloadResult.WebError:
                     enclosure.ButtonText = "Link error";
                     break;
                 case DownloadResult.FileAlreadyExists:
