@@ -71,19 +71,21 @@ namespace Rdr
                 // removing this breaks something
                 //websiteAsString = websiteAsString.Replace((char)(0x1F), (char)(0x20));
 
-                if (ParseIntoXDocument(website, feed.XmlUrl) is XDocument x)
+                if (ParseXml(website, feed.XmlUrl) is XDocument x)
                 {
                     feed.Load(x);
 
                     AddUnreadItemsToUnreadCollector(feed.Items);
                 }
             }
+
+            _feeds.DoSorting();
             
             feed.Updating = false;
             Activity = activeTasks.Any();
         }
         
-        private static XDocument ParseIntoXDocument(string websiteAsString, Uri feedUri)
+        private static XDocument ParseXml(string websiteAsString, Uri feedUri)
         {
             XDocument x = null;
 
@@ -331,8 +333,8 @@ namespace Rdr
                 case DownloadResult.Success:
                     enclosure.ButtonText = "Downloaded";
                     break;
-                case DownloadResult.WebError:
-                    enclosure.ButtonText = "Link error";
+                case DownloadResult.InternetError:
+                    enclosure.ButtonText = "Internet error";
                     break;
                 case DownloadResult.FileAlreadyExists:
                     enclosure.ButtonText = "File already exists";
@@ -433,12 +435,11 @@ namespace Rdr
             {
                 var refreshTasks = e.NewItems.Cast<RdrFeed>()
                     .Where(x => !x.Updating)
-                    .Select(x => RefreshFeedAsync(x));
+                    .Select(x => RefreshFeedAsync(x))
+                    .ToList();
 
                 await Task.WhenAll(refreshTasks).ConfigureAwait(false);
             }
-
-            _feeds.DoSorting();
         }
 
         private async void UpdateAllTimer_Tick(object sender, EventArgs e) => await RefreshAllFeedsAsync();

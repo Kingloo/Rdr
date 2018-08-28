@@ -15,25 +15,16 @@ namespace Rdr.Common
         Failure,
         Canceled,
         FileAlreadyExists,
-        WebError
+        InternetError
     }
 
     public class DownloadProgress
     {
-        private readonly Int64 _bytesRead = 0L;
-        public Int64 BytesRead => _bytesRead;
-
-        private readonly Int64 _totalBytesReceived = 0L;
-        public Int64 TotalBytesReceived => _totalBytesReceived;
-
-        private readonly Int64? _contentLength = null;
-        public Int64? ContentLength => _contentLength;
-
-        private readonly Uri _uri = null;
-        public Uri Uri => _uri;
-
-        private readonly string _filePath = string.Empty;
-        public string FilePath => _filePath;
+        public Int64 BytesRead { get; } = 0L;
+        public Int64 TotalBytesReceived { get; } = 0L;
+        public Int64? ContentLength { get; } = null;
+        public Uri Uri { get; } = null;
+        public string FilePath { get; } = string.Empty;
 
         public DownloadProgress(Uri uri, string filePath, Int64 bytesRead, Int64 totalBytesReceived)
             : this(uri, filePath, bytesRead, totalBytesReceived, null)
@@ -41,43 +32,56 @@ namespace Rdr.Common
 
         public DownloadProgress(Uri uri, string filePath, Int64 bytesRead, Int64 totalBytesReceived, Int64? contentLength)
         {
-            _uri = uri ?? throw new ArgumentNullException(nameof(uri));
-            _filePath = filePath;
-            _bytesRead = bytesRead;
-            _totalBytesReceived = totalBytesReceived;
-            _contentLength = contentLength;
+            Uri = uri ?? throw new ArgumentNullException(nameof(uri));
+            FilePath = filePath;
+            BytesRead = bytesRead;
+            TotalBytesReceived = totalBytesReceived;
+            ContentLength = contentLength;
         }
     }
 
     public class Download
     {
-        private const string userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:59.0) Gecko/20100101 Firefox/59.0";
+        private const string userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:60.0) Gecko/20100101 Firefox/60.0";
+        
+        private static HttpClient client = null;
 
-        private static HttpClientHandler handler = new HttpClientHandler
+        private static void InitClient()
         {
-            AllowAutoRedirect = true,
-            AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
-            MaxAutomaticRedirections = 3
-        };
+            if (client != null) { return; }
 
-        private static HttpClient client = new HttpClient(handler)
-        {
-            Timeout = TimeSpan.FromSeconds(5d)
-        };
+            var handler = new HttpClientHandler
+            {
+                AllowAutoRedirect = true,
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+                MaxAutomaticRedirections = 3
+            };
 
+            client = new HttpClient(handler)
+            {
+                Timeout = TimeSpan.FromSeconds(5d)
+            };
+
+            if (!client.DefaultRequestHeaders.UserAgent.TryParseAdd(userAgent))
+            {
+                string message = string.Format(
+                    CultureInfo.CurrentCulture,
+                    "User-Agent ({0}) could not be added",
+                    userAgent);
+
+                Log.LogMessage(message);
+            }
+        }
 
         #region Properties
-        private readonly Uri _uri = default;
-        public Uri Uri => _uri;
-
-        private readonly FileInfo _file = default;
-        public FileInfo File => _file;
+        public Uri Uri { get; } = null;
+        public FileInfo File { get; } = null;
         #endregion
 
         public Download(Uri uri, FileInfo file)
         {
-            _uri = uri ?? throw new ArgumentNullException(nameof(uri));
-            _file = file ?? throw new ArgumentNullException(nameof(file));
+            Uri = uri ?? throw new ArgumentNullException(nameof(uri));
+            File = file ?? throw new ArgumentNullException(nameof(file));
         }
 
         public Task<DownloadResult> ToFileAsync(IProgress<DownloadProgress> progress)
@@ -87,18 +91,10 @@ namespace Rdr.Common
         {
             if (File.Exists) { return DownloadResult.FileAlreadyExists; }
 
+            InitClient();
+
             var request = new HttpRequestMessage(HttpMethod.Get, Uri);
             
-            if (!request.Headers.UserAgent.TryParseAdd(userAgent))
-            {
-                string message = string.Format(
-                    CultureInfo.CurrentCulture,
-                    "User-Agent ({0}) could not be added",
-                    userAgent);
-
-                await Log.LogMessageAsync(message).ConfigureAwait(false);
-            }
-
             var response = await client
                 .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token)
                 .ConfigureAwait(false);
@@ -120,7 +116,7 @@ namespace Rdr.Common
             Int64 prevTotalBytesReceived = 0L;
             Int64 reportingThreshold = 1024 * 333; // 333 KiB
 
-            byte[] buffer = new byte[1024 * 1024 * 5]; // 5 MiB
+            byte[] buffer = new byte[1024 * 1024 * 15]; // 15 MiB
 
             try
             {
@@ -130,13 +126,14 @@ namespace Rdr.Common
 
                     if ((totalBytesReceived - prevTotalBytesReceived) > reportingThreshold)
                     {
-                        progress.Report(
-                            new DownloadProgress(
-                                request.RequestUri,
-                                File.FullName,
-                                bytesRead,
-                                totalBytesReceived,
-                                contentLength));
+                        var dlProgress = new DownloadProgress(
+                            request.RequestUri,
+                            File.FullName,
+                            bytesRead,
+                            totalBytesReceived,
+                            contentLength);
+
+                        progress.Report(dlProgress);
 
                         prevTotalBytesReceived = totalBytesReceived;
                     }
@@ -148,7 +145,7 @@ namespace Rdr.Common
             }
             catch (HttpRequestException)
             {
-                return DownloadResult.WebError;
+                return DownloadResult.InternetError;
             }
             catch (IOException)
             {
@@ -179,16 +176,6 @@ namespace Rdr.Common
 
             var request = new HttpRequestMessage(HttpMethod.Get, uri);
             
-            if (!request.Headers.UserAgent.TryParseAdd(userAgent))
-            {
-                string message = string.Format(
-                    CultureInfo.CurrentCulture,
-                    "User-Agent ({0}) could not be added",
-                    userAgent);
-
-                Log.LogMessage(message);
-            }
-
             return DownloadStringAsync(request, token);
         }
 
@@ -205,6 +192,8 @@ namespace Rdr.Common
 
         private static async Task<string> DownloadStringAsync(HttpRequestMessage request, CancellationToken token)
         {
+            InitClient();
+
             string text = string.Empty;
 
             try

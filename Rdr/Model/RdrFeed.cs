@@ -29,21 +29,13 @@ namespace Rdr.Model
             get => _name;
             set
             {
-                //if (_name != value)
-                //{
-                //    _name = value;
-
-                //    RaisePropertyChanged(nameof(Name));
-                //}
-
                 _name = value;
 
                 RaisePropertyChanged(nameof(Name));
             }
         }
 
-        private readonly Uri _xmlUrl = default;
-        public Uri XmlUrl => _xmlUrl;
+        public Uri XmlUrl { get; } = null;
 
         private bool _updating = false;
         public bool Updating
@@ -64,7 +56,7 @@ namespace Rdr.Model
         {
             get
             {
-                StringBuilder sb = new StringBuilder();
+                var sb = new StringBuilder();
 
                 sb.Append(Items.Count);
                 sb.Append(" items, ");
@@ -84,19 +76,9 @@ namespace Rdr.Model
         private int _sortId = 0;
         public int SortId
         {
-            get
-            {
-                return _sortId;
-            }
+            get => _sortId;
             set
             {
-                //if (_sortId != value)
-                //{
-                //    _sortId = value;
-
-                //    RaisePropertyChanged(nameof(SortId));
-                //}
-
                 _sortId = value;
 
                 RaisePropertyChanged(nameof(SortId));
@@ -115,7 +97,7 @@ namespace Rdr.Model
 
         public RdrFeed(Uri xmlUrl)
         {
-            _xmlUrl = xmlUrl ?? throw new ArgumentNullException(nameof(xmlUrl));
+            XmlUrl = xmlUrl ?? throw new ArgumentNullException(nameof(xmlUrl));
             _name = xmlUrl.AbsoluteUri;
         }
         
