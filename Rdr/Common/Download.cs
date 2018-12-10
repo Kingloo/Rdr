@@ -64,6 +64,11 @@ namespace Rdr.Common
 
             if (!client.DefaultRequestHeaders.UserAgent.TryParseAdd(userAgent))
             {
+                // TODO
+                //
+                // this eventuality should never happen
+                // therefore it should throw a new custom exception instead
+
                 string message = string.Format(
                     CultureInfo.CurrentCulture,
                     "User-Agent ({0}) could not be added",
@@ -83,6 +88,9 @@ namespace Rdr.Common
             Uri = uri ?? throw new ArgumentNullException(nameof(uri));
             File = file ?? throw new ArgumentNullException(nameof(file));
         }
+
+        public Task<DownloadResult> ToFileAsync()
+            => ToFileAsync(null, CancellationToken.None);
 
         public Task<DownloadResult> ToFileAsync(IProgress<DownloadProgress> progress)
             => ToFileAsync(progress, CancellationToken.None);
@@ -139,6 +147,12 @@ namespace Rdr.Common
                     }
 
                     await save.WriteAsync(buffer, 0, bytesRead).ConfigureAwait(false);
+
+                    // does this help reduce bandwidth hogging ?
+                    // 500 ms caused significant download slowdown
+                    // 50 ms was better but still pretty slow
+                    // 5 ms seems to work
+                    await Task.Delay(5);
                 }
 
                 await save.FlushAsync().ConfigureAwait(false);
@@ -198,7 +212,9 @@ namespace Rdr.Common
 
             try
             {
-                using (var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
+                var httpOption = HttpCompletionOption.ResponseHeadersRead;
+
+                using (var response = await client.SendAsync(request, httpOption, token).ConfigureAwait(false))
                 {
                     if (response.IsSuccessStatusCode)
                     {
