@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Net;
@@ -16,6 +17,17 @@ namespace Rdr.Common
         Canceled,
         FileAlreadyExists,
         InternetError
+    }
+
+    public class HeaderException : Exception
+    {
+        public string UnaddableHeader { get; } = string.Empty;
+
+        public HeaderException(string header)
+            : base($"unaddable header: {header}")
+        {
+            UnaddableHeader = header;
+        }
     }
 
     public class DownloadProgress
@@ -42,9 +54,11 @@ namespace Rdr.Common
 
     public class Download
     {
-        private const string userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:60.0) Gecko/20100101 Firefox/60.0";
+        private const string userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:64.0) Gecko/20100101 Firefox/64.0";
         
         private static HttpClient client = null;
+
+        private CancellationTokenSource cts = null;
 
         private static void InitClient()
         {
@@ -64,17 +78,7 @@ namespace Rdr.Common
 
             if (!client.DefaultRequestHeaders.UserAgent.TryParseAdd(userAgent))
             {
-                // TODO
-                //
-                // this eventuality should never happen
-                // therefore it should throw a new custom exception instead
-
-                string message = string.Format(
-                    CultureInfo.CurrentCulture,
-                    "User-Agent ({0}) could not be added",
-                    userAgent);
-
-                Log.LogMessage(message);
+                throw new HeaderException(userAgent);
             }
         }
 
@@ -90,21 +94,20 @@ namespace Rdr.Common
         }
 
         public Task<DownloadResult> ToFileAsync()
-            => ToFileAsync(null, CancellationToken.None);
+            => ToFileAsync(null);
 
-        public Task<DownloadResult> ToFileAsync(IProgress<DownloadProgress> progress)
-            => ToFileAsync(progress, CancellationToken.None);
-
-        public async Task<DownloadResult> ToFileAsync(IProgress<DownloadProgress> progress, CancellationToken token)
+        public async Task<DownloadResult> ToFileAsync(IProgress<DownloadProgress> progress)
         {
             if (File.Exists) { return DownloadResult.FileAlreadyExists; }
 
             InitClient();
 
+            cts = new CancellationTokenSource();
+
             var request = new HttpRequestMessage(HttpMethod.Get, Uri);
             
             var response = await client
-                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token)
+                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cts.Token)
                 .ConfigureAwait(false);
 
             Stream receive = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
@@ -114,7 +117,7 @@ namespace Rdr.Common
                 FileMode.Create,
                 FileAccess.Write,
                 FileShare.None,
-                1024 * 1024 * 5, // 5 MiB
+                1024 * 1024 * 15, // 15 MiB
                 FileOptions.Asynchronous);
 
             Int64? contentLength = response.Content.Headers.ContentLength;
@@ -122,14 +125,16 @@ namespace Rdr.Common
             int bytesRead = 0;
             Int64 totalBytesReceived = 0L;
             Int64 prevTotalBytesReceived = 0L;
-            Int64 reportingThreshold = 1024 * 333; // 333 KiB
+            Int64 reportingThreshold = 1024L * 333L; // 333 KiB
 
-            byte[] buffer = new byte[1024 * 1024 * 15]; // 15 MiB
+            byte[] buffer = new byte[1024 * 1024]; // 1 MiB - but bytesRead below is only ever 16384 bytes
 
             try
             {
-                while ((bytesRead = await receive.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false)) > 0)
+                while ((bytesRead = await receive.ReadAsync(buffer, 0, buffer.Length, cts.Token).ConfigureAwait(false)) > 0)
                 {
+                    Debug.WriteLine($"while begin ({bytesRead})");
+
                     totalBytesReceived += bytesRead;
 
                     if ((totalBytesReceived - prevTotalBytesReceived) > reportingThreshold)
@@ -147,12 +152,6 @@ namespace Rdr.Common
                     }
 
                     await save.WriteAsync(buffer, 0, bytesRead).ConfigureAwait(false);
-
-                    // does this help reduce bandwidth hogging ?
-                    // 500 ms caused significant download slowdown
-                    // 50 ms was better but still pretty slow
-                    // 5 ms seems to work
-                    await Task.Delay(5);
                 }
 
                 await save.FlushAsync().ConfigureAwait(false);
@@ -175,9 +174,16 @@ namespace Rdr.Common
                 response?.Dispose();
                 receive?.Dispose();
                 save?.Dispose();
+                cts?.Dispose();
+                cts = null;
             }
 
             return DownloadResult.Success;
+        }
+
+        public void Cancel()
+        {
+            cts?.Cancel();
         }
 
 
@@ -241,10 +247,10 @@ namespace Rdr.Common
 
             if (token.IsCancellationRequested)
             {
-                string message = string.Format(
-                    CultureInfo.CurrentCulture,
-                    "user cancelled download of {0}",
-                    request.RequestUri.AbsoluteUri);
+                var cc = CultureInfo.CurrentCulture;
+                string link = request.RequestUri.AbsoluteUri;
+
+                string message = string.Format(cc, "user cancelled download of {0}", link);
 
                 await Log.LogMessageAsync(message).ConfigureAwait(false);
             }
