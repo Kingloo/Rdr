@@ -104,24 +104,6 @@ namespace Rdr.Common
 
             cts = new CancellationTokenSource();
 
-            var request = new HttpRequestMessage(HttpMethod.Get, Uri);
-            
-            var response = await client
-                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cts.Token)
-                .ConfigureAwait(false);
-
-            Stream receive = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
-
-            Stream save = new FileStream(
-                File.FullName,
-                FileMode.Create,
-                FileAccess.Write,
-                FileShare.None,
-                1024 * 1024 * 15, // 15 MiB
-                FileOptions.Asynchronous);
-
-            Int64? contentLength = response.Content.Headers.ContentLength;
-
             int bytesRead = 0;
             Int64 totalBytesReceived = 0L;
             Int64 prevTotalBytesReceived = 0L;
@@ -129,12 +111,34 @@ namespace Rdr.Common
 
             byte[] buffer = new byte[1024 * 1024]; // 1 MiB - but bytesRead below is only ever 16384 bytes
 
+            HttpRequestMessage request = null;
+            HttpResponseMessage response = null;
+
+            Stream receive = null;
+            Stream save = null;
+
             try
             {
+                request = new HttpRequestMessage(HttpMethod.Get, Uri);
+
+                response = await client
+                    .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cts.Token)
+                    .ConfigureAwait(false);
+
+                receive = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+
+                save = new FileStream(
+                    File.FullName,
+                    FileMode.Create,
+                    FileAccess.Write,
+                    FileShare.None,
+                    1024 * 1024 * 15, // 15 MiB
+                    FileOptions.Asynchronous);
+
+                Int64? contentLength = response.Content.Headers.ContentLength;
+
                 while ((bytesRead = await receive.ReadAsync(buffer, 0, buffer.Length, cts.Token).ConfigureAwait(false)) > 0)
                 {
-                    Debug.WriteLine($"while begin ({bytesRead})");
-
                     totalBytesReceived += bytesRead;
 
                     if ((totalBytesReceived - prevTotalBytesReceived) > reportingThreshold)
@@ -175,6 +179,7 @@ namespace Rdr.Common
                 receive?.Dispose();
                 save?.Dispose();
                 cts?.Dispose();
+
                 cts = null;
             }
 
@@ -228,11 +233,11 @@ namespace Rdr.Common
                     }
                     else
                     {
-                        string message = string.Format(
-                            CultureInfo.CurrentCulture,
-                            "downloading {0}: {1}",
-                            request.RequestUri.AbsoluteUri,
-                            response.StatusCode);
+                        var cc = CultureInfo.CurrentCulture;
+                        string link = request.RequestUri.AbsoluteUri;
+                        HttpStatusCode httpCode = response.StatusCode;
+
+                        string message = string.Format(cc, "downloading {0} failed: {1}", link, httpCode);
 
                         await Log.LogMessageAsync(message).ConfigureAwait(false);
                     }
