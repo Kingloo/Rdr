@@ -191,13 +191,15 @@ namespace Rdr.Model
 
         private static string GetDuration(XElement element)
         {
-            string ifAbsent = "no duration";
+            if (element != null)
+            {
+                if (!String.IsNullOrWhiteSpace(element.Value))
+                {
+                    return element.Value.Trim();
+                }
+            }
 
-            if (element == default(XElement)) { return ifAbsent; }
-
-            return String.IsNullOrWhiteSpace(element.Value)
-                ? ifAbsent
-                : element.Value.Trim();
+            return "no duration";
         }
 
         public void MarkAsRead() => Unread = false;
@@ -247,9 +249,11 @@ namespace Rdr.Model
         {
             StringBuilder sb = new StringBuilder();
 
+            var cc = CultureInfo.CurrentCulture;
+
             sb.AppendLine(GetType().FullName);
-            sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "Name: {0}", Name));
-            sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "TitleOfFeed: {0}", TitleOfFeed));
+            sb.AppendLine(string.Format(cc, "Name: {0}", Name));
+            sb.AppendLine(string.Format(cc, "TitleOfFeed: {0}", TitleOfFeed));
 
             if (Link == null)
             {
@@ -257,16 +261,16 @@ namespace Rdr.Model
             }
             else
             {
-                sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "Link: {0}", Link.AbsoluteUri));
+                sb.AppendLine(string.Format(cc, "Link: {0}", Link.AbsoluteUri));
             }
 
-            sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "PubDate: {0}", PubDate.ToString(CultureInfo.CurrentCulture)));
-            sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "Unread: {0}", Unread.ToString()));
-            sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "Has enclosure: {0}", HasEnclosure.ToString()));
+            sb.AppendLine(string.Format(cc, "PubDate: {0}", PubDate.ToString(cc)));
+            sb.AppendLine(string.Format(cc, "Unread: {0}", Unread.ToString()));
+            sb.AppendLine(string.Format(cc, "Has enclosure: {0}", HasEnclosure.ToString()));
 
             if (HasEnclosure)
             {
-                sb.AppendLine(string.Format(CultureInfo.CurrentCulture, "Enclosure:{0}", Environment.NewLine));
+                sb.AppendLine(string.Format(cc, "Enclosure:{0}", Environment.NewLine));
                 sb.AppendLine(Enclosure.ToString());
             }
 
