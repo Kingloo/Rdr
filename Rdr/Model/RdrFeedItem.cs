@@ -91,19 +91,22 @@ namespace Rdr.Model
         
         private static string GetName(XElement element)
         {
-            string ifAbsent = "no title";
-
-            if (element == default(XElement)) { return ifAbsent; }
-
-            return String.IsNullOrWhiteSpace(element.Value)
-                ? ifAbsent
-                : element
-                .Value
-                .RemoveUnicodeCategories(new List<UnicodeCategory>
+            if (element != null)
+            {
+                if (!String.IsNullOrWhiteSpace(element.Value))
                 {
-                    UnicodeCategory.OtherSymbol
-                })
-                .Trim();
+                    return element
+                        .Value
+                        .RemoveUnicodeCategories(
+                            new List<UnicodeCategory>
+                            {
+                                UnicodeCategory.OtherSymbol
+                            })
+                        .Trim();
+                }
+            }
+
+            return "no title";
         }
 
         private static DateTime GetPubDate(IEnumerable<XElement> elements)
