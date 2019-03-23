@@ -169,24 +169,20 @@ namespace Rdr.Model
 
         private static Uri GetLink(XElement element)
         {
-            if (element == default(XElement)) { return null; }
+            Uri uri = null;
 
-            if (Uri.TryCreate(element.Value, UriKind.Absolute, out Uri uri))
+            if (element != null)
             {
-                return uri;
-            }
-            else
-            {
-                if (element.Attribute("href") is XAttribute href)
+                if (!Uri.TryCreate(element.Value, UriKind.Absolute, out uri))
                 {
-                    if (Uri.TryCreate(href.Value, UriKind.Absolute, out Uri hrefUri))
+                    if (element.Attribute("href") is XAttribute href)
                     {
-                        return hrefUri;
+                        Uri.TryCreate(href.Value, UriKind.Absolute, out uri);
                     }
                 }
             }
 
-            return null;
+            return uri;
         }
 
         private static string GetDuration(XElement element)
