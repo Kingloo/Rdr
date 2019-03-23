@@ -27,10 +27,10 @@ namespace Rdr.DataAccess
                 }
             }
 
-            return GetLinesAsyncImpl(file, mode);
+            return GetLinesAsyncInternal(file, mode);
         }
 
-        private static async Task<string[]> GetLinesAsyncImpl(FileInfo file, FileMode mode)
+        private static async Task<string[]> GetLinesAsyncInternal(FileInfo file, FileMode mode)
         {
             var lines = new List<string>();
 

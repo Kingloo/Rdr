@@ -161,7 +161,7 @@ namespace Rdr
             }
         }
 
-        private void GoToFeed(RdrFeed feed) => Utils.OpenUriInBrowser(feed.XmlUrl);
+        private void GoToFeed(RdrFeed feed) => feed.XmlUrl.OpenInBrowser();
 
         private DelegateCommand<RdrFeedItem> _goToItemCommand = null;
         public DelegateCommand<RdrFeedItem> GoToItemCommand
@@ -183,11 +183,11 @@ namespace Rdr
 
             if (feedItem.Link is Uri uri)
             {
-                Utils.OpenUriInBrowser(uri);
+                uri.OpenInBrowser();
             }
             else
             {
-                Log.LogMessage("link was null");
+                Log.LogMessage($"link from {feedItem.Name} was null");
             }
             
             MarkItemAsRead(feedItem);
