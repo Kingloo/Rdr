@@ -36,85 +36,55 @@ namespace Rdr.Common
         }
 
 
-        public static void LogMessage(string message)
+        public static void Message(string message)
         {
             string text = FormatMessage(message);
 
             WriteToFile(text);
         }
 
-        public static async Task LogMessageAsync(string message)
+        public static Task MessageAsync(string message)
         {
             string text = FormatMessage(message);
 
-            await WriteToFileAsync(text).ConfigureAwait(false);
+            return WriteToFileAsync(text);
         }
 
 
-        public static void LogException(Exception ex)
-            => LogException(ex, string.Empty, false);
+        public static void Exception(Exception ex)
+            => Exception(ex, string.Empty, false);
 
-        public static void LogException(Exception ex, string message)
-            => LogException(ex, message, false);
+        public static void Exception(Exception ex, string message)
+            => Exception(ex, message, false);
 
-        public static void LogException(Exception ex, bool includeStackTrace)
-            => LogException(ex, string.Empty, includeStackTrace);
+        public static void Exception(Exception ex, bool includeStackTrace)
+            => Exception(ex, string.Empty, includeStackTrace);
 
-        public static void LogException(Exception ex, string message, bool includeStackTrace)
+        public static void Exception(Exception ex, string message, bool includeStackTrace)
         {
-            if (ex == null) { return; }
+            if (ex is null) { throw new ArgumentNullException(nameof(ex)); }
 
-            StringBuilder sb = new StringBuilder();
+            string text = FormatException(ex, message, includeStackTrace);
 
-            sb.Append(ex.GetType().FullName);
-            sb.Append(" - ");
-            sb.Append(ex.Message);
-
-            if (!String.IsNullOrWhiteSpace(message))
-            {
-                sb.Append(" - ");
-                sb.Append(message);
-            }
-            
-            if (includeStackTrace)
-            {
-                sb.AppendLine(ex.StackTrace);
-            }
-
-            LogMessage(sb.ToString());
+            Message(text);
         }
 
-        public static async Task LogExceptionAsync(Exception ex)
-            => await LogExceptionAsync(ex, string.Empty, false).ConfigureAwait(false);
+        public static Task ExceptionAsync(Exception ex)
+            => ExceptionAsync(ex, string.Empty, false);
 
-        public static async Task LogExceptionAsync(Exception ex, string message)
-            => await LogExceptionAsync(ex, message, false).ConfigureAwait(false);
+        public static Task ExceptionAsync(Exception ex, string message)
+            => ExceptionAsync(ex, message, false);
 
-        public static async Task LogExceptionAsync(Exception ex, bool includeStackTrace)
-            => await LogExceptionAsync(ex, string.Empty, includeStackTrace).ConfigureAwait(false);
+        public static Task ExceptionAsync(Exception ex, bool includeStackTrace)
+            => ExceptionAsync(ex, string.Empty, includeStackTrace);
 
-        public static async Task LogExceptionAsync(Exception ex, string message, bool includeStackTrace)
+        public static Task ExceptionAsync(Exception ex, string message, bool includeStackTrace)
         {
-            if (ex == null) { return; }
+            if (ex is null) { throw new ArgumentNullException(nameof(ex)); }
 
-            StringBuilder sb = new StringBuilder();
-
-            sb.Append(ex.GetType().FullName);
-            sb.Append(" - ");
-            sb.Append(ex.Message);
-
-            if (!String.IsNullOrWhiteSpace(message))
-            {
-                sb.Append(" - ");
-                sb.Append(message);
-            }
+            string text = FormatException(ex, message, includeStackTrace);
             
-            if (includeStackTrace)
-            {
-                sb.AppendLine(ex.StackTrace);
-            }
-            
-            await LogMessageAsync(sb.ToString()).ConfigureAwait(false);
+            return MessageAsync(text);
         }
 
 
@@ -126,6 +96,28 @@ namespace Rdr.Common
             string processName = Process.GetCurrentProcess().MainModule.ModuleName;
 
             return string.Format(cc, "{0} - {1} - {2}", timestamp, processName, message);
+        }
+
+        private static string FormatException(Exception ex, string message, bool includeStackTrace)
+        {
+            var sb = new StringBuilder();
+
+            sb.Append(ex.GetType().FullName);
+            sb.Append(" - ");
+            sb.Append(ex.Message);
+
+            if (!String.IsNullOrWhiteSpace(message))
+            {
+                sb.Append(" - ");
+                sb.Append(message);
+            }
+            
+            if (includeStackTrace)
+            {
+                sb.AppendLine(ex.StackTrace);
+            }
+
+            return sb.ToString();
         }
 
 
@@ -148,6 +140,8 @@ namespace Rdr.Common
                     fs = null;
 
                     sw.WriteLine(text);
+
+                    sw.Flush();
                 }
             }
             catch (FileNotFoundException) { }
@@ -177,6 +171,8 @@ namespace Rdr.Common
                     fsAsync = null;
 
                     await sw.WriteLineAsync(text).ConfigureAwait(false);
+
+                    await sw.FlushAsync().ConfigureAwait(false);
                 }
             }
             catch (FileNotFoundException) { }
