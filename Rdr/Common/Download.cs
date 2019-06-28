@@ -196,7 +196,7 @@ namespace Rdr.Common
 
         public static Task<string> WebsiteAsync(Uri uri, CancellationToken token)
         {
-            if (uri == null) { throw new ArgumentNullException(nameof(uri)); }
+            if (uri is null) { throw new ArgumentNullException(nameof(uri)); }
 
             var request = new HttpRequestMessage(HttpMethod.Get, uri);
             
@@ -208,7 +208,7 @@ namespace Rdr.Common
 
         public static Task<string> WebsiteAsync(HttpRequestMessage request, CancellationToken token)
         {
-            if (request == null) { throw new ArgumentNullException(nameof(request)); }
+            if (request is null) { throw new ArgumentNullException(nameof(request)); }
 
             return DownloadStringAsync(request, token);
         }
@@ -238,12 +238,13 @@ namespace Rdr.Common
 
                         string message = string.Format(cc, "downloading {0} failed: {1}", link, httpCode);
 
-                        await Log.LogMessageAsync(message).ConfigureAwait(false);
+                        await Log.MessageAsync(message).ConfigureAwait(false);
                     }
                 }
             }
             catch (HttpRequestException) { }
             catch (TaskCanceledException) { }
+            catch (OperationCanceledException) { }
             finally
             {
                 request?.Dispose();
@@ -256,7 +257,7 @@ namespace Rdr.Common
 
                 string message = string.Format(cc, "user cancelled download of {0}", link);
 
-                await Log.LogMessageAsync(message).ConfigureAwait(false);
+                await Log.MessageAsync(message).ConfigureAwait(false);
             }
 
             return text;

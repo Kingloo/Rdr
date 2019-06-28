@@ -24,7 +24,7 @@ namespace Rdr
         
         private void App_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
-            Log.LogException(e.Exception, includeStackTrace: true);
+            Log.Exception(e.Exception, includeStackTrace: true);
         }
     }
 }

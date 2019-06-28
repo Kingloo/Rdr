@@ -56,26 +56,23 @@ namespace Rdr
 
         private void SetFeedItemsBinding(RdrFeed feed)
         {
-            CollectionViewSource sortByDate = new CollectionViewSource
+            var sortingSource = new CollectionViewSource
             {
                 IsLiveSortingRequested = true,
+                SortDescriptions =
+                {
+                    new SortDescription(nameof(RdrFeedItem.PubDate), ListSortDirection.Descending)
+                },
                 Source = feed.Items
             };
-            
-            sortByDate.SortDescriptions.Add(
-                new SortDescription(
-                    nameof(RdrFeedItem.PubDate),
-                    ListSortDirection.Descending));
-            
+
             Binding itemsBinding = new Binding
             {
-                Source = sortByDate,
+                Source = sortingSource,
                 Mode = BindingMode.OneWay
             };
 
-            BindingOperations.SetBinding(ic_Items,
-                ItemsControl.ItemsSourceProperty,
-                itemsBinding);
+            BindingOperations.SetBinding(ic_Items, ItemsControl.ItemsSourceProperty, itemsBinding);
         }
         
         private void Window_Closing(object sender, CancelEventArgs e)

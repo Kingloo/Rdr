@@ -7,14 +7,14 @@ namespace Rdr
 {
     public static class Program
     {
-        private static string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        private static readonly string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
-        private static string myDocuments = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        private static readonly string myDocuments = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
 #if DEBUG
-        private static string filename = "RdrFeeds-test.txt";
+        private static readonly string filename = "RdrFeeds-test.txt";
 #else
-        private static string filename = "RdrFeeds.txt";
+        private static readonly string filename = "RdrFeeds.txt";
 #endif
 
         [STAThread]
@@ -34,7 +34,7 @@ namespace Rdr
             {
                 string errorMessage = string.Format(CultureInfo.CurrentCulture, "exited with code {0}", exitCode);
 
-                Log.LogMessage(errorMessage);
+                Log.Message(errorMessage);
             }
 
             return exitCode;

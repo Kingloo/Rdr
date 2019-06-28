@@ -71,7 +71,7 @@ namespace Rdr
                 // removing this breaks something
                 //websiteAsString = websiteAsString.Replace((char)(0x1F), (char)(0x20));
 
-                if (ParseXml(website, feed.XmlUrl) is XDocument x)
+                if (TryParseXml(website, feed.XmlUrl, out XDocument x))
                 {
                     feed.Load(x);
 
@@ -84,25 +84,40 @@ namespace Rdr
             feed.Updating = false;
             Activity = activeTasks.Any();
         }
-        
-        private static XDocument ParseXml(string websiteAsString, Uri feedUri)
+
+        private static bool TryParseXml(string raw, Uri feedUri, out XDocument document)
         {
-            XDocument x = null;
+            if (String.IsNullOrWhiteSpace(raw))
+            {
+                document = null;
+                return false;
+            }
+
+            if (feedUri is null)
+            {
+                document = null;
+                return false;
+            }
 
             try
             {
-                x = XDocument.Parse(websiteAsString);
+                document = XDocument.Parse(raw);
+                return true;
             }
             catch (XmlException ex)
             {
-                string errorMessage = string.Format(CultureInfo.CurrentCulture, "Parsing of XML document failed: {0}", feedUri.AbsoluteUri);
+                var cc = CultureInfo.CurrentCulture;
+                string link = feedUri.AbsoluteUri;
 
-                Log.LogException(ex, errorMessage, includeStackTrace: false);
+                string errorMessage = string.Format(cc, "Parsing of XML document failed: {0}", link);
+
+                Log.Exception(ex, errorMessage);
             }
 
-            return x;
+            document = null;
+            return false;
         }
-
+        
         private void AddUnreadItemsToUnreadCollector(IEnumerable<RdrFeedItem> feedItems)
         {
             var unreadItems = feedItems.Where(x => x.Unread);
@@ -179,7 +194,7 @@ namespace Rdr
 
         private void GoToItem(RdrFeedItem feedItem)
         {
-            if (feedItem == null) { throw new ArgumentNullException(nameof(feedItem)); }
+            if (feedItem is null) { throw new ArgumentNullException(nameof(feedItem)); }
 
             if (feedItem.Link is Uri uri)
             {
@@ -187,7 +202,7 @@ namespace Rdr
             }
             else
             {
-                Log.LogMessage($"link from {feedItem.Name} was null");
+                Log.Message($"link from {feedItem.Name} was null");
             }
             
             MarkItemAsRead(feedItem);
@@ -292,11 +307,11 @@ namespace Rdr
 
         private async Task DownloadEnclosureAsync(RdrEnclosure enclosure)
         {
-            if (enclosure.DownloadLink == null)
+            if (enclosure.DownloadLink is null)
             {
                 string errorMessage = string.Format(CultureInfo.CurrentCulture, "{0} - download link is null", enclosure.Parent.Name);
 
-                await Log.LogMessageAsync(errorMessage).ConfigureAwait(false);
+                await Log.MessageAsync(errorMessage).ConfigureAwait(false);
 
                 return;
             }
@@ -305,8 +320,6 @@ namespace Rdr
             
             var download = new Download(enclosure.DownloadLink, file);
             
-            enclosure.Downloading = true;
-
             var progress = new Progress<DownloadProgress>(p =>
             {
                 if (p.ContentLength.HasValue)
@@ -323,6 +336,8 @@ namespace Rdr
                     enclosure.ButtonText = p.TotalBytesReceived.ToString(CultureInfo.CurrentUICulture);
                 }
             });
+
+            enclosure.Downloading = true;
 
             var result = await download.ToFileAsync(progress);
 
@@ -355,12 +370,12 @@ namespace Rdr
 
         private static string GetPercentFormat()
         {
-            NumberFormatInfo numberFormat = CultureInfo.CurrentCulture.NumberFormat;
+            var cc = CultureInfo.CurrentCulture;
 
-            string separator = numberFormat.PercentDecimalSeparator;
-            string symbol = numberFormat.PercentSymbol;
+            string separator = cc.NumberFormat.PercentDecimalSeparator;
+            string symbol = cc.NumberFormat.PercentSymbol;
 
-            return string.Format(CultureInfo.CurrentCulture, "0{0}0 {1}", separator, symbol);
+            return string.Format(cc, "0{0}0 {1}", separator, symbol);
         }
 
         private bool CanExecute(object _) => true;
@@ -376,7 +391,7 @@ namespace Rdr
 
         private readonly DispatcherTimer updateAllTimer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromMinutes(25d)
+            Interval = TimeSpan.FromMinutes(15d)
         };
         #endregion
 
@@ -442,7 +457,8 @@ namespace Rdr
             }
         }
 
-        private async void UpdateAllTimer_Tick(object sender, EventArgs e) => await RefreshAllFeedsAsync();
+        private async void UpdateAllTimer_Tick(object sender, EventArgs e)
+            => await RefreshAllFeedsAsync();
 
         public override string ToString()
         {
