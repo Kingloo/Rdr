@@ -15,8 +15,10 @@ namespace RdrLib
         Success,
         Failure,
         Canceled,
+        InternetError,
         FileAlreadyExists,
         InitiationFailed,
+        ErrorWritingFile,
         Interrupted
     }
 
@@ -41,34 +43,32 @@ namespace RdrLib
 
     public class DownloadProgress
     {
-        public Int64 BytesRead { get; } = 0L;
         public Int64 TotalBytesReceived { get; } = 0L;
         public Int64? ContentLength { get; } = null;
         public Uri Uri { get; } = null;
         public string FilePath { get; } = string.Empty;
 
-        public DownloadProgress(Uri uri, string filePath, Int64 bytesRead, Int64 totalBytesReceived)
-            : this(uri, filePath, bytesRead, totalBytesReceived, null)
+        public DownloadProgress(Uri uri, string filePath, Int64 totalBytesReceived)
+            : this(uri, filePath, totalBytesReceived, null)
         { }
 
-        public DownloadProgress(Uri uri, string filePath, Int64 bytesRead, Int64 totalBytesReceived, Int64? contentLength)
+        public DownloadProgress(Uri uri, string filePath, Int64 totalBytesReceived, Int64? contentLength)
         {
             Uri = uri ?? throw new ArgumentNullException(nameof(uri));
             FilePath = filePath;
-            BytesRead = bytesRead;
             TotalBytesReceived = totalBytesReceived;
             ContentLength = contentLength;
         }
     }
 
-    public class Download : IDisposable
+    public class FileDownload : IDisposable
     {
         private const string userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x66; rv:64.0) Gecko/20100101 Firefox/70.0";
 
         private readonly Uri uri = null;
         private readonly string path = string.Empty;
 
-        private static readonly HttpClientHandler handler = new HttpClientHandler
+        private readonly HttpClientHandler handler = new HttpClientHandler
         {
             AllowAutoRedirect = true,
             AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
@@ -76,55 +76,22 @@ namespace RdrLib
             SslProtocols = SslProtocols.Tls12
         };
 
-        private readonly HttpClient client = new HttpClient(handler, false)
-        {
-            Timeout = TimeSpan.FromSeconds(7d)
-        };
+        private readonly HttpClient client = null;
 
-        public Download(Uri uri, string path)
+        public FileDownload(Uri uri, string path)
         {
             this.uri = uri ?? throw new ArgumentNullException(nameof(uri));
             this.path = path ?? throw new ArgumentNullException(nameof(path));
 
-            SetClientHeader();
-        }
-
-        private void SetClientHeader()
-        {
-            client.DefaultRequestHeaders.Clear();
+            client = new HttpClient(handler, false)
+            {
+                Timeout = TimeSpan.FromSeconds(5d)
+            };
 
             if (!client.DefaultRequestHeaders.UserAgent.TryParseAdd(userAgent))
             {
                 throw new HeaderException(userAgent);
             }
-        }
-
-        public async Task<(HttpStatusCode code, string text)> TextAsync(Uri uri)
-        {
-            HttpStatusCode result = HttpStatusCode.Unused;
-            string text = string.Empty;
-
-            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, uri);
-
-            try
-            {
-                using (HttpResponseMessage response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false))
-                {
-                    result = response.StatusCode;
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        text = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    }
-                }
-            }
-            catch (HttpRequestException) { }
-            finally
-            {
-                request.Dispose();
-            }
-
-            return (result, text);
         }
 
         public Task<DownloadResult> ToFileAsync() => ToFileAsync(null, CancellationToken.None);
@@ -152,14 +119,29 @@ namespace RdrLib
                 return DownloadResult.InitiationFailed;
             }
 
-            Pipe pipe = new Pipe();
+            try
+            {
+                Pipe pipe = new Pipe();
 
-            Task<DownloadResult> downloadFromStream = WriteFromDownloadStreamToPipeAsync(download, pipe.Writer, token);
-            Task writeToDisk = ReadFromPipeAndWriteToDiskAsync(path, pipe.Reader, progress, contentLength, token);
+                Task<DownloadResult> downloadFromStream = WriteFromDownloadStreamToPipeAsync(download, pipe.Writer, token);
+                Task writeToDisk = ReadFromPipeAndWriteToDiskAsync(path, pipe.Reader, progress, contentLength, token);
 
-            await Task.WhenAll(downloadFromStream, writeToDisk).ConfigureAwait(false);
+                await Task.WhenAll(downloadFromStream, writeToDisk).ConfigureAwait(false);
 
-            return downloadFromStream.IsCompleted ? downloadFromStream.Result : DownloadResult.Failure;
+                return downloadFromStream.IsCompleted ? downloadFromStream.Result : DownloadResult.Failure;
+            }
+            catch (HttpRequestException)
+            {
+                return DownloadResult.InternetError;
+            }
+            catch (IOException)
+            {
+                return DownloadResult.ErrorWritingFile;
+            }
+            finally
+            {
+                download?.Dispose();
+            }
         }
 
         private async Task<(Stream, Int64?)> SetupStreamAsync(Uri uri)
@@ -202,101 +184,161 @@ namespace RdrLib
         {
             int BUFSIZE = 1024 * 50;
 
-            try
+            while (true)
             {
-                while (true)
+                Memory<byte> memory = writer.GetMemory(BUFSIZE);
+
+                int bytesRead = await stream.ReadAsync(memory, token).ConfigureAwait(false);
+
+                if (bytesRead < 1)
                 {
-                    Memory<byte> memory = writer.GetMemory(BUFSIZE);
-
-                    int bytesRead = await stream.ReadAsync(memory, token).ConfigureAwait(false);
-
-                    if (bytesRead < 1)
-                    {
-                        break;
-                    }
-
-                    writer.Advance(bytesRead);
-
-                    FlushResult flushResult = await writer.FlushAsync().ConfigureAwait(false);
-
-                    if (flushResult.IsCompleted)
-                    {
-                        break;
-                    }
+                    break;
                 }
-                
-                return DownloadResult.Success;
+
+                writer.Advance(bytesRead);
+
+                FlushResult flushResult = await writer.FlushAsync().ConfigureAwait(false);
+
+                if (flushResult.IsCompleted)
+                {
+                    break;
+                }
             }
-            catch (HttpRequestException)
-            {
-                return DownloadResult.Interrupted;
-            }
-            finally
-            {
-                writer.Complete();
-            }
+
+            writer.Complete();
+
+            return DownloadResult.Success;
         }
 
         private async Task ReadFromPipeAndWriteToDiskAsync(string path, PipeReader reader, IProgress<DownloadProgress> progress, Int64? contentLength, CancellationToken token)
         {
-            FileStream fsAsync = null;
-
             Int64 previousBytesReceived = 0;
             Int64 totalBytesReceived = 0;
 
             Int64 threshold = 1024 * 100;
 
-            try
+            using FileStream fsAsync = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None, 4096, FileOptions.Asynchronous);
+
+            while (true)
             {
-                fsAsync = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None, 4096, FileOptions.Asynchronous);
+                ReadResult readResult = await reader.ReadAsync(token).ConfigureAwait(false);
 
-                while (true)
+                foreach (ReadOnlyMemory<byte> segment in readResult.Buffer)
                 {
-                    ReadResult readResult = await reader.ReadAsync(token).ConfigureAwait(false);
+                    await fsAsync.WriteAsync(segment, token).ConfigureAwait(false);
 
-                    foreach (ReadOnlyMemory<byte> segment in readResult.Buffer)
-                    {
-                        await fsAsync.WriteAsync(segment, token).ConfigureAwait(false);
-
-                        totalBytesReceived += segment.Length;
-                    }
-
-                    reader.AdvanceTo(readResult.Buffer.End);
-
-                    if ((totalBytesReceived - previousBytesReceived) > threshold)
-                    {
-                        if (progress != null)
-                        {
-                            var downloadProgress = new DownloadProgress(uri, path, readResult.Buffer.Length, totalBytesReceived, contentLength);
-
-                            progress.Report(downloadProgress);
-                        }
-                        
-                        previousBytesReceived = totalBytesReceived;
-                    }
-                    
-                    if (readResult.IsCompleted)
-                    {
-                        break;
-                    }
+                    totalBytesReceived += segment.Length;
                 }
 
-                await fsAsync.FlushAsync().ConfigureAwait(false);
+                reader.AdvanceTo(readResult.Buffer.End);
+
+                if ((totalBytesReceived - previousBytesReceived) > threshold)
+                {
+                    if (progress != null)
+                    {
+                        var downloadProgress = new DownloadProgress(uri, path, totalBytesReceived, contentLength);
+
+                        progress.Report(downloadProgress);
+                    }
+
+                    previousBytesReceived = totalBytesReceived;
+                }
+
+                if (readResult.IsCompleted)
+                {
+                    break;
+                }
             }
-            catch (FileNotFoundException)
+
+            await fsAsync.FlushAsync().ConfigureAwait(false);
+
+            reader.Complete();
+        }
+
+        private bool disposedValue = false;
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
             {
-                return;
+                if (disposing)
+                {
+                    client?.Dispose();
+                    handler?.Dispose();
+                }
+
+                disposedValue = true;
             }
-            catch (IOException)
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+    }
+
+    public class TextDownload : IDisposable
+    {
+        private const string userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x66; rv:64.0) Gecko/20100101 Firefox/70.0";
+
+        private readonly Uri uri = null;
+
+        private readonly HttpClientHandler handler = new HttpClientHandler
+        {
+            AllowAutoRedirect = true,
+            AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+            MaxAutomaticRedirections = 3,
+            SslProtocols = SslProtocols.Tls12
+        };
+
+        private readonly HttpClient client = null;
+
+        public TextDownload(Uri uri)
+        {
+            this.uri = uri ?? throw new ArgumentNullException(nameof(uri));
+
+            client = new HttpClient(handler, false)
             {
-                return;
+                Timeout = TimeSpan.FromSeconds(5d)
+            };
+
+            if (!client.DefaultRequestHeaders.UserAgent.TryParseAdd(userAgent))
+            {
+                throw new HeaderException(userAgent);
             }
+        }
+
+        public async Task<(HttpStatusCode code, string text)> TextAsync()
+        {
+            HttpStatusCode result = HttpStatusCode.Unused;
+            string text = string.Empty;
+
+            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, uri);
+            HttpResponseMessage response = null;
+
+            try
+            {
+                using (response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false))
+                {
+                    result = response.StatusCode;
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        text = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    }
+                }
+            }
+            catch (HttpRequestException) { }
             finally
             {
-                fsAsync?.Dispose();
+                result = response?.StatusCode ?? HttpStatusCode.Unused;
 
-                reader.Complete();
+                request?.Dispose();
+                response?.Dispose();
             }
+
+            return (result, text);
         }
 
         private bool disposedValue = false;
