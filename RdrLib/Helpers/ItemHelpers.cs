@@ -9,9 +9,9 @@ using RdrLib.Model;
 
 namespace RdrLib.Helpers
 {
-    public static class ItemHelpers
+    internal static class ItemHelpers
     {
-        public static IEnumerable<Item> CreateItems(IEnumerable<XElement> elements)
+        internal static IEnumerable<Item> CreateItems(IEnumerable<XElement> elements)
         {
             if (elements is null) { throw new ArgumentNullException(nameof(elements)); }
 

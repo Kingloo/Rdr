@@ -7,16 +7,16 @@ using System.Text.RegularExpressions;
 
 namespace RdrLib.Extensions
 {
-    public static class StringExtensions
+    internal static class StringExtensions
     {
-        public static bool ContainsExt(this string target, string toFind, StringComparison comparison)
+        internal static bool ContainsExt(this string target, string toFind, StringComparison comparison)
         {
             if (target is null) { throw new ArgumentNullException(nameof(target)); }
 
             return (target.IndexOf(toFind, comparison) > -1);
         }
 
-        public static string RemoveNewLines(this string value)
+        internal static string RemoveNewLines(this string value)
         {
             if (value is null) { throw new ArgumentNullException(nameof(value)); }
 
@@ -46,8 +46,8 @@ namespace RdrLib.Extensions
 
             return toReturn;
         }
-        
-        public static string RemoveUnicodeCategories(this string self, IEnumerable<UnicodeCategory> categories)
+
+        internal static string RemoveUnicodeCategories(this string self, IEnumerable<UnicodeCategory> categories)
         {
             if (self is null) { throw new ArgumentNullException(nameof(self)); }
             if (categories is null) { throw new ArgumentNullException(nameof(categories)); }
@@ -65,7 +65,7 @@ namespace RdrLib.Extensions
             return sb.ToString();
         }
 
-        public static IReadOnlyCollection<string> FindBetween(this string text, string beginning, string ending)
+        internal static IReadOnlyCollection<string> FindBetween(this string text, string beginning, string ending)
         {
             if (text is null) { throw new ArgumentNullException(nameof(text)); }
 
@@ -89,7 +89,7 @@ namespace RdrLib.Extensions
             return results;
         }
 
-        public static string EnsureStartsWithHttps(this string input)
+        internal static string EnsureStartsWithHttps(this string input)
         {
             if (input is null) { throw new ArgumentNullException(nameof(input)); }
 

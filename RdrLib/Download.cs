@@ -22,37 +22,37 @@ namespace RdrLib
         Interrupted
     }
 
-    public class HeaderException : Exception
+    internal class HeaderException : Exception
     {
-        public string UnaddableHeader { get; } = string.Empty;
+        internal string UnaddableHeader { get; } = string.Empty;
 
-        public HeaderException()
+        internal HeaderException()
             : this(string.Empty, null)
         { }
 
-        public HeaderException(string header)
+        internal HeaderException(string header)
             : this(header, null)
         { }
 
-        public HeaderException(string header, Exception innerException)
+        internal HeaderException(string header, Exception innerException)
             : base(header, innerException)
         {
             UnaddableHeader = header;
         }
     }
 
-    public class DownloadProgress
+    internal class DownloadProgress
     {
-        public Int64 TotalBytesReceived { get; } = 0L;
-        public Int64? ContentLength { get; } = null;
-        public Uri Uri { get; } = null;
-        public string FilePath { get; } = string.Empty;
+        internal Int64 TotalBytesReceived { get; } = 0L;
+        internal Int64? ContentLength { get; } = null;
+        internal Uri Uri { get; } = null;
+        internal string FilePath { get; } = string.Empty;
 
-        public DownloadProgress(Uri uri, string filePath, Int64 totalBytesReceived)
+        internal DownloadProgress(Uri uri, string filePath, Int64 totalBytesReceived)
             : this(uri, filePath, totalBytesReceived, null)
         { }
 
-        public DownloadProgress(Uri uri, string filePath, Int64 totalBytesReceived, Int64? contentLength)
+        internal DownloadProgress(Uri uri, string filePath, Int64 totalBytesReceived, Int64? contentLength)
         {
             Uri = uri ?? throw new ArgumentNullException(nameof(uri));
             FilePath = filePath;
@@ -61,7 +61,7 @@ namespace RdrLib
         }
     }
 
-    public class FileDownload : IDisposable
+    internal class FileDownload : IDisposable
     {
         private const string userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x66; rv:64.0) Gecko/20100101 Firefox/70.0";
 
@@ -78,7 +78,7 @@ namespace RdrLib
 
         private readonly HttpClient client = null;
 
-        public FileDownload(Uri uri, string path)
+        internal FileDownload(Uri uri, string path)
         {
             this.uri = uri ?? throw new ArgumentNullException(nameof(uri));
             this.path = path ?? throw new ArgumentNullException(nameof(path));
@@ -94,18 +94,18 @@ namespace RdrLib
             }
         }
 
-        public Task<DownloadResult> ToFileAsync() => ToFileAsync(null, CancellationToken.None);
+        internal Task<DownloadResult> ToFileAsync() => ToFileAsync(null, CancellationToken.None);
 
-        public Task<DownloadResult> ToFileAsync(IProgress<DownloadProgress> progress)
+        internal Task<DownloadResult> ToFileAsync(IProgress<DownloadProgress> progress)
         {
             if (progress is null) { throw new ArgumentNullException(nameof(progress)); }
 
             return ToFileAsync(progress, CancellationToken.None);
         }
 
-        public Task<DownloadResult> ToFileAsync(CancellationToken token) => ToFileAsync(null, token);
+        internal Task<DownloadResult> ToFileAsync(CancellationToken token) => ToFileAsync(null, token);
 
-        public async Task<DownloadResult> ToFileAsync(IProgress<DownloadProgress> progress, CancellationToken token)
+        internal async Task<DownloadResult> ToFileAsync(IProgress<DownloadProgress> progress, CancellationToken token)
         {
             if (File.Exists(path))
             {
@@ -278,7 +278,7 @@ namespace RdrLib
         }
     }
 
-    public class TextDownload : IDisposable
+    internal class TextDownload : IDisposable
     {
         private const string userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x66; rv:64.0) Gecko/20100101 Firefox/70.0";
 
@@ -294,7 +294,7 @@ namespace RdrLib
 
         private readonly HttpClient client = null;
 
-        public TextDownload(Uri uri)
+        internal TextDownload(Uri uri)
         {
             this.uri = uri ?? throw new ArgumentNullException(nameof(uri));
 
@@ -309,7 +309,7 @@ namespace RdrLib
             }
         }
 
-        public async Task<(HttpStatusCode code, string text)> TextAsync()
+        internal async Task<(HttpStatusCode code, string text)> TextAsync()
         {
             HttpStatusCode result = HttpStatusCode.Unused;
             string text = string.Empty;

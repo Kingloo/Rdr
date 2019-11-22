@@ -4,9 +4,9 @@ using System.Xml.Linq;
 
 namespace RdrLib.Helpers
 {
-    public static class XmlHelpers
+    internal static class XmlHelpers
     {
-        public static bool TryParse(string raw, out XDocument document)
+        internal static bool TryParse(string raw, out XDocument document)
         {
             try
             {
@@ -20,7 +20,7 @@ namespace RdrLib.Helpers
             }
         }
 
-        public static FeedType DetermineFeedType(XDocument document)
+        internal static FeedType DetermineFeedType(XDocument document)
         {
             var sco = StringComparison.OrdinalIgnoreCase;
 

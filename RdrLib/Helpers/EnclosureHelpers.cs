@@ -6,9 +6,9 @@ using RdrLib.Model;
 
 namespace RdrLib.Helpers
 {
-    public static class EnclosureHelpers
+    internal static class EnclosureHelpers
     {
-        public static Enclosure Create(XElement element)
+        internal static Enclosure Create(XElement element)
         {
             Uri downloadLink = GetLink(element);
             Int64 size = GetSize(element);
@@ -16,7 +16,7 @@ namespace RdrLib.Helpers
             return new Enclosure(downloadLink, size);
         }
 
-        private static Uri GetLink(XElement element)
+        internal static Uri GetLink(XElement element)
         {
             IEnumerable<XAttribute> linkAttributes = element
                 .Attributes()
@@ -35,7 +35,7 @@ namespace RdrLib.Helpers
             return null;
         }
 
-        private static Int64 GetSize(XElement element)
+        internal static Int64 GetSize(XElement element)
         {
             IEnumerable<XAttribute> lengthAttributes = element
                 .Attributes()

@@ -8,9 +8,9 @@ using RdrLib.Model;
 
 namespace RdrLib.Helpers
 {
-    public static class FeedHelpers
+    internal static class FeedHelpers
     {
-        public static bool TryCreate(Uri uri, out Feed feed)
+        internal static bool TryCreate(Uri uri, out Feed feed)
         {
             if (uri is null) { throw new ArgumentNullException(nameof(uri)); }
 
@@ -24,7 +24,7 @@ namespace RdrLib.Helpers
             return true;
         }
 
-        public static string GetName(XDocument document)
+        internal static string GetName(XDocument document)
         {
             if (document is null) { throw new ArgumentNullException(nameof(document)); }
 
@@ -54,7 +54,7 @@ namespace RdrLib.Helpers
                 "unknown title";
         }
 
-        public static IEnumerable<Item> GetItems(XDocument document)
+        internal static IEnumerable<Item> GetItems(XDocument document)
         {
             if (document is null) { throw new ArgumentNullException(nameof(document)); }
 
