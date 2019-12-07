@@ -10,13 +10,13 @@ namespace RdrLib.Helpers
     {
         internal static Enclosure Create(XElement element)
         {
-            Uri downloadLink = GetLink(element);
+            Uri? downloadLink = GetLink(element);
             Int64 size = GetSize(element);
 
             return new Enclosure(downloadLink, size);
         }
 
-        internal static Uri GetLink(XElement element)
+        internal static Uri? GetLink(XElement element)
         {
             IEnumerable<XAttribute> linkAttributes = element
                 .Attributes()

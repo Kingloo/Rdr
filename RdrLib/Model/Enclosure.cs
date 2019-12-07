@@ -4,12 +4,12 @@ namespace RdrLib.Model
 {
     public class Enclosure : BindableBase
     {
-        public Uri DownloadLink { get; } = null;
+        public Uri? Link { get; } = null;
         public Int64 Size { get; } = 0L;
 
-        public Enclosure(Uri uri, Int64 size)
+        public Enclosure(Uri? uri, Int64 size)
         {
-            DownloadLink = uri ?? throw new ArgumentNullException(nameof(uri));
+            Link = uri;
             Size = size;
         }
     }

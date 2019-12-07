@@ -6,7 +6,7 @@ namespace RdrLib.Model
 {
     public class Item : BindableBase, IEquatable<Item>, IComparable<Item>
     {
-        public Uri Link { get; set; } = null;
+        public Uri? Link { get; set; } = null;
         public string Name { get; set; } = string.Empty;
         public DateTimeOffset Published { get; set; } = DateTimeOffset.MinValue;
 
@@ -17,22 +17,38 @@ namespace RdrLib.Model
             set => SetProperty(ref _unread, value, nameof(Unread));
         }
         
-        public Enclosure Enclosure { get; set; } = null;
+        public Enclosure? Enclosure { get; set; } = null;
         public bool HasEnclosure => !(Enclosure is null);
 
         public Item() { }
 
         public bool Equals(Item other)
         {
-            if (other is null) { return false; }
+            bool sameName = Name.Equals(other.Name, StringComparison.OrdinalIgnoreCase);
+            bool sameLink = AreLinksTheSame(Link, other.Link);
+            
+            return sameName && sameLink;
+        }
 
-            return Link.AbsolutePath.Equals(other.Link.AbsolutePath);
+        private static bool AreLinksTheSame(Uri? mine, Uri? other)
+        {
+            if (mine is null && other is null)
+            {
+                return true;
+            }
+
+            if ((mine is null) != (other is null))
+            {
+                return false;
+            }
+
+            #nullable disable
+            return mine.AbsolutePath.Equals(other.AbsolutePath, StringComparison.OrdinalIgnoreCase);
+            #nullable enable
         }
 
         public int CompareTo(Item other)
         {
-            if (other is null) { throw new ArgumentNullException(nameof(other)); }
-
             if (other.Published > Published)
             {
                 return 1;
@@ -51,11 +67,11 @@ namespace RdrLib.Model
         {
             StringBuilder sb = new StringBuilder();
 
-            sb.AppendLine(Link.AbsoluteUri);
+            sb.AppendLine(Link?.AbsoluteUri ?? "no link");
             sb.AppendLine(Name);
             sb.AppendLine(Published.ToString(CultureInfo.CurrentCulture));
             sb.AppendLine(Unread.ToString());
-            sb.AppendLine(HasEnclosure ? Enclosure.ToString() : "no enclosure");
+            sb.AppendLine(Enclosure?.ToString() ?? "no enclosure");
 
             return sb.ToString();
         }

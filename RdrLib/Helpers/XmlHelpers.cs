@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Xml;
 using System.Xml.Linq;
 
@@ -6,7 +7,7 @@ namespace RdrLib.Helpers
 {
     internal static class XmlHelpers
     {
-        internal static bool TryParse(string raw, out XDocument document)
+        internal static bool TryParse(string raw, out XDocument? document)
         {
             try
             {

@@ -7,7 +7,7 @@ namespace RdrLib.Model
 {
     public class Feed : BindableBase, IEquatable<Feed>, IComparable<Feed>
     {
-        public Uri Link { get; } = null;
+        public Uri Link { get; } = new Uri("", UriKind.Relative);
 
         private string _name = string.Empty;
         public string Name
@@ -28,62 +28,76 @@ namespace RdrLib.Model
 
         public Feed(Uri uri)
         {
-            Link = uri ?? throw new ArgumentNullException(nameof(uri));
+            Link = uri;
+            
+            _name = Link.AbsoluteUri;
         }
 
-        public void Add(Item item)
+        public bool Add(Item item)
         {
-            if (item is null) { throw new ArgumentNullException(nameof(item)); }
-
             if (!_items.Contains(item))
             {
                 _items.Add(item);
+
+                return true;
             }
+
+            return false;
         }
 
-        public void AddMany(IEnumerable<Item> items)
+        public int AddMany(IEnumerable<Item> items)
         {
-            if (items is null) { throw new ArgumentNullException(nameof(items)); }
+            int added = 0;
 
             foreach (Item item in items)
             {
-                Add(item);
+                if (Add(item))
+                {
+                    added++;
+                }
             }
+
+            return added;
         }
 
-        public void Remove(Item item)
+        public bool Remove(Item item)
         {
-            if (item is null) { throw new ArgumentNullException(nameof(item)); }
-
             if (_items.Contains(item))
             {
                 _items.Remove(item);
+
+                return true;
             }
+
+            return false;
         }
 
-        public void RemoveMany(IEnumerable<Item> items)
+        public int RemoveMany(IEnumerable<Item> items)
         {
-            if (items is null) { throw new ArgumentNullException(nameof(items)); }
+            int removed = 0;
 
             foreach (Item item in items)
             {
-                Remove(item);
+                if (Remove(item))
+                {
+                    removed++;
+                }
             }
+
+            return removed;
         }
 
         public bool Equals(Feed other)
         {
-            if (other is null) { return false; }
+            var oic = StringComparison.OrdinalIgnoreCase;
 
-            return Link.AbsolutePath.Equals(other.Link.AbsolutePath);
+            bool sameHost = Link.DnsSafeHost.Equals(other.Link.DnsSafeHost, oic);
+            bool samePathAndQuery = Link.PathAndQuery.Equals(other.Link.PathAndQuery, oic);
+
+            return sameHost && samePathAndQuery;
         }
 
-        public int CompareTo(Feed other)
-        {
-            if (other is null) { throw new ArgumentNullException(nameof(other)); }
-
-            return Name.CompareTo(other.Name);
-        }
+        public int CompareTo(Feed other) => Name.CompareTo(other.Name);
 
         public override string ToString()
         {
@@ -91,7 +105,7 @@ namespace RdrLib.Model
 
             sb.AppendLine(Link.AbsoluteUri);
             sb.AppendLine(Name);
-            sb.AppendLine(Status.ToString());
+            sb.AppendLine($"Status: {Status.ToString()}");
             sb.AppendLine($"items count: {Items.Count}");
 
             return sb.ToString();

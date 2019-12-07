@@ -13,16 +13,28 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace Rdr
+namespace Rdr.Gui
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
-        public MainWindow()
+        private readonly MainWindowViewModel vm;
+
+        public MainWindow(MainWindowViewModel viewModel)
         {
             InitializeComponent();
+
+            vm = viewModel;
+
+            DataContext = vm;
+        }
+
+        private async void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            await vm.ReloadAsync();
+
+            await vm.RefreshAllAsync();
+
+            vm.StartTimer();
         }
     }
 }

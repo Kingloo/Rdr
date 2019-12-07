@@ -11,18 +11,16 @@ namespace RdrLib.Helpers
 {
     internal static class ItemHelpers
     {
-        internal static IEnumerable<Item> CreateItems(IEnumerable<XElement> elements)
+        internal static IReadOnlyCollection<Item> CreateItems(IEnumerable<XElement> elements)
         {
-            if (elements is null) { throw new ArgumentNullException(nameof(elements)); }
-
             Collection<Item> items = new Collection<Item>();
 
             foreach (XElement element in elements)
             {
-                Uri link = GetLink(element);
+                Uri? link = GetLink(element);
                 string name = GetName(element);
                 DateTimeOffset published = GetPublished(element);
-                Enclosure enclosure = GetEnclosure(element);
+                Enclosure? enclosure = GetEnclosure(element);
 
                 Item item = new Item
                 {
@@ -38,17 +36,20 @@ namespace RdrLib.Helpers
             return items;
         }
 
-        private static Uri GetLink(XElement element)
+        private static Uri? GetLink(XElement element)
         {
-            XElement linkElement = element.Elements().Where(x => x.Name.LocalName.Equals("link", StringComparison.Ordinal)).FirstOrDefault();
+            XElement linkElement = element
+                .Elements()
+                .Where(x => x.Name.LocalName.Equals("link", StringComparison.Ordinal))
+                .FirstOrDefault();
 
-            Uri uri = null;
+            Uri? uri = null;
 
             if (linkElement != null)
             {
                 if (!Uri.TryCreate(linkElement.Value, UriKind.Absolute, out uri))
                 {
-                    if (element.Attribute("href") is XAttribute href)
+                    if (linkElement.Attribute("href") is XAttribute href)
                     {
                         Uri.TryCreate(href.Value, UriKind.Absolute, out uri);
                     }
@@ -103,7 +104,7 @@ namespace RdrLib.Helpers
                 || localName.Equals("updated", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static Enclosure GetEnclosure(XElement element)
+        private static Enclosure? GetEnclosure(XElement element)
         {
             IEnumerable<XElement> enclosureElements = element
                 .Elements()

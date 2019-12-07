@@ -4,7 +4,10 @@
     {
         None,
         Updating,
-        NewItems,
-        DoesNotExist
+        DoesNotExist,
+        Forbidden,
+        MovedCannotFollow,
+        OtherInternetError,
+        Broken
     }
 }

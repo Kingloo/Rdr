@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using System.Xml.Linq;
@@ -10,10 +11,8 @@ namespace RdrLib.Helpers
 {
     internal static class FeedHelpers
     {
-        internal static bool TryCreate(Uri uri, out Feed feed)
+        internal static bool TryCreate(Uri uri, out Feed? feed)
         {
-            if (uri is null) { throw new ArgumentNullException(nameof(uri)); }
-
             if (!uri.IsAbsoluteUri)
             {
                 feed = null;
@@ -26,19 +25,14 @@ namespace RdrLib.Helpers
 
         internal static string GetName(XDocument document)
         {
-            if (document is null) { throw new ArgumentNullException(nameof(document)); }
-
             FeedType feedType = XmlHelpers.DetermineFeedType(document);
 
-            switch (feedType)
+            return feedType switch
             {
-                case FeedType.Atom:
-                    return GetName(document.Root);
-                case FeedType.RSS:
-                    return GetName(document.Root.Element("channel"));
-                default:
-                    return string.Empty;
-            }
+                FeedType.Atom => GetName(document.Root),
+                FeedType.RSS => GetName(document.Root.Element("channel")),
+                _ => string.Empty,
+            };
         }
 
         private static string GetName(XElement element)
@@ -54,21 +48,16 @@ namespace RdrLib.Helpers
                 "unknown title";
         }
 
-        internal static IEnumerable<Item> GetItems(XDocument document)
+        internal static IReadOnlyCollection<Item> GetItems(XDocument document)
         {
-            if (document is null) { throw new ArgumentNullException(nameof(document)); }
-
             FeedType feedType = XmlHelpers.DetermineFeedType(document);
 
-            switch (feedType)
+            return feedType switch
             {
-                case FeedType.Atom:
-                    return ItemHelpers.CreateItems(document.Root.Elements(XName.Get("entry", "http://www.w3.org/2005/Atom")));
-                case FeedType.RSS:
-                    return ItemHelpers.CreateItems(document.Root.Element("channel").Elements("item"));
-                default:
-                    return Enumerable.Empty<Item>();
-            }
+                FeedType.Atom => ItemHelpers.CreateItems(document.Root.Elements(XName.Get("entry", "http://www.w3.org/2005/Atom"))),
+                FeedType.RSS => ItemHelpers.CreateItems(document.Root.Element("channel").Elements("item")),
+                _ => new Collection<Item>(),
+            };
         }
     }
 }
