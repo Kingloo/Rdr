@@ -28,18 +28,28 @@
             </CollectionViewSource.SortDescriptions>
         </CollectionViewSource>
 
+        <CollectionViewSource x:Key="sortedItems"
+                              Source="{Binding UnreadItems}"
+                              IsLiveSortingRequested="True">
+            <CollectionViewSource.SortDescriptions>
+                <scm:SortDescription PropertyName="Published" Direction="Descending" />
+            </CollectionViewSource.SortDescriptions>
+        </CollectionViewSource>
+
         <DataTemplate DataType="{x:Type rdrModel:Feed}">
-            <Label Margin="0,0,0,5">
+            <Label Margin="0,0,0,5"
+                   MouseLeftButtonUp="Label_MouseLeftButtonUp"
+                   Tag="{Binding Path=DataContext, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type gui:MainWindow}}}">
                 <Label.Content>
                     <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
                 </Label.Content>
                 <Label.ContextMenu>
                     <ContextMenu>
                         <MenuItem Header="Refresh"
-                                  Command="{Binding RefreshCommand, Mode=OneTime}"
+                                  Command="{Binding PlacementTarget.Tag.RefreshCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}"
                                   CommandParameter="{Binding}" />
                         <MenuItem Header="Go To Feed"
-                                  Command="{Binding GoToFeedCommand, Mode=OneTime}"
+                                  Command="{Binding PlacementTarget.Tag.GoToFeedCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}"
                                   CommandParameter="{Binding}" />
                     </ContextMenu>
                 </Label.ContextMenu>
@@ -57,8 +67,8 @@
 
                 <Grid.Resources>
                     <converters:HasEnclosureConverter x:Key="hasEnclosureConverter"
-                                               True="Visible"
-                                               False="Collapsed" />
+                                                      True="Visible"
+                                                      False="Collapsed" />
                 </Grid.Resources>
 
                 <Grid.InputBindings>
@@ -70,7 +80,7 @@
                 <Label Grid.Column="0"
                        HorizontalAlignment="Left">
                     <Label.Content>
-                        <TextBlock Text="{Binding FeedTitle, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding FeedName, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
                     </Label.Content>
                 </Label>
 
@@ -106,7 +116,7 @@
 
     <Grid Margin="0,0,0,10">
         <Grid.RowDefinitions>
-            <RowDefinition Height="100" />
+            <RowDefinition Height="80" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -114,7 +124,7 @@
                     HorizontalAlignment="Center"
                     VerticalAlignment="Stretch"
                     Orientation="Horizontal">
-            <Button Content="Refresh" Command="{Binding RefreshAllFeedsCommand, Mode=OneTime}" />
+            <Button Content="Refresh" Command="{Binding RefreshAllCommand, Mode=OneTime}" />
             <Button Content="Mark All As Read" Command="{Binding MarkAllAsReadCommand, Mode=OneTime}" />
             <Button Content="Open File" Command="{Binding OpenFeedsFileCommand, Mode=OneTime}" />
             <Button Content="Reload Feeds" Command="{Binding ReloadCommand, Mode=OneTime}" />
@@ -126,19 +136,31 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <ItemsControl Grid.Column="0"
-                          ItemsSource="{Binding Source={StaticResource sortedFeeds}}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <VirtualizingStackPanel Background="Green" Margin="10,0,10,0" />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-            </ItemsControl>
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="50" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
 
-            <ItemsControl Grid.Column="1">
+                <Button Grid.Row="0"
+                        Content="Unread"
+                        Click="SeeUnread" />
+
+                <ItemsControl Grid.Row="1"
+                              ItemsSource="{Binding Source={StaticResource sortedFeeds}}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel Margin="10,0,10,0" Background="Green" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </Grid>
+
+            <ItemsControl Grid.Column="1"
+                          ItemsSource="{Binding Source={StaticResource sortedItems}}" >
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
-                        <VirtualizingStackPanel Margin="15,0,15,0" />
+                        <VirtualizingStackPanel Margin="10,0,10,0" Background="Yellow" />
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
             </ItemsControl>

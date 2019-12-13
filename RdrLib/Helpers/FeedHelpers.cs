@@ -48,14 +48,14 @@ namespace RdrLib.Helpers
                 "unknown title";
         }
 
-        internal static IReadOnlyCollection<Item> GetItems(XDocument document)
+        internal static IReadOnlyCollection<Item> GetItems(XDocument document, string feedName)
         {
             FeedType feedType = XmlHelpers.DetermineFeedType(document);
 
             return feedType switch
             {
-                FeedType.Atom => ItemHelpers.CreateItems(document.Root.Elements(XName.Get("entry", "http://www.w3.org/2005/Atom"))),
-                FeedType.RSS => ItemHelpers.CreateItems(document.Root.Element("channel").Elements("item")),
+                FeedType.Atom => ItemHelpers.CreateItems(document.Root.Elements(XName.Get("entry", "http://www.w3.org/2005/Atom")), feedName),
+                FeedType.RSS => ItemHelpers.CreateItems(document.Root.Element("channel").Elements("item"), feedName),
                 _ => new Collection<Item>(),
             };
         }

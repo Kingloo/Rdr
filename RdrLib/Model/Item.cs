@@ -8,9 +8,10 @@ namespace RdrLib.Model
     {
         public Uri? Link { get; set; } = null;
         public string Name { get; set; } = string.Empty;
+        public string FeedName { get; set; } = string.Empty;
         public DateTimeOffset Published { get; set; } = DateTimeOffset.MinValue;
 
-        private bool _unread = false;
+        private bool _unread = true;
         public bool Unread
         {
             get => _unread;
@@ -20,7 +21,10 @@ namespace RdrLib.Model
         public Enclosure? Enclosure { get; set; } = null;
         public bool HasEnclosure => !(Enclosure is null);
 
-        public Item() { }
+        public Item(string feedName)
+        {
+            FeedName = feedName;
+        }
 
         public bool Equals(Item other)
         {
@@ -42,9 +46,7 @@ namespace RdrLib.Model
                 return false;
             }
 
-            #nullable disable
             return mine.AbsolutePath.Equals(other.AbsolutePath, StringComparison.OrdinalIgnoreCase);
-            #nullable enable
         }
 
         public int CompareTo(Item other)

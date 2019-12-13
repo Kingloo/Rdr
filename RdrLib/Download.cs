@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -55,7 +54,7 @@ namespace RdrLib
 
     internal class Download
     {
-        private const string userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/70.0";
+        private const string userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/71.0";
 
         private static readonly HttpClient client = new HttpClient(
             new HttpClientHandler
@@ -71,23 +70,18 @@ namespace RdrLib
         public Uri Uri { get; }
         public string Path { get; } = string.Empty;
 
+        static Download()
+        {
+            if (!client.DefaultRequestHeaders.UserAgent.TryParseAdd(userAgent))
+            {
+                throw new HeaderException(userAgent);
+            }
+        }
+
         internal Download(Uri uri, string path)
         {
             Uri = uri;
             Path = path;
-
-            EnsureClientHeader();
-        }
-
-        private static void EnsureClientHeader()
-        {
-            if (client.DefaultRequestHeaders.UserAgent.Count == 0)
-            {
-                if (!client.DefaultRequestHeaders.UserAgent.TryParseAdd(userAgent))
-                {
-                    throw new HeaderException(userAgent);
-                }
-            }
         }
 
         internal Task<DownloadResult> ToFileAsync() => ToFileAsync(null, CancellationToken.None);
@@ -95,8 +89,6 @@ namespace RdrLib
         internal async Task<DownloadResult> ToFileAsync(IProgress<DownloadProgress>? progress, CancellationToken token)
         {
             if (File.Exists(Path)) { return DownloadResult.FileAlreadyExists; }
-
-            EnsureClientHeader();
 
             int bytesRead = 0;
             Int64 totalBytesReceived = 0L;
@@ -178,8 +170,6 @@ namespace RdrLib
 
         internal static async Task<(HttpStatusCode, string)> StringAsync(Uri uri, CancellationToken token)
         {
-            EnsureClientHeader();
-
             HttpStatusCode status = HttpStatusCode.Unused;
             string text = string.Empty;
 

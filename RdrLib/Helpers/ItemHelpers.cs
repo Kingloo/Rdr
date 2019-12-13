@@ -11,7 +11,7 @@ namespace RdrLib.Helpers
 {
     internal static class ItemHelpers
     {
-        internal static IReadOnlyCollection<Item> CreateItems(IEnumerable<XElement> elements)
+        internal static IReadOnlyCollection<Item> CreateItems(IEnumerable<XElement> elements, string feedTitle)
         {
             Collection<Item> items = new Collection<Item>();
 
@@ -22,7 +22,7 @@ namespace RdrLib.Helpers
                 DateTimeOffset published = GetPublished(element);
                 Enclosure? enclosure = GetEnclosure(element);
 
-                Item item = new Item
+                Item item = new Item(feedTitle)
                 {
                     Link = link,
                     Name = name,
@@ -89,6 +89,20 @@ namespace RdrLib.Helpers
                 if (DateTimeOffset.TryParse(pubDateElement.Value, out DateTimeOffset dto))
                 {
                     return dto;
+                }
+                else
+                {
+                    // some sites, such as AnandTech, do publish datetime in a bad format
+                    // e.g. Thu, 12 Dec 2019 11:00:00 EDT
+                    // if we remove the "EDT" it does parse correctly
+
+                    int end = pubDateElement.Value.Length - 4;
+                    string valueWithoutTimeZone = pubDateElement.Value.Substring(0, end);
+
+                    if (DateTimeOffset.TryParse(valueWithoutTimeZone, out DateTimeOffset fixedDto))
+                    {
+                        return fixedDto;
+                    }
                 }
             }
 

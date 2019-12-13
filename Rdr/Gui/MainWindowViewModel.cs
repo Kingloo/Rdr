@@ -1,16 +1,14 @@
-﻿using Rdr.Common;
-using RdrLib;
-using RdrLib.Model;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Threading;
+using Rdr.Common;
+using RdrLib;
+using RdrLib.Model;
 
 namespace Rdr.Gui
 {
@@ -79,7 +77,7 @@ namespace Rdr.Gui
             {
                 if (_markAllAsReadCommand is null)
                 {
-                    _markAllAsReadCommand = new DelegateCommand(service.MarkAllAsRead, (_) => true);
+                    _markAllAsReadCommand = new DelegateCommand(MarkAllAsRead, (_) => true);
                 }
 
                 return _markAllAsReadCommand;
@@ -114,10 +112,7 @@ namespace Rdr.Gui
             }
         }
 
-        private bool CanExecuteAsync(object _)
-        {
-            return true;
-        }
+        private bool CanExecuteAsync(object _) => !Activity;
 
         private readonly DispatcherTimer refreshTimer = new DispatcherTimer(DispatcherPriority.ApplicationIdle)
         {
@@ -129,13 +124,31 @@ namespace Rdr.Gui
 
         public IReadOnlyCollection<Feed> Feeds => service.Feeds;
 
-        public bool IsTimerRunning => refreshTimer.IsEnabled;
+        private readonly ObservableCollection<Item> _items = new ObservableCollection<Item>();
+        public IReadOnlyCollection<Item> Items => _items;
+
+        private readonly ObservableCollection<Item> _unreadItems = new ObservableCollection<Item>();
+        public IReadOnlyCollection<Item> UnreadItems => _unreadItems;
+
+        public bool IsRefreshTimerRunning => refreshTimer.IsEnabled;
 
         private bool _activity = false;
         public bool Activity
         {
             get => _activity;
-            set => SetProperty(ref _activity, value, nameof(Activity));
+            set
+            {
+                SetProperty(ref _activity, value, nameof(Activity));
+
+                RaiseCanExecuteChangedOnAsyncCommands();
+            }
+        }
+
+        private void RaiseCanExecuteChangedOnAsyncCommands()
+        {
+            RefreshAllCommand.RaiseCanExecuteChanged();
+            RefreshCommand.RaiseCanExecuteChanged();
+            ReloadCommand.RaiseCanExecuteChanged();
         }
 
         public MainWindowViewModel(string feedsFilePath)
@@ -168,12 +181,61 @@ namespace Rdr.Gui
 
         public async Task RefreshAllAsync()
         {
+            Activity = true;
+
             await service.UpdateAllAsync();
+
+            AddUnreadRemoveRead();
+
+            Activity = false;
         }
 
         public async Task RefreshAsync(Feed feed)
         {
+            Activity = true;
+
             await service.UpdateAsync(feed);
+
+            AddUnreadRemoveRead();
+
+            Activity = false;
+        }
+
+        public async Task RefreshAsync(IEnumerable<Feed> feeds)
+        {
+            Activity = true;
+
+            await service.UpdateAsync(feeds);
+
+            AddUnreadRemoveRead();
+
+            Activity = false;
+        }
+
+        private void AddUnreadRemoveRead()
+        {
+            var toAdd = (from feed in Feeds
+                         from item in feed.Items
+                         where item.Unread
+                         select item).ToList();
+
+            var toRemove = _unreadItems.Where(i => !i.Unread).ToList();
+
+            foreach (Item each in toAdd.Where(i => i.Published > DateTimeOffset.Now.AddDays(-14)))
+            {
+                if (!_unreadItems.Contains(each))
+                {
+                    _unreadItems.Add(each);
+                }
+            }
+
+            foreach (Item each in toRemove)
+            {
+                if (_unreadItems.Contains(each))
+                {
+                    _unreadItems.Remove(each);
+                }
+            }
         }
 
         private void GoToFeed(Feed feed)
@@ -210,6 +272,13 @@ namespace Rdr.Gui
             }
         }
 
+        private void MarkAllAsRead()
+        {
+            service.MarkAllAsRead();
+
+            AddUnreadRemoveRead();
+        }
+
         public void OpenFeedsFile()
         {
             if (!SystemLaunch.Path(feedsFilePath))
@@ -227,6 +296,8 @@ namespace Rdr.Gui
             if (feeds.Count == 0)
             {
                 service.Clear();
+                _items.Clear();
+                _unreadItems.Clear();
 
                 return;
             }
@@ -246,7 +317,7 @@ namespace Rdr.Gui
                 }
             }
 
-            await service.UpdateAsync(toRefresh);
+            await RefreshAsync(toRefresh);
         }
 
         private static async Task<string[]> ReadLinesAsync(string path, string commentChar)

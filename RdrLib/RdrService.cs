@@ -64,7 +64,7 @@ namespace RdrLib
 
             feed.Name = FeedHelpers.GetName(document);
 
-            IEnumerable<Item> items = FeedHelpers.GetItems(document);
+            IEnumerable<Item> items = FeedHelpers.GetItems(document, feed.Name);
 
             feed.AddMany(items);
 
