@@ -9,8 +9,8 @@ namespace Rdr.Gui
     public partial class App : Application
     {
         private readonly string defaultDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-        //private const string defaultFileName = "RdrFeeds.txt";
-        private const string defaultFileName = "RdrFeeds-test.txt";
+        private const string defaultFileName = "RdrFeeds.txt";
+        //private const string defaultFileName = "RdrFeeds-test.txt";
 
         public App()
         {

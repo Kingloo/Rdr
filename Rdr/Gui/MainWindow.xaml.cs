@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
@@ -40,13 +38,14 @@ namespace Rdr.Gui
 
         private void Label_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (sender is Label lbl)
-            {
-                if (lbl.DataContext is Feed feed)
-                {
-                    SetItemsBinding(feed.Items);
-                }
-            }
+            // hard-casts mean that if this method is ever passed anything else it will throw
+            // and InvalidCastException
+            // this is desired behaviour - calling this method with anything else is a mistake that must be corrected
+
+            Label label = (Label)sender;
+            Feed feed = (Feed)label.DataContext;
+
+            SetItemsBinding(feed.Items);
         }
 
         private void SetItemsBinding(IReadOnlyCollection<Item> source)
@@ -54,6 +53,19 @@ namespace Rdr.Gui
             var cvs = (CollectionViewSource)Resources["sortedItems"];
 
             cvs.Source = source;
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (vm.Activity || vm.HasActiveDownload)
+            {
+                MessageBoxResult result = MessageBox.Show("I am doing something. Do you really want to quit?", "Activity!", MessageBoxButton.YesNo, MessageBoxImage.Exclamation);
+
+                if (result != MessageBoxResult.Yes)
+                {
+                    e.Cancel = true;
+                }
+            }
         }
     }
 }

@@ -93,13 +93,13 @@ namespace RdrLib
             int bytesRead = 0;
             Int64 totalBytesReceived = 0L;
             Int64 prevTotalBytesReceived = 0L;
-            Int64 reportingThreshold = 1024L * 333L; // 333 KiB
+            Int64 reportingThreshold = 1024L * 100L;
 
             int bytesWrittenThisLoop = 0;
-            int throttleThresholdBytes = ((1024 * 1024 * 10) / 8) / 2; // 10 megabits in mebibytes
+            int throttleThresholdBytes = ((1024 * 1024 * 10) / 8) / 4; // 10 megabits in mebibytes
 
             Stopwatch stopWatch = Stopwatch.StartNew();
-            TimeSpan timeThreshold = TimeSpan.FromMilliseconds(500d);
+            TimeSpan timeThreshold = TimeSpan.FromMilliseconds(250d);
 
             byte[] buffer = new byte[1024 * 1024]; // 1 MiB - but bytesRead below only ever seems to return 16384 bytes
 

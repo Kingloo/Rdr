@@ -5,7 +5,8 @@
         xmlns:gui="clr-namespace:Rdr.Gui"
         xmlns:converters="clr-namespace:Rdr.Gui.Converters"
         xmlns:rdrModel="clr-namespace:RdrLib.Model;assembly=RdrLib"
-        Loaded="Window_Loaded">
+        Loaded="Window_Loaded"
+        Closing="Window_Closing">
 
     <Window.Style>
         <Style TargetType="{x:Type gui:MainWindow}">
@@ -37,13 +38,32 @@
         </CollectionViewSource>
 
         <DataTemplate DataType="{x:Type rdrModel:Feed}">
+            <DataTemplate.Resources>
+                <converters:FeedStatusColorConverter x:Key="feedStatusToColorConverter"
+                                                       None="#FF313131"
+                                                       Updating="LightGray"
+                                                       DoesNotExist="Maroon"
+                                                       Forbidden="LightGreen"
+                                                       MovedCannotFollow="Red"
+                                                       OtherInternetError="LightPink"
+                                                       Broken="LightBlue" />
+            </DataTemplate.Resources>
+            
             <Label Margin="0,0,0,5"
+                   Foreground="#FF7A7A7A"
+                   FontSize="15"
+                   Background="{Binding Status, Converter={StaticResource feedStatusToColorConverter}}"
                    MouseLeftButtonUp="Label_MouseLeftButtonUp"
                    Tag="{Binding Path=DataContext, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type gui:MainWindow}}}">
                 <Label.Content>
                     <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
                 </Label.Content>
                 <Label.ContextMenu>
+                    <!--
+                        Label's tag has MainWindow's datacontext, aka a MainWindowViewModel
+                        MenuItem commands refer to this through PlacementTarget.Tag because the commands we want are on the MainWindowViewModel
+                        CommandParameter binds to Label's datacontext aka Feed for the link we want to open
+                    -->
                     <ContextMenu>
                         <MenuItem Header="Refresh"
                                   Command="{Binding PlacementTarget.Tag.RefreshCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}"
@@ -57,9 +77,37 @@
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type rdrModel:Item}">
-            <Grid>
+            <DataTemplate.Resources>
+                <converters:IsUnreadConverter x:Key="isUnreadGridConverter">
+                    <converters:IsUnreadConverter.True>
+                        <Style TargetType="{x:Type Grid}" BasedOn="{StaticResource {x:Type Grid}}">
+                            <Setter Property="Background" Value="LightGray" />
+                        </Style>
+                    </converters:IsUnreadConverter.True>
+                    <converters:IsUnreadConverter.False>
+                        <Style TargetType="{x:Type Grid}" BasedOn="{StaticResource {x:Type Grid}}">
+                            <Setter Property="Background" Value="#FF313131" />
+                        </Style>
+                    </converters:IsUnreadConverter.False>
+                </converters:IsUnreadConverter>
+                <converters:IsUnreadConverter x:Key="isUnreadLabelConverter">
+                    <converters:IsUnreadConverter.True>
+                        <Style TargetType="{x:Type Label}" BasedOn="{StaticResource {x:Type Label}}">
+                            <Setter Property="Foreground" Value="#FF313131" />
+                        </Style>
+                    </converters:IsUnreadConverter.True>
+                    <converters:IsUnreadConverter.False>
+                        <Style TargetType="{x:Type Label}" BasedOn="{StaticResource {x:Type Label}}">
+                            <Setter Property="Foreground" Value="#FF7A7A7A" />
+                        </Style>
+                    </converters:IsUnreadConverter.False>
+                </converters:IsUnreadConverter>
+            </DataTemplate.Resources>
+            
+            <Grid Style="{Binding Unread, Converter={StaticResource isUnreadGridConverter}}"
+                  Margin="0,2,0,2">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="200" />
+                    <ColumnDefinition Width="160" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="150" />
@@ -78,6 +126,7 @@
                 </Grid.InputBindings>
 
                 <Label Grid.Column="0"
+                       Style="{Binding Unread, Converter={StaticResource isUnreadLabelConverter}}"
                        HorizontalAlignment="Left">
                     <Label.Content>
                         <TextBlock Text="{Binding FeedName, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
@@ -85,6 +134,8 @@
                 </Label>
 
                 <Label Grid.Column="1"
+                       FontSize="16"
+                       Style="{Binding Unread, Converter={StaticResource isUnreadLabelConverter}}"
                        HorizontalAlignment="Stretch">
                     <Label.Content>
                         <TextBlock Text="{Binding Name, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
@@ -93,11 +144,15 @@
 
                 <Button Grid.Column="2"
                         HorizontalAlignment="Right"
-                        Content="Download"
+                        Content="{Binding Enclosure.Message}"
+                        IsEnabled="{Binding Enclosure.IsDownloading, Converter={StaticResource booleanNegationConverter}}"
+                        Command="{Binding DataContext.DownloadEnclosureCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type gui:MainWindow}}}"
+                        CommandParameter="{Binding Enclosure}"
                         ToolTip="{Binding Enclosure.Link.AbsoluteUri, Mode=OneTime}"
                         Visibility="{Binding HasEnclosure, Converter={StaticResource hasEnclosureConverter}}" />
 
                 <Label Grid.Column="3"
+                       Style="{Binding Unread, Converter={StaticResource isUnreadLabelConverter}}"
                        HorizontalAlignment="Right"
                        Content="{Binding Published, Mode=OneTime}"
                        ContentStringFormat="{}{0:HH:mm - dd MMM yy}" />
@@ -124,9 +179,9 @@
                     HorizontalAlignment="Center"
                     VerticalAlignment="Stretch"
                     Orientation="Horizontal">
-            <Button Content="Refresh" Command="{Binding RefreshAllCommand, Mode=OneTime}" />
-            <Button Content="Mark All As Read" Command="{Binding MarkAllAsReadCommand, Mode=OneTime}" />
-            <Button Content="Open File" Command="{Binding OpenFeedsFileCommand, Mode=OneTime}" />
+            <Button Content="Refresh" Command="{Binding RefreshAllCommand, Mode=OneTime}" Margin="0,0,10,0" />
+            <Button Content="Mark All As Read" Command="{Binding MarkAllAsReadCommand, Mode=OneTime}" Margin="0,0,10,0" />
+            <Button Content="Open File" Command="{Binding OpenFeedsFileCommand, Mode=OneTime}" Margin="0,0,10,0" />
             <Button Content="Reload Feeds" Command="{Binding ReloadCommand, Mode=OneTime}" />
         </StackPanel>
 
@@ -150,7 +205,7 @@
                               ItemsSource="{Binding Source={StaticResource sortedFeeds}}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <VirtualizingStackPanel Margin="10,0,10,0" Background="Green" />
+                            <VirtualizingStackPanel Margin="10,0,10,0" />
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                 </ItemsControl>
@@ -160,7 +215,7 @@
                           ItemsSource="{Binding Source={StaticResource sortedItems}}" >
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
-                        <VirtualizingStackPanel Margin="10,0,10,0" Background="Yellow" />
+                        <VirtualizingStackPanel Margin="10,0,10,0" />
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
             </ItemsControl>

@@ -7,7 +7,7 @@ namespace RdrLib.Model
 {
     public class Feed : BindableBase, IEquatable<Feed>, IComparable<Feed>
     {
-        public Uri Link { get; } = new Uri("", UriKind.Relative);
+        public Uri Link { get; }
 
         private string _name = string.Empty;
         public string Name

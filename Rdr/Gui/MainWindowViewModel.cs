@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -112,6 +112,9 @@ namespace Rdr.Gui
             }
         }
 
+        public DelegateCommandAsync<Enclosure> DownloadEnclosureCommand
+            => new DelegateCommandAsync<Enclosure>(DownloadEnclosureAsync, CanExecuteAsync);
+
         private bool CanExecuteAsync(object _) => !Activity;
 
         private readonly DispatcherTimer refreshTimer = new DispatcherTimer(DispatcherPriority.ApplicationIdle)
@@ -143,6 +146,9 @@ namespace Rdr.Gui
                 RaiseCanExecuteChangedOnAsyncCommands();
             }
         }
+
+        private int activeDownloads = 0;
+        public bool HasActiveDownload => activeDownloads > 0;
 
         private void RaiseCanExecuteChangedOnAsyncCommands()
         {
@@ -260,6 +266,8 @@ namespace Rdr.Gui
                 if (SystemLaunch.Uri(uri))
                 {
                     service.MarkAsRead(item);
+
+                    _unreadItems.Remove(item);
                 }
                 else
                 {
@@ -351,6 +359,51 @@ namespace Rdr.Gui
             }
 
             return feeds.AsReadOnly();
+        }
+
+        public async Task DownloadEnclosureAsync(Enclosure enclosure)
+        {
+            string directory = @"C:\Users\k1ngl\share";
+            string filename = enclosure.Link.Segments.Last();
+
+            string path = Path.Combine(directory, filename);
+
+            var progress = new Progress<DownloadProgress>(e =>
+            {
+                if (e.ContentLength.HasValue)
+                {
+                    decimal current = Convert.ToDecimal(e.TotalBytesReceived);
+                    decimal total = Convert.ToDecimal(e.ContentLength.Value);
+
+                    decimal percent = current / total;
+
+                    enclosure.Message = percent.ToString(GetPercentFormat());
+                }
+                else
+                {
+                    enclosure.Message = $"{e.TotalBytesReceived} bytes received";
+                }
+            });
+
+            enclosure.IsDownloading = true;
+            activeDownloads++;
+
+            DownloadResult result = await service.DownloadEnclosureAsync(enclosure, path, progress);
+
+            enclosure.IsDownloading = false;
+            activeDownloads--;
+
+            enclosure.Message = (result == DownloadResult.Success) ? "Download" : result.ToString();
+        }
+
+        private static string GetPercentFormat()
+        {
+            var cc = CultureInfo.CurrentCulture;
+
+            string separator = cc.NumberFormat.PercentDecimalSeparator;
+            string symbol = cc.NumberFormat.PercentSymbol;
+
+            return String.Format(cc, "0{0}0 {1}", separator, symbol);
         }
     }
 }

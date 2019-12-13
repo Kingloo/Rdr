@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,10 +12,19 @@ namespace RdrLib
 {
     public class RdrService
     {
+        private bool preserveSynchronizationContext = true;
+
         private readonly ObservableCollection<Feed> _feeds = new ObservableCollection<Feed>();
         public IReadOnlyCollection<Feed> Feeds => _feeds;
         
-        public RdrService() { }
+        public RdrService()
+            : this(true)
+        { }
+
+        public RdrService(bool preserveSynchronizationContext)
+        {
+            this.preserveSynchronizationContext = preserveSynchronizationContext;
+        }
 
         public Task UpdateAsync(Feed feed) => UpdateFeedAsync(feed);
 
@@ -41,7 +48,7 @@ namespace RdrLib
         {
             feed.Status = FeedStatus.Updating;
 
-            (HttpStatusCode code, string text) = await Download.StringAsync(feed.Link).ConfigureAwait(false);
+            (HttpStatusCode code, string text) = await Download.StringAsync(feed.Link).ConfigureAwait(preserveSynchronizationContext);
 
             if (code != HttpStatusCode.OK)
             {
@@ -85,13 +92,13 @@ namespace RdrLib
             {
                 Download download = new Download(enclosure.Link, path);
                 
-                return await download.ToFileAsync().ConfigureAwait(false);
+                return await download.ToFileAsync().ConfigureAwait(preserveSynchronizationContext);
             }
             else
             {
                 Download download = new Download(enclosure.Link, path);
 
-                return await download.ToFileAsync(progress, CancellationToken.None).ConfigureAwait(false);
+                return await download.ToFileAsync(progress, CancellationToken.None).ConfigureAwait(preserveSynchronizationContext);
             }
         }
 
