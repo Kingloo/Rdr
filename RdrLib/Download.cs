@@ -96,10 +96,10 @@ namespace RdrLib
             Int64 reportingThreshold = 1024L * 100L;
 
             int bytesWrittenThisLoop = 0;
-            int throttleThresholdBytes = ((1024 * 1024 * 10) / 8) / 4; // 10 megabits in mebibytes
+            int throttleThresholdBytes = ((1024 * 1024 * 10) / 8) / 3; // 10 megabits in mebibytes
 
             Stopwatch stopWatch = Stopwatch.StartNew();
-            TimeSpan timeThreshold = TimeSpan.FromMilliseconds(250d);
+            TimeSpan timeThreshold = TimeSpan.FromMilliseconds(333d);
 
             byte[] buffer = new byte[1024 * 1024]; // 1 MiB - but bytesRead below only ever seems to return 16384 bytes
 
@@ -206,6 +206,11 @@ namespace RdrLib
             }
 
             return (status, text);
+        }
+
+        internal static void CleanUp()
+        {
+            client.Dispose();
         }
     }
 }

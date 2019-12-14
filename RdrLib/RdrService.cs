@@ -12,7 +12,7 @@ namespace RdrLib
 {
     public class RdrService
     {
-        private bool preserveSynchronizationContext = true;
+        private readonly bool preserveSynchronizationContext = true;
 
         private readonly ObservableCollection<Feed> _feeds = new ObservableCollection<Feed>();
         public IReadOnlyCollection<Feed> Feeds => _feeds;
@@ -71,9 +71,35 @@ namespace RdrLib
 
             feed.Name = FeedHelpers.GetName(document);
 
-            IEnumerable<Item> items = FeedHelpers.GetItems(document, feed.Name);
+            IReadOnlyCollection<Item> items = FeedHelpers.GetItems(document, feed.Name);
 
             feed.AddMany(items);
+
+
+
+
+            // DEBUG ONLY !
+
+            //feed.AddMany(items.Take(5));
+
+            //if (feed.Name.Contains("varney", StringComparison.OrdinalIgnoreCase))
+            //{
+            //    Item fake = new Item(feed.Name)
+            //    {
+            //        Name = DateTimeOffset.Now.Ticks.ToString(),
+            //        Published = DateTimeOffset.Now,
+            //        Unread = true
+            //    };
+
+            //    feed.Add(fake);
+            //}
+
+
+
+            //
+
+
+
 
             feed.Status = FeedStatus.None;
         }
@@ -81,24 +107,19 @@ namespace RdrLib
         public Task<DownloadResult> DownloadEnclosureAsync(Enclosure enclosure, string path)
             => DownloadEnclosureAsync(enclosure, path, null);
 
-        public async Task<DownloadResult> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<DownloadProgress>? progress)
+        public Task<DownloadResult> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<DownloadProgress>? progress)
         {
-            if (enclosure.Link is null)
-            {
-                return DownloadResult.NoLink;
-            }
-
             if (progress is null)
             {
                 Download download = new Download(enclosure.Link, path);
                 
-                return await download.ToFileAsync().ConfigureAwait(preserveSynchronizationContext);
+                return download.ToFileAsync();
             }
             else
             {
                 Download download = new Download(enclosure.Link, path);
 
-                return await download.ToFileAsync(progress, CancellationToken.None).ConfigureAwait(preserveSynchronizationContext);
+                return download.ToFileAsync(progress, CancellationToken.None);
             }
         }
 
@@ -170,5 +191,7 @@ namespace RdrLib
         }
 
         public void MarkAsRead(Item item) => item.Unread = false;
+
+        public void CleanUp() => Download.CleanUp();
     }
 }

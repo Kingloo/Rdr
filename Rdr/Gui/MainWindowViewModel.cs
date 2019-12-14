@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -14,7 +15,7 @@ namespace Rdr.Gui
 {
     public class MainWindowViewModel : BindableBase
     {
-        private DelegateCommandAsync? _refreshAllCommand;
+        private DelegateCommandAsync? _refreshAllCommand = null;
         public DelegateCommandAsync RefreshAllCommand
         {
             get
@@ -70,7 +71,7 @@ namespace Rdr.Gui
             }
         }
 
-        private DelegateCommand? _markAllAsReadCommand;
+        private DelegateCommand? _markAllAsReadCommand = null;
         public DelegateCommand MarkAllAsReadCommand
         {
             get
@@ -119,19 +120,17 @@ namespace Rdr.Gui
 
         private readonly DispatcherTimer refreshTimer = new DispatcherTimer(DispatcherPriority.ApplicationIdle)
         {
-            Interval = TimeSpan.FromMinutes(15d)
+            Interval = TimeSpan.FromMinutes(10d)
         };
 
         private readonly string feedsFilePath = string.Empty;
         private readonly RdrService service = new RdrService();
+        private Feed? selectedFeed = null;
 
         public IReadOnlyCollection<Feed> Feeds => service.Feeds;
 
         private readonly ObservableCollection<Item> _items = new ObservableCollection<Item>();
         public IReadOnlyCollection<Item> Items => _items;
-
-        private readonly ObservableCollection<Item> _unreadItems = new ObservableCollection<Item>();
-        public IReadOnlyCollection<Item> UnreadItems => _unreadItems;
 
         public bool IsRefreshTimerRunning => refreshTimer.IsEnabled;
 
@@ -191,7 +190,14 @@ namespace Rdr.Gui
 
             await service.UpdateAllAsync();
 
-            AddUnreadRemoveRead();
+            if (selectedFeed is null)
+            {
+                MoveUnreadItems();
+            }
+            else
+            {
+                MoveItems(selectedFeed);
+            }
 
             Activity = false;
         }
@@ -202,7 +208,10 @@ namespace Rdr.Gui
 
             await service.UpdateAsync(feed);
 
-            AddUnreadRemoveRead();
+            if (selectedFeed == feed)
+            {
+                MoveItems(feed);
+            }
 
             Activity = false;
         }
@@ -213,35 +222,16 @@ namespace Rdr.Gui
 
             await service.UpdateAsync(feeds);
 
-            AddUnreadRemoveRead();
-
+            if (selectedFeed is null)
+            {
+                MoveUnreadItems();
+            }
+            else
+            {
+                MoveItems(selectedFeed);
+            }
+            
             Activity = false;
-        }
-
-        private void AddUnreadRemoveRead()
-        {
-            var toAdd = (from feed in Feeds
-                         from item in feed.Items
-                         where item.Unread
-                         select item).ToList();
-
-            var toRemove = _unreadItems.Where(i => !i.Unread).ToList();
-
-            foreach (Item each in toAdd.Where(i => i.Published > DateTimeOffset.Now.AddDays(-14)))
-            {
-                if (!_unreadItems.Contains(each))
-                {
-                    _unreadItems.Add(each);
-                }
-            }
-
-            foreach (Item each in toRemove)
-            {
-                if (_unreadItems.Contains(each))
-                {
-                    _unreadItems.Remove(each);
-                }
-            }
         }
 
         private void GoToFeed(Feed feed)
@@ -267,7 +257,10 @@ namespace Rdr.Gui
                 {
                     service.MarkAsRead(item);
 
-                    _unreadItems.Remove(item);
+                    if ((selectedFeed is null) && (item.Unread) && (_items.Contains(item)))
+                    {
+                        _items.Remove(item);
+                    }
                 }
                 else
                 {
@@ -284,7 +277,10 @@ namespace Rdr.Gui
         {
             service.MarkAllAsRead();
 
-            AddUnreadRemoveRead();
+            if (selectedFeed is null)
+            {
+                _items.Clear();
+            }
         }
 
         public void OpenFeedsFile()
@@ -305,7 +301,6 @@ namespace Rdr.Gui
             {
                 service.Clear();
                 _items.Clear();
-                _unreadItems.Clear();
 
                 return;
             }
@@ -330,18 +325,16 @@ namespace Rdr.Gui
 
         private static async Task<string[]> ReadLinesAsync(string path, string commentChar)
         {
-            string[] lines = Array.Empty<string>();
-
             try
             {
-                lines = await FileSystem.LoadLinesFromFileAsync(path, commentChar).ConfigureAwait(false);
+                return await FileSystem.LoadLinesFromFileAsync(path, commentChar).ConfigureAwait(false);
             }
             catch (FileNotFoundException)
             {
                 await Log.MessageAsync($"file not found: {path}").ConfigureAwait(false);
-            }
 
-            return lines;
+                return Array.Empty<string>();
+            }
         }
 
         private static IReadOnlyCollection<Feed> CreateFeeds(string[] lines)
@@ -404,6 +397,55 @@ namespace Rdr.Gui
             string symbol = cc.NumberFormat.PercentSymbol;
 
             return String.Format(cc, "0{0}0 {1}", separator, symbol);
+        }
+
+        public void SetSelectedFeed(Feed? feed)
+        {
+            if (feed is null)
+            {
+                selectedFeed = null;
+
+                MoveUnreadItems();
+            }
+            else
+            {
+                selectedFeed = feed;
+
+                MoveItems(selectedFeed.Items, clearFirst: true);
+            }
+        }
+
+        private void MoveUnreadItems()
+        {
+            var unreadItems = from f in Feeds
+                              from i in f.Items
+                              where i.Unread
+                              select i;
+
+            MoveItems(unreadItems, clearFirst: true);
+        }
+
+        private void MoveItems(Feed feed) => MoveItems(feed.Items, clearFirst: false);
+
+        private void MoveItems(IEnumerable<Item> items, bool clearFirst)
+        {
+            if (clearFirst)
+            {
+                _items.Clear();
+            }
+
+            foreach (Item item in items)
+            {
+                if (!_items.Contains(item))
+                {
+                    _items.Add(item);
+                }
+            }
+        }
+
+        public void CleanUp()
+        {
+            service.CleanUp();
         }
     }
 }

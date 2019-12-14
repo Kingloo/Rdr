@@ -32,7 +32,7 @@ namespace Rdr.Gui
         {
             if (e.Exception is Exception ex)
             {
-                Log.Exception(ex);
+                Log.Exception(ex, includeStackTrace: true);
             }
             else
             {

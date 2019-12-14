@@ -6,7 +6,9 @@
         xmlns:converters="clr-namespace:Rdr.Gui.Converters"
         xmlns:rdrModel="clr-namespace:RdrLib.Model;assembly=RdrLib"
         Loaded="Window_Loaded"
-        Closing="Window_Closing">
+        KeyDown="Window_KeyDown"
+        Closing="Window_Closing"
+        Closed="Window_Closed">
 
     <Window.Style>
         <Style TargetType="{x:Type gui:MainWindow}">
@@ -30,7 +32,7 @@
         </CollectionViewSource>
 
         <CollectionViewSource x:Key="sortedItems"
-                              Source="{Binding UnreadItems}"
+                              Source="{Binding Items}"
                               IsLiveSortingRequested="True">
             <CollectionViewSource.SortDescriptions>
                 <scm:SortDescription PropertyName="Published" Direction="Descending" />
