@@ -65,7 +65,7 @@ namespace RdrLib
 
             if (!XmlHelpers.TryParse(text, out XDocument? document))
             {
-                feed.Status = FeedStatus.Broken;
+                feed.Status = FeedStatus.ParseFailed;
                 return;
             }
 
@@ -101,7 +101,7 @@ namespace RdrLib
 
 
 
-            feed.Status = FeedStatus.None;
+            feed.Status = FeedStatus.Ok;
         }
 
         public Task<DownloadResult> DownloadEnclosureAsync(Enclosure enclosure, string path)

@@ -10,9 +10,11 @@ namespace Rdr.Gui.Converters
     public class FeedStatusColorConverter : IValueConverter
     {
         public Brush None { get; set; } = Brushes.White;
+        public Brush Ok { get; set; } = Brushes.White;
         public Brush Updating { get; set; } = Brushes.White;
         public Brush DoesNotExist { get; set; } = Brushes.White;
         public Brush Forbidden { get; set; } = Brushes.White;
+        public Brush ParseFailed { get; set; } = Brushes.White;
         public Brush MovedCannotFollow { get; set; } = Brushes.White;
         public Brush OtherInternetError { get; set; } = Brushes.White;
         public Brush Broken { get; set; } = Brushes.White;
@@ -21,9 +23,11 @@ namespace Rdr.Gui.Converters
             => (FeedStatus)value switch
             {
                 FeedStatus.None => None,
+                FeedStatus.Ok => Ok,
                 FeedStatus.Updating => Updating,
                 FeedStatus.DoesNotExist => DoesNotExist,
                 FeedStatus.Forbidden => Forbidden,
+                FeedStatus.ParseFailed => ParseFailed,
                 FeedStatus.MovedCannotFollow => MovedCannotFollow,
                 FeedStatus.OtherInternetError => OtherInternetError,
                 FeedStatus.Broken => Broken,
@@ -32,7 +36,7 @@ namespace Rdr.Gui.Converters
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            throw new NotImplementedException("converting from color to FeedStatus is not supported!");
+            throw new NotSupportedException("converting from color to FeedStatus is not supported!");
         }
     }
 }

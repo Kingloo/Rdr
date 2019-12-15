@@ -42,13 +42,15 @@
         <DataTemplate DataType="{x:Type rdrModel:Feed}">
             <DataTemplate.Resources>
                 <converters:FeedStatusColorConverter x:Key="feedStatusToColorConverter"
-                                                       None="#FF313131"
-                                                       Updating="LightGray"
-                                                       DoesNotExist="Maroon"
-                                                       Forbidden="LightGreen"
-                                                       MovedCannotFollow="Red"
-                                                       OtherInternetError="LightPink"
-                                                       Broken="LightBlue" />
+                                                     None="White"
+                                                     Ok="#FF313131"
+                                                     Updating="LightGray"
+                                                     DoesNotExist="LightGoldenrodYellow"
+                                                     Forbidden="Red"
+                                                     ParseFailed="LightPink"
+                                                     MovedCannotFollow="Red"
+                                                     OtherInternetError="LightBlue"
+                                                     Broken="Blue" />
             </DataTemplate.Resources>
             
             <Label Margin="0,0,0,5"
