@@ -257,7 +257,7 @@ namespace Rdr.Gui
                 {
                     service.MarkAsRead(item);
 
-                    if ((selectedFeed is null) && (item.Unread) && (_items.Contains(item)))
+                    if ((selectedFeed is null) && (_items.Contains(item)))
                     {
                         _items.Remove(item);
                     }
