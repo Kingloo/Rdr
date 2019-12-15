@@ -22,13 +22,13 @@ namespace RdrLib.Helpers
 
         internal static FeedType DetermineFeedType(XDocument document)
         {
-            var sco = StringComparison.OrdinalIgnoreCase;
+            var oic = StringComparison.OrdinalIgnoreCase;
 
-            if (document.Root.Name.LocalName.Equals("feed", sco))
+            if (document.Root.Name.LocalName.Equals("feed", oic))
             {
                 return FeedType.Atom;
             }
-            else if (document.Root.Name.LocalName.Equals("rss", sco))
+            else if (document.Root.Name.LocalName.Equals("rss", oic))
             {
                 return FeedType.RSS;
             }

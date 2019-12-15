@@ -13,7 +13,7 @@ namespace RdrLib.Helpers
     {
         internal static IReadOnlyCollection<Item> CreateItems(IEnumerable<XElement> elements, string feedTitle)
         {
-            Collection<Item> items = new Collection<Item>();
+            List<Item> items = new List<Item>();
 
             foreach (XElement element in elements)
             {
@@ -33,7 +33,7 @@ namespace RdrLib.Helpers
                 items.Add(item);
             }
 
-            return items;
+            return items.AsReadOnly();
         }
 
         private static Uri? GetLink(XElement element)
@@ -92,9 +92,9 @@ namespace RdrLib.Helpers
                 }
                 else
                 {
-                    // some sites, such as AnandTech, do publish datetime in a bad format
+                    // some sites, such as AnandTech, publish datetime in a bad format
                     // e.g. Thu, 12 Dec 2019 11:00:00 EDT
-                    // if we remove the "EDT" it does parse correctly
+                    // if we remove the "EDT" it parses correctly
 
                     int end = pubDateElement.Value.Length - 4;
                     string valueWithoutTimeZone = pubDateElement.Value.Substring(0, end);

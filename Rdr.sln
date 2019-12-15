@@ -1,13 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26124.0
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29609.76
 MinimumVisualStudioVersion = 15.0.26124.0
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rdr", "Rdr\Rdr.csproj", "{B0B05997-CE64-4853-B5DC-D8274296A7B4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rdr", "Rdr\Rdr.csproj", "{B0B05997-CE64-4853-B5DC-D8274296A7B4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RdrLib", "RdrLib\RdrLib.csproj", "{777D902F-FD9B-4140-90BD-784B0D9AA839}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "console", "console\console.csproj", "{7FAC4027-1EA0-44D3-A481-F8B3EC54F756}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RdrLib", "RdrLib\RdrLib.csproj", "{777D902F-FD9B-4140-90BD-784B0D9AA839}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,9 +15,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{B0B05997-CE64-4853-B5DC-D8274296A7B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -46,17 +41,11 @@ Global
 		{777D902F-FD9B-4140-90BD-784B0D9AA839}.Release|x64.Build.0 = Release|Any CPU
 		{777D902F-FD9B-4140-90BD-784B0D9AA839}.Release|x86.ActiveCfg = Release|Any CPU
 		{777D902F-FD9B-4140-90BD-784B0D9AA839}.Release|x86.Build.0 = Release|Any CPU
-		{7FAC4027-1EA0-44D3-A481-F8B3EC54F756}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7FAC4027-1EA0-44D3-A481-F8B3EC54F756}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7FAC4027-1EA0-44D3-A481-F8B3EC54F756}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{7FAC4027-1EA0-44D3-A481-F8B3EC54F756}.Debug|x64.Build.0 = Debug|Any CPU
-		{7FAC4027-1EA0-44D3-A481-F8B3EC54F756}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{7FAC4027-1EA0-44D3-A481-F8B3EC54F756}.Debug|x86.Build.0 = Debug|Any CPU
-		{7FAC4027-1EA0-44D3-A481-F8B3EC54F756}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7FAC4027-1EA0-44D3-A481-F8B3EC54F756}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7FAC4027-1EA0-44D3-A481-F8B3EC54F756}.Release|x64.ActiveCfg = Release|Any CPU
-		{7FAC4027-1EA0-44D3-A481-F8B3EC54F756}.Release|x64.Build.0 = Release|Any CPU
-		{7FAC4027-1EA0-44D3-A481-F8B3EC54F756}.Release|x86.ActiveCfg = Release|Any CPU
-		{7FAC4027-1EA0-44D3-A481-F8B3EC54F756}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {606DA63E-F8DD-4C8B-8C67-6BEF96FBC0BD}
 	EndGlobalSection
 EndGlobal

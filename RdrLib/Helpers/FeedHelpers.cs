@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using System.Xml.Linq;
@@ -56,7 +55,7 @@ namespace RdrLib.Helpers
             {
                 FeedType.Atom => ItemHelpers.CreateItems(document.Root.Elements(XName.Get("entry", "http://www.w3.org/2005/Atom")), feedName),
                 FeedType.RSS => ItemHelpers.CreateItems(document.Root.Element("channel").Elements("item"), feedName),
-                _ => new Collection<Item>(),
+                _ => new List<Item>(0).AsReadOnly()
             };
         }
     }

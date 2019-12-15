@@ -8,12 +8,18 @@ namespace RdrLib.Helpers
 {
     internal static class EnclosureHelpers
     {
-        internal static Enclosure Create(XElement element)
+        internal static Enclosure? Create(XElement element)
         {
-            Uri? downloadLink = GetLink(element);
-            Int64 size = GetSize(element);
+            if (GetLink(element) is Uri uri)
+            {
+                Int64 size = GetSize(element);
 
-            return new Enclosure(downloadLink, size);
+                return new Enclosure(uri, size);
+            }
+            else
+            {
+                return null;
+            }
         }
 
         internal static Uri? GetLink(XElement element)
