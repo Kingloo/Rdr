@@ -44,6 +44,11 @@ namespace Rdr.Gui
             vm.SetSelectedFeed(null);
         }
 
+        private void SeeAll(object sender, RoutedEventArgs e)
+        {
+            vm.SeeAll();
+        }
+
         private void Label_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             Label label = (Label)sender;
@@ -70,6 +75,6 @@ namespace Rdr.Gui
             vm.StopTimer();
 
             vm.CleanUp();
-        }        
+        }
     }
 }

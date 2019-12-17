@@ -191,7 +191,7 @@ namespace Rdr.Gui
 
             if (selectedFeed is null)
             {
-                MoveUnreadItems();
+                MoveUnreadItems(false);
             }
             else
             {
@@ -223,7 +223,7 @@ namespace Rdr.Gui
 
             if (selectedFeed is null)
             {
-                MoveUnreadItems();
+                MoveUnreadItems(false);
             }
             else
             {
@@ -256,6 +256,7 @@ namespace Rdr.Gui
                 {
                     service.MarkAsRead(item);
 
+                    // we only want to remove the item if we are looking at unread items and _items contains it
                     if ((selectedFeed is null) && (_items.Contains(item)))
                     {
                         _items.Remove(item);
@@ -404,7 +405,7 @@ namespace Rdr.Gui
             {
                 selectedFeed = null;
 
-                MoveUnreadItems();
+                MoveUnreadItems(true);
             }
             else
             {
@@ -414,14 +415,26 @@ namespace Rdr.Gui
             }
         }
 
-        private void MoveUnreadItems()
+        public void SeeAll()
+        {
+            _items.Clear();
+
+            var allItems = from feed in Feeds
+                           from item in feed.Items
+                           orderby item.Published descending
+                           select item;
+
+            MoveItems(allItems, clearFirst: true);
+        }
+
+        private void MoveUnreadItems(bool clearFirst)
         {
             var unreadItems = from f in Feeds
                               from i in f.Items
                               where i.Unread
                               select i;
 
-            MoveItems(unreadItems, clearFirst: true);
+            MoveItems(unreadItems, clearFirst);
         }
 
         private void MoveItems(Feed feed) => MoveItems(feed.Items, clearFirst: false);
