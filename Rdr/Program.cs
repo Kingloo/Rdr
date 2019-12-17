@@ -21,7 +21,7 @@ namespace Rdr
                 Log.Message(message);
             }
 
-            return 0;
+            return exitCode;
         }
     }
 }
