@@ -356,10 +356,10 @@ namespace Rdr.Gui
 
         public async Task DownloadEnclosureAsync(Enclosure enclosure)
         {
-            string directory = @"C:\Users\k1ngl\share";
+            string profileFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             string filename = enclosure.Link.Segments.Last();
 
-            string path = Path.Combine(directory, filename);
+            string path = Path.Combine(profileFolder, "share", filename);
 
             var progress = new Progress<DownloadProgress>(e =>
             {
