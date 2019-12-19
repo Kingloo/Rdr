@@ -75,32 +75,6 @@ namespace RdrLib
 
             feed.AddMany(items);
 
-
-
-
-            // DEBUG ONLY !
-
-            //feed.AddMany(items.Take(5));
-
-            //if (feed.Name.Contains("varney", StringComparison.OrdinalIgnoreCase))
-            //{
-            //    Item fake = new Item(feed.Name)
-            //    {
-            //        Name = DateTimeOffset.Now.Ticks.ToString(),
-            //        Published = DateTimeOffset.Now,
-            //        Unread = true
-            //    };
-
-            //    feed.Add(fake);
-            //}
-
-
-
-            //
-
-
-
-
             feed.Status = FeedStatus.Ok;
         }
 
