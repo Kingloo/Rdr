@@ -54,7 +54,7 @@ namespace RdrLib
 
     internal class Download
     {
-        private const string userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/71.0";
+        private const string userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:76.0) Gecko/20100101 Firefox/76.0";
 
         private static readonly HttpClient client = new HttpClient(
             new HttpClientHandler
@@ -64,7 +64,7 @@ namespace RdrLib
                 MaxAutomaticRedirections = 3
             })
         {
-            Timeout = TimeSpan.FromSeconds(5d)
+            Timeout = TimeSpan.FromSeconds(30d)
         };
         
         public Uri Uri { get; }
@@ -182,12 +182,11 @@ namespace RdrLib
 
             try
             {
-                using (response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
+                response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false);
+
+                if (response.IsSuccessStatusCode)
                 {
-                    if (response.IsSuccessStatusCode)
-                    {
-                        text = await Task.Run(response.Content.ReadAsStringAsync, token).ConfigureAwait(false);
-                    }
+                    text = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 }
             }
             catch (HttpRequestException) { }

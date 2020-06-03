@@ -38,6 +38,22 @@ namespace RdrLib.Helpers
 
         private static Uri? GetLink(XElement element)
         {
+            //IEnumerable<XElement> linkElements = element.Elements().Where(x => x.Name.LocalName.Equals("link", StringComparison.OrdinalIgnoreCase));
+
+            //foreach (XElement each in linkElements)
+            //{
+            //    if (each.Attribute("rel") is XAttribute rel)
+            //    {
+            //        if (rel.Value.Equals("alternate", StringComparison.OrdinalIgnoreCase))
+            //        {
+            //            // all of this is specific to Blogger's Atom feeds
+            //            // which don't put the real link to the post as the first link element
+            //            // I don't know if all Atom feeds have this problem
+            //            // choosing the RSS feed type does not have this problem
+            //        }
+            //    }
+            //}
+
             XElement linkElement = element
                 .Elements()
                 .Where(x => x.Name.LocalName.Equals("link", StringComparison.Ordinal))
