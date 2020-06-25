@@ -48,11 +48,11 @@ namespace RdrLib
         {
             feed.Status = FeedStatus.Updating;
 
-            (HttpStatusCode code, string text) = await Download.StringAsync(feed.Link).ConfigureAwait(preserveSynchronizationContext);
+            StringResponse response = await Web.DownloadStringAsync(feed.Link).ConfigureAwait(false);
 
-            if (code != HttpStatusCode.OK)
+            if (response.Reason != Reason.Success)
             {
-                feed.Status = code switch
+                feed.Status = response.Status switch
                 {
                     HttpStatusCode.Forbidden => FeedStatus.Forbidden,
                     HttpStatusCode.Moved => FeedStatus.MovedCannotFollow,
@@ -63,7 +63,7 @@ namespace RdrLib
                 return;
             }
 
-            if (!XmlHelpers.TryParse(text, out XDocument? document))
+            if (!XmlHelpers.TryParse(response.Text, out XDocument? document))
             {
                 feed.Status = FeedStatus.ParseFailed;
                 return;
@@ -78,22 +78,18 @@ namespace RdrLib
             feed.Status = FeedStatus.Ok;
         }
 
-        public Task<DownloadResult> DownloadEnclosureAsync(Enclosure enclosure, string path)
+        public Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path)
             => DownloadEnclosureAsync(enclosure, path, null);
 
-        public Task<DownloadResult> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<DownloadProgress>? progress)
+        public async Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress>? progress)
         {
             if (progress is null)
             {
-                Download download = new Download(enclosure.Link, path);
-                
-                return download.ToFileAsync();
+                return await Web.DownloadFileAsync(enclosure.Link, path).ConfigureAwait(false);
             }
             else
             {
-                Download download = new Download(enclosure.Link, path);
-
-                return download.ToFileAsync(progress, CancellationToken.None);
+                return await Web.DownloadFileAsync(enclosure.Link, path, progress).ConfigureAwait(false);
             }
         }
 
@@ -165,7 +161,5 @@ namespace RdrLib
         }
 
         public void MarkAsRead(Item item) => item.Unread = false;
-
-        public void CleanUp() => Download.CleanUp();
     }
 }

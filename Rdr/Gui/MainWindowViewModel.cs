@@ -361,42 +361,27 @@ namespace Rdr.Gui
 
             string path = Path.Combine(profileFolder, "share", filename);
 
-            var progress = new Progress<DownloadProgress>(e =>
+            var progress = new Progress<FileProgress>(e =>
             {
                 if (e.ContentLength.HasValue)
                 {
-                    decimal current = Convert.ToDecimal(e.TotalBytesReceived);
-                    decimal total = Convert.ToDecimal(e.ContentLength.Value);
-
-                    decimal percent = current / total;
-
-                    enclosure.Message = percent.ToString(GetPercentFormat());
+                    enclosure.Message = e.GetPercentFormatted(CultureInfo.CurrentCulture) ?? "error!";
                 }
                 else
                 {
-                    enclosure.Message = $"{e.TotalBytesReceived} bytes received";
+                    enclosure.Message = $"{e.TotalBytesWritten} bytes written";
                 }
             });
 
             enclosure.IsDownloading = true;
             activeDownloads++;
 
-            DownloadResult result = await service.DownloadEnclosureAsync(enclosure, path, progress);
+            FileResponse response = await service.DownloadEnclosureAsync(enclosure, path, progress);
 
             enclosure.IsDownloading = false;
             activeDownloads--;
 
-            enclosure.Message = (result == DownloadResult.Success) ? "Download" : result.ToString();
-        }
-
-        private static string GetPercentFormat()
-        {
-            var cc = CultureInfo.CurrentCulture;
-
-            string separator = cc.NumberFormat.PercentDecimalSeparator;
-            string symbol = cc.NumberFormat.PercentSymbol;
-
-            return String.Format(cc, "0{0}0 {1}", separator, symbol);
+            enclosure.Message = (response.Reason == Reason.Success) ? "Download" : response.Reason.ToString();
         }
 
         public void SetSelectedFeed(Feed? feed)
@@ -453,11 +438,6 @@ namespace Rdr.Gui
                     _items.Add(item);
                 }
             }
-        }
-
-        public void CleanUp()
-        {
-            service.CleanUp();
         }
     }
 }

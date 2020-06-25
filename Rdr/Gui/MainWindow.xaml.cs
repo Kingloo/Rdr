@@ -1,10 +1,8 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Markup;
 using RdrLib.Model;
 
 namespace Rdr.Gui
@@ -16,8 +14,6 @@ namespace Rdr.Gui
         public MainWindow(MainWindowViewModel viewModel)
         {
             InitializeComponent();
-
-            Language = XmlLanguage.GetLanguage(CultureInfo.CurrentCulture.IetfLanguageTag);
 
             vm = viewModel;
 
@@ -73,8 +69,6 @@ namespace Rdr.Gui
         private void Window_Closed(object sender, EventArgs e)
         {
             vm.StopTimer();
-
-            vm.CleanUp();
         }
     }
 }

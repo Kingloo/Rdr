@@ -22,11 +22,11 @@ namespace Rdr.Common
 
         public DelegateCommand(Action execute, Predicate<object> canExecute)
         {
-            _execute = execute;
-            _canExecute = canExecute;
+            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
+            _canExecute = canExecute ?? throw new ArgumentNullException(nameof(canExecute));
         }
 
-        public override void Execute(object parameter)
+        public override void Execute(object? parameter)
             => _execute();
 
         public override bool CanExecute(object parameter)
@@ -40,8 +40,8 @@ namespace Rdr.Common
 
         public DelegateCommand(Action<T> execute, Predicate<T> canExecute)
         {
-            _execute = execute;
-            _canExecute = canExecute;
+            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
+            _canExecute = canExecute ?? throw new ArgumentNullException(nameof(canExecute));
         }
 
         public override void Execute(object parameter)
@@ -59,11 +59,11 @@ namespace Rdr.Common
 
         public DelegateCommandAsync(Func<Task> executeAsync, Predicate<object> canExecute)
         {
-            _executeAsync = executeAsync;
-            _canExecute = canExecute;
+            _executeAsync = executeAsync ?? throw new ArgumentNullException(nameof(executeAsync));
+            _canExecute = canExecute ?? throw new ArgumentNullException(nameof(canExecute));
         }
 
-        public async override void Execute(object parameter)
+        public async override void Execute(object? parameter)
             => await ExecuteAsync();
 
         private async Task ExecuteAsync()
@@ -89,8 +89,8 @@ namespace Rdr.Common
 
         public DelegateCommandAsync(Func<T, Task> executeAsync, Predicate<T> canExecute)
         {
-            _executeAsync = executeAsync;
-            _canExecute = canExecute;
+            _executeAsync = executeAsync ?? throw new ArgumentNullException(nameof(executeAsync));
+            _canExecute = canExecute ?? throw new ArgumentNullException(nameof(canExecute));
         }
 
         public override async void Execute(object parameter)

@@ -9,7 +9,13 @@ namespace RdrLib.Model
         public Uri? Link { get; set; } = null;
         public string Name { get; set; } = string.Empty;
         public string FeedName { get; set; } = string.Empty;
-        public DateTimeOffset Published { get; set; } = DateTimeOffset.MinValue;
+
+        private DateTimeOffset _published = DateTimeOffset.MinValue;
+        public DateTimeOffset Published
+        {
+            get => _published.ToLocalTime();
+            set => _published = value;
+        }
 
         private bool _unread = true;
         public bool Unread
