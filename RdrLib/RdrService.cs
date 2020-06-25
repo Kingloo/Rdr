@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Net;
-using System.Threading;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using RdrLib.Helpers;
@@ -13,6 +14,9 @@ namespace RdrLib
     public class RdrService
     {
         private readonly bool preserveSynchronizationContext = true;
+
+        private const string userAgentHeaderName = "User-Agent";
+        private const string userAgentHeaderValue = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:77.0) Gecko/20100101 Firefox/77.0";
 
         private readonly ObservableCollection<Feed> _feeds = new ObservableCollection<Feed>();
         public IReadOnlyCollection<Feed> Feeds => _feeds;
@@ -48,7 +52,12 @@ namespace RdrLib
         {
             feed.Status = FeedStatus.Updating;
 
-            StringResponse response = await Web.DownloadStringAsync(feed.Link).ConfigureAwait(false);
+            static void configRequest(HttpRequestMessage request)
+            {
+                request.Headers.UserAgent.ParseAdd(userAgentHeaderValue);
+            }
+
+            StringResponse response = await Web.DownloadStringAsync(feed.Link, configRequest).ConfigureAwait(false);
 
             if (response.Reason != Reason.Success)
             {
@@ -59,6 +68,8 @@ namespace RdrLib
                     HttpStatusCode.NotFound => FeedStatus.DoesNotExist,
                     _ => FeedStatus.OtherInternetError,
                 };
+
+                Debug.WriteLine($"{feed.Link.AbsoluteUri}: {response.Reason}, {response.Status}, {response.Text}");
 
                 return;
             }

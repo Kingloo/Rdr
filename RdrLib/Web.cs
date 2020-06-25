@@ -219,11 +219,12 @@ namespace RdrLib
                     Text = text
                 };
             }
-            catch (HttpRequestException)
+            catch (HttpRequestException ex)
             {
                 return new StringResponse(uri, Reason.WebError)
                 {
-                    Status = response?.StatusCode ?? null
+                    Status = response?.StatusCode ?? null,
+                    Text = ex.Message
                 };
             }
             catch (TaskCanceledException)
