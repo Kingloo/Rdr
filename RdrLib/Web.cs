@@ -231,6 +231,10 @@ namespace RdrLib
             {
                 return new StringResponse(uri, Reason.Timeout);
             }
+            catch (OperationCanceledException)
+            {
+                return new StringResponse(uri, Reason.WebError);
+            }
             finally
             {
                 request?.Dispose();
@@ -276,6 +280,10 @@ namespace RdrLib
             catch (TaskCanceledException)
             {
                 return new DataResponse(uri, Reason.Timeout);
+            }
+            catch (OperationCanceledException)
+            {
+                return new DataResponse(uri, Reason.WebError);
             }
             finally
             {
@@ -375,6 +383,10 @@ namespace RdrLib
             catch (TaskCanceledException)
             {
                 fileResponse = new FileResponse(uri, path, Reason.Canceled);
+            }
+            catch (OperationCanceledException)
+            {
+                fileResponse = new FileResponse(uri, path, Reason.WebError);
             }
             finally
             {
