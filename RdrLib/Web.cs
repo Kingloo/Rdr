@@ -329,7 +329,7 @@ namespace RdrLib
             byte[] buffer = new byte[receiveBufferSize];
             Int64 totalBytesWritten = 0L;
             Int64 prevTotalBytesWritten = 0L;
-            Int64 progressReportThreshold = 1024L * 500L; // 1024 * 500 = 500 KiB
+            Int64 progressReportThreshold = 1024L * 100L; // 1024 * 100 = 100 KiB
 
             try
             {
