@@ -52,6 +52,16 @@ namespace RdrLib.Model
                 return false;
             }
 
+            if (mine is null)
+            {
+                return false;
+            }
+
+            if (other is null)
+            {
+                return false;
+            }
+
             return mine.AbsolutePath.Equals(other.AbsolutePath, StringComparison.OrdinalIgnoreCase);
         }
 
