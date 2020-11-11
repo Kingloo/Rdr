@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Xml.Linq;
@@ -10,7 +11,7 @@ namespace RdrLib.Helpers
 {
     internal static class FeedHelpers
     {
-        internal static bool TryCreate(Uri uri, out Feed? feed)
+        internal static bool TryCreate(Uri uri, [NotNullWhen(true)] out Feed? feed)
         {
             if (!uri.IsAbsoluteUri)
             {
