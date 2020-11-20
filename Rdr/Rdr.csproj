@@ -10,6 +10,7 @@
     <StartupObject>Rdr.Program</StartupObject>
     <ApplicationIcon>Assets\Rdr.ico</ApplicationIcon>
     <PlatformTarget>x64</PlatformTarget>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
   </PropertyGroup>
 
   <ItemGroup>
