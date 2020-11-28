@@ -306,7 +306,7 @@ namespace RdrLib
             if (String.IsNullOrWhiteSpace(path)) { throw new ArgumentException("path cannot be NullOrWhiteSpace", nameof(path)); }
             if (File.Exists(path)) { return new FileResponse(uri, path, Reason.FileExists); }
 
-            string inProgressPath = $"{path}.inprogress";
+            string inProgressPath = GetExtension(path, "inprogress");
 
             FileResponse? fileResponse = null;
             
@@ -403,9 +403,9 @@ namespace RdrLib
             string finalPath = fileResponse.Reason switch
             {
                 Reason.Success => path,
-                Reason.WebError => SetExtension(path, "error"),
-                Reason.Canceled => SetExtension(path, "canceled"),
-                _ => SetExtension(path, "failed")
+                Reason.WebError => GetExtension(path, "error"),
+                Reason.Canceled => GetExtension(path, "canceled"),
+                _ => GetExtension(path, "failed")
             };
 
             File.Move(inProgressPath, finalPath);
@@ -413,7 +413,7 @@ namespace RdrLib
             return fileResponse;
         }
 
-        private static string SetExtension(string path, string extension)
+        private static string GetExtension(string path, string extension)
         {
             string newPath = $"{path}.{extension}";
 
