@@ -7,84 +7,104 @@ using System.Threading.Tasks;
 
 namespace Rdr.Common
 {
-    public static class Log
+    public enum Severity
     {
-        private static FileInfo logFile = GetLogFile();
+        None = 0,
+        Debug = 1,
+        Information = 2,
+        Warning = 3,
+        Error = 4
+    }
 
-        private static FileInfo GetLogFile()
+    public interface ILog
+    {
+        string Path { get; }
+        Severity Severity { get; }
+        
+        void Message(string message, Severity severity);
+        Task MessageAsync(string message, Severity severity);
+
+        void Exception(Exception ex);
+        void Exception(Exception ex, string message);
+        void Exception(Exception ex, bool includeStackTrace);
+        void Exception(Exception ex, string message, bool includeStackTrace);
+
+        Task ExceptionAsync(Exception ex);
+        Task ExceptionAsync(Exception ex, string message);
+        Task ExceptionAsync(Exception ex, bool includeStackTrace);
+        Task ExceptionAsync(Exception ex, string message, bool includeStackTrace);
+    }
+
+    public class Log : ILog
+    {
+        public string Path { get; } = string.Empty;
+        public Severity Severity { get; } = Severity.None;
+
+        public Log(string path, Severity severity)
         {
-            string directory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            Path = path;
+            Severity = severity;
+        }
 
-            if (!Directory.Exists(directory))
+        public void Message(string msg, Severity severity)
+        {
+            if (severity >= Severity)
             {
-                throw new DirectoryNotFoundException(nameof(directory));
+                string text = FormatMessage(msg);
+
+                WriteToFile(text, Path);
             }
-
-            string filename = "logfile.txt";
-            
-            string fullPath = Path.Combine(directory, filename);
-
-            return File.Exists(fullPath) ? new FileInfo(fullPath) : CreateLogFile(fullPath);
         }
 
-        private static FileInfo CreateLogFile(string fullPath)
+        public Task MessageAsync(string message, Severity severity)
         {
-            using (StreamWriter sw = File.CreateText(fullPath))
+            if (severity >= Severity)
             {
-                return new FileInfo(fullPath);
+                string text = FormatMessage(message);
+
+                return WriteToFileAsync(text, Path);
+            }
+            else
+            {
+                return Task.CompletedTask;
             }
         }
 
 
-        public static void Message(string msg)
-        {
-            string text = FormatMessage(msg);
-
-            WriteToFile(text);
-        }
-
-        public static Task MessageAsync(string message)
-        {
-            string text = FormatMessage(message);
-
-            return WriteToFileAsync(text);
-        }
-
-
-        public static void Exception(Exception ex)
+        public void Exception(Exception ex)
             => Exception(ex, string.Empty, false);
 
-        public static void Exception(Exception ex, string message)
+        public void Exception(Exception ex, string message)
             => Exception(ex, message, false);
 
-        public static void Exception(Exception ex, bool includeStackTrace)
+        public void Exception(Exception ex, bool includeStackTrace)
             => Exception(ex, string.Empty, includeStackTrace);
 
-        public static void Exception(Exception ex, string message, bool includeStackTrace)
+        public void Exception(Exception ex, string message, bool includeStackTrace)
         {
             if (ex is null) { throw new ArgumentNullException(nameof(ex)); }
 
             string text = FormatException(ex, message, includeStackTrace);
 
-            Message(text);
+            Message(text, Severity.Error);
         }
 
-        public static Task ExceptionAsync(Exception ex)
+        public Task ExceptionAsync(Exception ex)
             => ExceptionAsync(ex, string.Empty, false);
 
-        public static Task ExceptionAsync(Exception ex, string message)
+        public Task ExceptionAsync(Exception ex, string message)
             => ExceptionAsync(ex, message, false);
 
-        public static Task ExceptionAsync(Exception ex, bool includeStackTrace)
+        public Task ExceptionAsync(Exception ex, bool includeStackTrace)
             => ExceptionAsync(ex, string.Empty, includeStackTrace);
 
-        public static Task ExceptionAsync(Exception ex, string message, bool includeStackTrace)
+        public Task ExceptionAsync(Exception ex, string message, bool includeStackTrace)
         {
             if (ex is null) { throw new ArgumentNullException(nameof(ex)); }
 
             string text = FormatException(ex, message, includeStackTrace);
-            
-            return MessageAsync(text);
+
+            return MessageAsync(text, Severity.Error);
         }
 
 
@@ -111,7 +131,7 @@ namespace Rdr.Common
                 sb.Append(" - ");
                 sb.Append(message);
             }
-            
+
             if (includeStackTrace)
             {
                 sb.AppendLine(ex.StackTrace);
@@ -121,14 +141,14 @@ namespace Rdr.Common
         }
 
 
-        private static void WriteToFile(string text)
+        private static void WriteToFile(string text, string path)
         {
-            FileStream? fs = null;
+            FileStream? fs = default;
 
             try
             {
                 fs = new FileStream(
-                    logFile.FullName,
+                    path,
                     FileMode.Append,
                     FileAccess.Write,
                     FileShare.None,
@@ -144,7 +164,6 @@ namespace Rdr.Common
                     sw.Flush();
                 }
             }
-            catch (FileNotFoundException) { }
             catch (IOException) { }
             finally
             {
@@ -152,14 +171,14 @@ namespace Rdr.Common
             }
         }
 
-        private static async Task WriteToFileAsync(string text)
+        private static async Task WriteToFileAsync(string text, string path)
         {
             FileStream? fsAsync = default;
 
             try
             {
                 fsAsync = new FileStream(
-                    logFile.FullName,
+                    path,
                     FileMode.Append,
                     FileAccess.Write,
                     FileShare.None,
@@ -175,12 +194,53 @@ namespace Rdr.Common
                     await sw.FlushAsync().ConfigureAwait(false);
                 }
             }
-            catch (FileNotFoundException) { }
             catch (IOException) { }
             finally
             {
                 fsAsync?.Close();
             }
         }
+    }
+
+    public class NullLog : ILog
+    {
+        public string Path => string.Empty;
+
+        public Severity Severity => Severity.None;
+
+        public void Message(string message, Severity severity) { }
+        public Task MessageAsync(string message, Severity severity) => Task.CompletedTask;
+
+        public void Exception(Exception ex) { }
+        public void Exception(Exception ex, string message) { }
+        public void Exception(Exception ex, bool includeStackTrace) { }
+        public void Exception(Exception ex, string message, bool includeStackTrace) { }
+
+        public Task ExceptionAsync(Exception ex) => Task.CompletedTask;
+        public Task ExceptionAsync(Exception ex, string message) => Task.CompletedTask;
+        public Task ExceptionAsync(Exception ex, bool includeStackTrace) => Task.CompletedTask;
+        public Task ExceptionAsync(Exception ex, string message, bool includeStackTrace) => Task.CompletedTask;
+    }
+
+    public static class LogStatic
+    {
+        private const string defaultFileName = "logfile.txt";
+        private static readonly string defaultDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        private static readonly string defaultPath = Path.Combine(defaultDirectory, defaultFileName);
+
+        private static readonly Log instance = new Log(defaultPath, Severity.Information);
+
+        public static void Message(string message) => instance.Message(message, Severity.Error);
+        public static Task MessageAsync(string message) => instance.MessageAsync(message, Severity.Error);
+
+        public static void Exception(Exception ex) => instance.Exception(ex);
+        public static void Exception(Exception ex, string message) => instance.Exception(ex, message);
+        public static void Exception(Exception ex, bool includeStackTrace) => instance.Exception(ex, includeStackTrace);
+        public static void Exception(Exception ex, string message, bool includeStackTrace) => instance.Exception(ex, message, includeStackTrace);
+
+        public static Task ExceptionAsync(Exception ex) => instance.ExceptionAsync(ex);
+        public static Task ExceptionAsync(Exception ex, string message) => instance.ExceptionAsync(ex, message);
+        public static Task ExceptionAsync(Exception ex, bool includeStackTrace) => instance.ExceptionAsync(ex, includeStackTrace);
+        public static Task ExceptionAsync(Exception ex, string message, bool includeStackTrace) => instance.ExceptionAsync(ex, message, includeStackTrace);
     }
 }

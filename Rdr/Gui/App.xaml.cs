@@ -36,13 +36,13 @@ namespace Rdr.Gui
         {
             if (e.Exception is Exception ex)
             {
-                Log.Exception(ex, includeStackTrace: true);
+                LogStatic.Exception(ex, includeStackTrace: true);
             }
             else
             {
                 string message = "a DispatcherUnhandledException happened, but was empty";
 
-                Log.Message(message);
+                LogStatic.Message(message);
             }
         }
     }

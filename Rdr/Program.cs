@@ -18,7 +18,7 @@ namespace Rdr
             {
                 string message = String.Format(CultureInfo.CurrentCulture, "Rdr exited with code {0}", exitCode);
 
-                Log.Message(message);
+                LogStatic.Message(message);
             }
 
             return exitCode;

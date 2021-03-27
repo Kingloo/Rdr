@@ -8,12 +8,12 @@ namespace Rdr.Common
     {
         public static bool Path(string path)
         {
-            return File.Exists(path) ? Launch(path) : false;
+            return File.Exists(path) && Launch(path);
         }
 
         public static bool Uri(Uri uri)
         {
-            return uri.IsAbsoluteUri ? Launch(uri.AbsoluteUri) : false;
+            return uri.IsAbsoluteUri && Launch(uri.AbsoluteUri);
         }
 
         private static bool Launch(string launchString)

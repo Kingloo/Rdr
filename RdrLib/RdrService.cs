@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using RdrLib.Common;
 using RdrLib.Helpers;
 using RdrLib.Model;
 
@@ -15,11 +16,8 @@ namespace RdrLib
     {
         private readonly bool preserveSynchronizationContext = true;
 
-        private const string userAgentHeaderName = "User-Agent";
-        private const string userAgentHeaderValue = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:77.0) Gecko/20100101 Firefox/77.0";
-
         private readonly ObservableCollection<Feed> _feeds = new ObservableCollection<Feed>();
-        public IReadOnlyCollection<Feed> Feeds => _feeds;
+        public IReadOnlyCollection<Feed> Feeds { get => _feeds; }
         
         public RdrService()
             : this(true)
@@ -54,7 +52,7 @@ namespace RdrLib
 
             static void configRequest(HttpRequestMessage request)
             {
-                request.Headers.UserAgent.ParseAdd(userAgentHeaderValue);
+                request.Headers.UserAgent.ParseAdd(UserAgents.Firefox_87_Windows);
             }
 
             StringResponse response = await Web.DownloadStringAsync(feed.Link, configRequest).ConfigureAwait(false);
@@ -135,12 +133,12 @@ namespace RdrLib
         {
             if (_feeds.Contains(feed))
             {
-                _feeds.Remove(feed);
-
-                return true;
+                return _feeds.Remove(feed);
             }
-
-            return false;
+            else
+            {
+                return false;
+            }
         }
 
         public int Remove(IReadOnlyCollection<Feed> feeds)

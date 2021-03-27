@@ -239,12 +239,12 @@ namespace Rdr.Gui
             {
                 if (!SystemLaunch.Uri(uri))
                 {
-                    Log.Message($"feed link launch failed ({feed.Name})");
+                    LogStatic.Message($"feed link launch failed ({feed.Name})");
                 }
             }
             else
             {
-                Log.Message($"feed link was null ({feed.Name})");
+                LogStatic.Message($"feed link was null ({feed.Name})");
             }
         }
 
@@ -264,12 +264,12 @@ namespace Rdr.Gui
                 }
                 else
                 {
-                    Log.Message($"item link launch failed ({item.Name})");
+                    LogStatic.Message($"item link launch failed ({item.Name})");
                 }
             }
             else
             {
-                Log.Message($"item link was null ({item.Name})");
+                LogStatic.Message($"item link was null ({item.Name})");
             }
         }
 
@@ -287,7 +287,7 @@ namespace Rdr.Gui
         {
             if (!SystemLaunch.Path(feedsFilePath))
             {
-                Log.Message($"feeds file path does not exist ({feedsFilePath}), or process launch failed");
+                LogStatic.Message($"feeds file path does not exist ({feedsFilePath}), or process launch failed");
             }
         }
 
@@ -331,7 +331,7 @@ namespace Rdr.Gui
             }
             catch (FileNotFoundException)
             {
-                await Log.MessageAsync($"file not found: {path}").ConfigureAwait(false);
+                await LogStatic.MessageAsync($"file not found: {path}").ConfigureAwait(false);
 
                 return Array.Empty<string>();
             }
