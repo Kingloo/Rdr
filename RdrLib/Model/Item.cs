@@ -1,97 +1,97 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Text;
 
 namespace RdrLib.Model
 {
-    public class Item : BindableBase, IEquatable<Item>, IComparable<Item>
-    {
-        public Uri? Link { get; set; } = null;
-        public string Name { get; set; } = string.Empty;
-        public string FeedName { get; set; } = string.Empty;
+	public class Item : BindableBase, IEquatable<Item>, IComparable<Item>
+	{
+		public Uri? Link { get; set; } = null;
+		public string Name { get; set; } = string.Empty;
+		public string FeedName { get; set; } = string.Empty;
 
-        private DateTimeOffset _published = DateTimeOffset.MinValue;
-        public DateTimeOffset Published
-        {
-            get => _published.ToLocalTime();
-            set => _published = value;
-        }
+		private DateTimeOffset _published = DateTimeOffset.MinValue;
+		public DateTimeOffset Published
+		{
+			get => _published.ToLocalTime();
+			set => _published = value;
+		}
 
-        private bool _unread = true;
-        public bool Unread
-        {
-            get => _unread;
-            set => SetProperty(ref _unread, value, nameof(Unread));
-        }
-        
-        public Enclosure? Enclosure { get; set; } = null;
-        public bool HasEnclosure => !(Enclosure is null);
+		private bool _unread = true;
+		public bool Unread
+		{
+			get => _unread;
+			set => SetProperty(ref _unread, value, nameof(Unread));
+		}
 
-        public Item(string feedName)
-        {
-            FeedName = feedName;
-        }
+		public Enclosure? Enclosure { get; set; } = null;
+		public bool HasEnclosure => !(Enclosure is null);
 
-        public bool Equals(Item other)
-        {
-            bool sameName = Name.Equals(other.Name, StringComparison.OrdinalIgnoreCase);
-            bool sameLink = AreLinksTheSame(Link, other.Link);
-            
-            return sameName && sameLink;
-        }
+		public Item(string feedName)
+		{
+			FeedName = feedName;
+		}
 
-        private static bool AreLinksTheSame(Uri? mine, Uri? other)
-        {
-            if (mine is null && other is null)
-            {
-                return true;
-            }
+		public bool Equals(Item other)
+		{
+			bool sameName = Name.Equals(other.Name, StringComparison.OrdinalIgnoreCase);
+			bool sameLink = AreLinksTheSame(Link, other.Link);
 
-            if ((mine is null) != (other is null))
-            {
-                return false;
-            }
+			return sameName && sameLink;
+		}
 
-            if (mine is null)
-            {
-                return false;
-            }
+		private static bool AreLinksTheSame(Uri? mine, Uri? other)
+		{
+			if (mine is null && other is null)
+			{
+				return true;
+			}
 
-            if (other is null)
-            {
-                return false;
-            }
+			if ((mine is null) != (other is null))
+			{
+				return false;
+			}
 
-            return mine.AbsolutePath.Equals(other.AbsolutePath, StringComparison.OrdinalIgnoreCase);
-        }
+			if (mine is null)
+			{
+				return false;
+			}
 
-        public int CompareTo(Item other)
-        {
-            if (other.Published > Published)
-            {
-                return 1;
-            }
-            else if (other.Published < Published)
-            {
-                return -1;
-            }
-            else
-            {
-                return 0;
-            }
-        }
+			if (other is null)
+			{
+				return false;
+			}
 
-        public override string ToString()
-        {
-            StringBuilder sb = new StringBuilder();
+			return mine.AbsolutePath.Equals(other.AbsolutePath, StringComparison.OrdinalIgnoreCase);
+		}
 
-            sb.AppendLine(Link?.AbsoluteUri ?? "no link");
-            sb.AppendLine(Name);
-            sb.AppendLine(Published.ToString(CultureInfo.CurrentCulture));
-            sb.AppendLine(Unread.ToString());
-            sb.AppendLine(Enclosure?.ToString() ?? "no enclosure");
+		public int CompareTo(Item other)
+		{
+			if (other.Published > Published)
+			{
+				return 1;
+			}
+			else if (other.Published < Published)
+			{
+				return -1;
+			}
+			else
+			{
+				return 0;
+			}
+		}
 
-            return sb.ToString();
-        }
-    }
+		public override string ToString()
+		{
+			StringBuilder sb = new StringBuilder();
+
+			sb.AppendLine(Link?.AbsoluteUri ?? "no link");
+			sb.AppendLine(Name);
+			sb.AppendLine(Published.ToString(CultureInfo.CurrentCulture));
+			sb.AppendLine(Unread.ToString());
+			sb.AppendLine(Enclosure?.ToString() ?? "no enclosure");
+
+			return sb.ToString();
+		}
+	}
 }

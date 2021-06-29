@@ -1,26 +1,26 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 
 namespace RdrLib.Model
 {
-    public abstract class BindableBase : INotifyPropertyChanged
-    {
-        public event PropertyChangedEventHandler? PropertyChanged;
+	public abstract class BindableBase : INotifyPropertyChanged
+	{
+		public event PropertyChangedEventHandler? PropertyChanged;
 
-        protected bool SetProperty<T>(ref T storage, T value, string propertyName)
-        {
-            if (Equals(storage, value))
-            {
-                return false;
-            }
+		protected bool SetProperty<T>(ref T storage, T value, string propertyName)
+		{
+			if (Equals(storage, value))
+			{
+				return false;
+			}
 
-            storage = value;
+			storage = value;
 
-            RaisePropertyChanged(propertyName);
+			RaisePropertyChanged(propertyName);
 
-            return true;
-        }
+			return true;
+		}
 
-        protected virtual void RaisePropertyChanged(string propertyName)
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
+		protected virtual void RaisePropertyChanged(string propertyName)
+			=> PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+	}
 }

@@ -1,114 +1,114 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Text;
 
 namespace RdrLib.Model
 {
-    public class Feed : BindableBase, IEquatable<Feed>, IComparable<Feed>
-    {
-        public Uri Link { get; }
+	public class Feed : BindableBase, IEquatable<Feed>, IComparable<Feed>
+	{
+		public Uri Link { get; }
 
-        private string _name = string.Empty;
-        public string Name
-        {
-            get => _name;
-            set => SetProperty(ref _name, value, nameof(Name));
-        }
+		private string _name = string.Empty;
+		public string Name
+		{
+			get => _name;
+			set => SetProperty(ref _name, value, nameof(Name));
+		}
 
-        private FeedStatus _status = FeedStatus.None;
-        public FeedStatus Status
-        {
-            get => _status;
-            set => SetProperty(ref _status, value, nameof(Status));
-        }
+		private FeedStatus _status = FeedStatus.None;
+		public FeedStatus Status
+		{
+			get => _status;
+			set => SetProperty(ref _status, value, nameof(Status));
+		}
 
-        private readonly ObservableCollection<Item> _items = new ObservableCollection<Item>();
-        public IReadOnlyCollection<Item> Items => _items;
+		private readonly ObservableCollection<Item> _items = new ObservableCollection<Item>();
+		public IReadOnlyCollection<Item> Items => _items;
 
-        public Feed(Uri uri)
-        {
-            Link = uri;
-            
-            _name = Link.AbsoluteUri;
-        }
+		public Feed(Uri uri)
+		{
+			Link = uri;
 
-        public bool Add(Item item)
-        {
-            if (!_items.Contains(item))
-            {
-                _items.Add(item);
+			_name = Link.AbsoluteUri;
+		}
 
-                return true;
-            }
+		public bool Add(Item item)
+		{
+			if (!_items.Contains(item))
+			{
+				_items.Add(item);
 
-            return false;
-        }
+				return true;
+			}
 
-        public int AddMany(IEnumerable<Item> items)
-        {
-            int added = 0;
+			return false;
+		}
 
-            foreach (Item item in items)
-            {
-                if (Add(item))
-                {
-                    added++;
-                }
-            }
+		public int AddMany(IEnumerable<Item> items)
+		{
+			int added = 0;
 
-            return added;
-        }
+			foreach (Item item in items)
+			{
+				if (Add(item))
+				{
+					added++;
+				}
+			}
 
-        public bool Remove(Item item)
-        {
-            if (_items.Contains(item))
-            {
-                _items.Remove(item);
+			return added;
+		}
 
-                return true;
-            }
+		public bool Remove(Item item)
+		{
+			if (_items.Contains(item))
+			{
+				_items.Remove(item);
 
-            return false;
-        }
+				return true;
+			}
 
-        public int RemoveMany(IEnumerable<Item> items)
-        {
-            int removed = 0;
+			return false;
+		}
 
-            foreach (Item item in items)
-            {
-                if (Remove(item))
-                {
-                    removed++;
-                }
-            }
+		public int RemoveMany(IEnumerable<Item> items)
+		{
+			int removed = 0;
 
-            return removed;
-        }
+			foreach (Item item in items)
+			{
+				if (Remove(item))
+				{
+					removed++;
+				}
+			}
 
-        public bool Equals(Feed other)
-        {
-            var oic = StringComparison.OrdinalIgnoreCase;
+			return removed;
+		}
 
-            bool sameHost = Link.DnsSafeHost.Equals(other.Link.DnsSafeHost, oic);
-            bool samePathAndQuery = Link.PathAndQuery.Equals(other.Link.PathAndQuery, oic);
+		public bool Equals(Feed other)
+		{
+			var oic = StringComparison.OrdinalIgnoreCase;
 
-            return sameHost && samePathAndQuery;
-        }
+			bool sameHost = Link.DnsSafeHost.Equals(other.Link.DnsSafeHost, oic);
+			bool samePathAndQuery = Link.PathAndQuery.Equals(other.Link.PathAndQuery, oic);
 
-        public int CompareTo(Feed other) => Name.CompareTo(other.Name);
+			return sameHost && samePathAndQuery;
+		}
 
-        public override string ToString()
-        {
-            StringBuilder sb = new StringBuilder();
+		public int CompareTo(Feed other) => Name.CompareTo(other.Name);
 
-            sb.AppendLine(Link.AbsoluteUri);
-            sb.AppendLine(Name);
-            sb.AppendLine($"Status: {Status.ToString()}");
-            sb.AppendLine($"items count: {Items.Count}");
+		public override string ToString()
+		{
+			StringBuilder sb = new StringBuilder();
 
-            return sb.ToString();
-        }
-    }
+			sb.AppendLine(Link.AbsoluteUri);
+			sb.AppendLine(Name);
+			sb.AppendLine($"Status: {Status.ToString()}");
+			sb.AppendLine($"items count: {Items.Count}");
+
+			return sb.ToString();
+		}
+	}
 }

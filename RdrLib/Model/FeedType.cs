@@ -1,10 +1,10 @@
-﻿namespace RdrLib
+namespace RdrLib
 {
-    public enum FeedType
-    {
-        None,
-        Atom,
-        RSS,
-        Unknown
-    }
+	public enum FeedType
+	{
+		None,
+		Atom,
+		RSS,
+		Unknown
+	}
 }
