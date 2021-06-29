@@ -14,21 +14,14 @@ namespace RdrLib
 {
 	public class RdrService
 	{
-		private readonly bool preserveSynchronizationContext = true;
-
 		private readonly ObservableCollection<Feed> _feeds = new ObservableCollection<Feed>();
 		public IReadOnlyCollection<Feed> Feeds { get => _feeds; }
 
-		public RdrService()
-			: this(true)
-		{ }
+		public RdrService() { }
 
-		public RdrService(bool preserveSynchronizationContext)
-		{
-			this.preserveSynchronizationContext = preserveSynchronizationContext;
-		}
-
-		public Task UpdateAsync(Feed feed) => UpdateFeedAsync(feed);
+		[System.Diagnostics.DebuggerStepThrough]
+		public Task UpdateAsync(Feed feed)
+			=> UpdateFeedAsync(feed);
 
 		public Task UpdateAsync(IEnumerable<Feed> feedsToUpdate)
 		{
@@ -44,7 +37,9 @@ namespace RdrLib
 			return Task.WhenAll(tasks);
 		}
 
-		public Task UpdateAllAsync() => UpdateAsync(_feeds);
+		[System.Diagnostics.DebuggerStepThrough]
+		public Task UpdateAllAsync()
+			=> UpdateAsync(_feeds);
 
 		private async Task UpdateFeedAsync(Feed feed)
 		{
@@ -52,7 +47,7 @@ namespace RdrLib
 
 			static void configRequest(HttpRequestMessage request)
 			{
-				request.Headers.UserAgent.ParseAdd(UserAgents.Firefox_87_Windows);
+				request.Headers.UserAgent.ParseAdd(UserAgents.Firefox_89_Windows);
 			}
 
 			StringResponse response = await Web.DownloadStringAsync(feed.Link, configRequest).ConfigureAwait(false);
@@ -87,6 +82,7 @@ namespace RdrLib
 			feed.Status = FeedStatus.Ok;
 		}
 
+		[System.Diagnostics.DebuggerStepThrough]
 		public Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path)
 			=> DownloadEnclosureAsync(enclosure, path, null);
 
