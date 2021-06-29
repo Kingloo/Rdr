@@ -12,163 +12,163 @@ using RdrLib.Model;
 
 namespace RdrLib
 {
-    public class RdrService
-    {
-        private readonly bool preserveSynchronizationContext = true;
+	public class RdrService
+	{
+		private readonly bool preserveSynchronizationContext = true;
 
-        private readonly ObservableCollection<Feed> _feeds = new ObservableCollection<Feed>();
-        public IReadOnlyCollection<Feed> Feeds { get => _feeds; }
-        
-        public RdrService()
-            : this(true)
-        { }
+		private readonly ObservableCollection<Feed> _feeds = new ObservableCollection<Feed>();
+		public IReadOnlyCollection<Feed> Feeds { get => _feeds; }
 
-        public RdrService(bool preserveSynchronizationContext)
-        {
-            this.preserveSynchronizationContext = preserveSynchronizationContext;
-        }
+		public RdrService()
+			: this(true)
+		{ }
 
-        public Task UpdateAsync(Feed feed) => UpdateFeedAsync(feed);
+		public RdrService(bool preserveSynchronizationContext)
+		{
+			this.preserveSynchronizationContext = preserveSynchronizationContext;
+		}
 
-        public Task UpdateAsync(IEnumerable<Feed> feedsToUpdate)
-        {
-            Collection<Task> tasks = new Collection<Task>();
+		public Task UpdateAsync(Feed feed) => UpdateFeedAsync(feed);
 
-            foreach (Feed feed in feedsToUpdate)
-            {
-                Task task = Task.Run(() => UpdateAsync(feed));
+		public Task UpdateAsync(IEnumerable<Feed> feedsToUpdate)
+		{
+			Collection<Task> tasks = new Collection<Task>();
 
-                tasks.Add(task);
-            }
+			foreach (Feed feed in feedsToUpdate)
+			{
+				Task task = Task.Run(() => UpdateAsync(feed));
 
-            return Task.WhenAll(tasks);
-        }
+				tasks.Add(task);
+			}
 
-        public Task UpdateAllAsync() => UpdateAsync(_feeds);
+			return Task.WhenAll(tasks);
+		}
 
-        private async Task UpdateFeedAsync(Feed feed)
-        {
-            feed.Status = FeedStatus.Updating;
+		public Task UpdateAllAsync() => UpdateAsync(_feeds);
 
-            static void configRequest(HttpRequestMessage request)
-            {
-                request.Headers.UserAgent.ParseAdd(UserAgents.Firefox_87_Windows);
-            }
+		private async Task UpdateFeedAsync(Feed feed)
+		{
+			feed.Status = FeedStatus.Updating;
 
-            StringResponse response = await Web.DownloadStringAsync(feed.Link, configRequest).ConfigureAwait(false);
+			static void configRequest(HttpRequestMessage request)
+			{
+				request.Headers.UserAgent.ParseAdd(UserAgents.Firefox_87_Windows);
+			}
 
-            if (response.Reason != Reason.Success)
-            {
-                feed.Status = response.Status switch
-                {
-                    HttpStatusCode.Forbidden => FeedStatus.Forbidden,
-                    HttpStatusCode.Moved => FeedStatus.MovedCannotFollow,
-                    HttpStatusCode.NotFound => FeedStatus.DoesNotExist,
-                    _ => FeedStatus.OtherInternetError,
-                };
+			StringResponse response = await Web.DownloadStringAsync(feed.Link, configRequest).ConfigureAwait(false);
 
-                Debug.WriteLine($"{feed.Link.AbsoluteUri}: {response.Reason}, {response.Status}, {response.Text}");
+			if (response.Reason != Reason.Success)
+			{
+				feed.Status = response.Status switch
+				{
+					HttpStatusCode.Forbidden => FeedStatus.Forbidden,
+					HttpStatusCode.Moved => FeedStatus.MovedCannotFollow,
+					HttpStatusCode.NotFound => FeedStatus.DoesNotExist,
+					_ => FeedStatus.OtherInternetError,
+				};
 
-                return;
-            }
+				Debug.WriteLine($"{feed.Link.AbsoluteUri}: {response.Reason}, {response.Status}, {response.Text}");
 
-            if (!XmlHelpers.TryParse(response.Text, out XDocument? document))
-            {
-                feed.Status = FeedStatus.ParseFailed;
-                return;
-            }
+				return;
+			}
 
-            feed.Name = FeedHelpers.GetName(document);
+			if (!XmlHelpers.TryParse(response.Text, out XDocument? document))
+			{
+				feed.Status = FeedStatus.ParseFailed;
+				return;
+			}
 
-            IReadOnlyCollection<Item> items = FeedHelpers.GetItems(document, feed.Name);
+			feed.Name = FeedHelpers.GetName(document);
 
-            feed.AddMany(items);
+			IReadOnlyCollection<Item> items = FeedHelpers.GetItems(document, feed.Name);
 
-            feed.Status = FeedStatus.Ok;
-        }
+			feed.AddMany(items);
 
-        public Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path)
-            => DownloadEnclosureAsync(enclosure, path, null);
+			feed.Status = FeedStatus.Ok;
+		}
 
-        public async Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress>? progress)
-        {
-            if (progress is null)
-            {
-                return await Web.DownloadFileAsync(enclosure.Link, path).ConfigureAwait(false);
-            }
-            else
-            {
-                return await Web.DownloadFileAsync(enclosure.Link, path, progress).ConfigureAwait(false);
-            }
-        }
+		public Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path)
+			=> DownloadEnclosureAsync(enclosure, path, null);
 
-        public bool Add(Feed feed)
-        {
-            if (!_feeds.Contains(feed))
-            {
-                _feeds.Add(feed);
+		public async Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress>? progress)
+		{
+			if (progress is null)
+			{
+				return await Web.DownloadFileAsync(enclosure.Link, path).ConfigureAwait(false);
+			}
+			else
+			{
+				return await Web.DownloadFileAsync(enclosure.Link, path, progress).ConfigureAwait(false);
+			}
+		}
 
-                return true;
-            }
+		public bool Add(Feed feed)
+		{
+			if (!_feeds.Contains(feed))
+			{
+				_feeds.Add(feed);
 
-            return false;
-        }
+				return true;
+			}
 
-        public int Add(IReadOnlyCollection<Feed> feeds)
-        {
-            int added = 0;
+			return false;
+		}
 
-            foreach (Feed feed in feeds)
-            {
-                if (Add(feed))
-                {
-                    added++;
-                }
-            }
+		public int Add(IReadOnlyCollection<Feed> feeds)
+		{
+			int added = 0;
 
-            return added;
-        }
+			foreach (Feed feed in feeds)
+			{
+				if (Add(feed))
+				{
+					added++;
+				}
+			}
 
-        public bool Remove(Feed feed)
-        {
-            if (_feeds.Contains(feed))
-            {
-                return _feeds.Remove(feed);
-            }
-            else
-            {
-                return false;
-            }
-        }
+			return added;
+		}
 
-        public int Remove(IReadOnlyCollection<Feed> feeds)
-        {
-            int removed = 0;
+		public bool Remove(Feed feed)
+		{
+			if (_feeds.Contains(feed))
+			{
+				return _feeds.Remove(feed);
+			}
+			else
+			{
+				return false;
+			}
+		}
 
-            foreach (Feed feed in feeds)
-            {
-                if (Remove(feed))
-                {
-                    removed++;
-                }
-            }
+		public int Remove(IReadOnlyCollection<Feed> feeds)
+		{
+			int removed = 0;
 
-            return removed;
-        }
+			foreach (Feed feed in feeds)
+			{
+				if (Remove(feed))
+				{
+					removed++;
+				}
+			}
 
-        public void Clear() => _feeds.Clear();
+			return removed;
+		}
 
-        public void MarkAllAsRead()
-        {
-            foreach (Feed feed in _feeds)
-            {
-                foreach (Item item in feed.Items)
-                {
-                    MarkAsRead(item);
-                }
-            }
-        }
+		public void Clear() => _feeds.Clear();
 
-        public void MarkAsRead(Item item) => item.Unread = false;
-    }
+		public void MarkAllAsRead()
+		{
+			foreach (Feed feed in _feeds)
+			{
+				foreach (Item item in feed.Items)
+				{
+					MarkAsRead(item);
+				}
+			}
+		}
+
+		public void MarkAsRead(Item item) => item.Unread = false;
+	}
 }
