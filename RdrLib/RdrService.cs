@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -61,8 +60,6 @@ namespace RdrLib
 					HttpStatusCode.NotFound => FeedStatus.DoesNotExist,
 					_ => FeedStatus.OtherInternetError,
 				};
-
-				Debug.WriteLine($"{feed.Link.AbsoluteUri}: {response.Reason}, {response.Status}, {response.Text}");
 
 				return;
 			}
