@@ -1,0 +1,17 @@
+root = true
+
+[*]
+indent_style = tab
+indent_size = 4
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# IDE0090: Use 'new(...)'
+csharp_style_implicit_object_creation_when_type_is_apparent = false
+
+# IDE0059: Unnecessary assignment of a value
+csharp_style_unused_value_assignment_preference = unused_local_variable
+
+# IDE0059: Unnecessary assignment of a value
+dotnet_diagnostic.IDE0059.severity = none
