@@ -6,119 +6,119 @@ using System.Threading.Tasks;
 
 namespace Rdr.Common
 {
-    public static class FileSystem
-    {
-        public static void EnsureDirectoryExists(string folder)
-        {
-            if (!Directory.Exists(folder))
-            {
-                Directory.CreateDirectory(folder);
+	public static class FileSystem
+	{
+		public static void EnsureDirectoryExists(string folder)
+		{
+			if (!Directory.Exists(folder))
+			{
+				Directory.CreateDirectory(folder);
 
-                if (!Directory.Exists(folder))
-                {
-                    throw new DirectoryNotFoundException($"{folder} could not be created");
-                }
-            }
-        }
+				if (!Directory.Exists(folder))
+				{
+					throw new DirectoryNotFoundException($"{folder} could not be created");
+				}
+			}
+		}
 
-        public static void EnsureFileExists(string path)
-        {
-            if (!File.Exists(path))
-            {
+		public static void EnsureFileExists(string path)
+		{
+			if (!File.Exists(path))
+			{
 				EnsureDirectoryExists(new FileInfo(path).DirectoryName);
 
 				using (File.Create(path)) { }
 
-                if (!File.Exists(path))
-                {
-                    throw new FileNotFoundException($"file could not be created ({path})", path);
-                }
-            }
-        }
+				if (!File.Exists(path))
+				{
+					throw new FileNotFoundException($"file could not be created ({path})", path);
+				}
+			}
+		}
 
-        [System.Diagnostics.DebuggerStepThrough]
+		[System.Diagnostics.DebuggerStepThrough]
 		public static ValueTask<string[]> LoadLinesFromFileAsync(string path)
-            => LoadLinesFromFileAsync(path, string.Empty, Encoding.UTF8);
+			=> LoadLinesFromFileAsync(path, string.Empty, Encoding.UTF8);
 
 		[System.Diagnostics.DebuggerStepThrough]
 		public static ValueTask<string[]> LoadLinesFromFileAsync(string path, string comment)
-            => LoadLinesFromFileAsync(path, comment, Encoding.UTF8);
-        
-        public static async ValueTask<string[]> LoadLinesFromFileAsync(string path, string comment, Encoding encoding)
-        {
-            List<string> lines = new List<string>();
+			=> LoadLinesFromFileAsync(path, comment, Encoding.UTF8);
 
-            FileStream fsAsync = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None, 4096, FileOptions.Asynchronous | FileOptions.SequentialScan);
-            
-            try
-            {
-                using (StreamReader sr = new StreamReader(fsAsync, encoding))
-                {
-                    string? line = string.Empty;
+		public static async ValueTask<string[]> LoadLinesFromFileAsync(string path, string comment, Encoding encoding)
+		{
+			List<string> lines = new List<string>();
 
-                    while ((line = await sr.ReadLineAsync().ConfigureAwait(false)) != null)
-                    {
-                        bool shouldAddLine = true;
+			FileStream fsAsync = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None, 4096, FileOptions.Asynchronous | FileOptions.SequentialScan);
 
-                        if (!String.IsNullOrWhiteSpace(comment))
-                        {
-                            if (line.StartsWith(comment, StringComparison.OrdinalIgnoreCase))
-                            {
-                                shouldAddLine = false;
-                            }
-                        }
+			try
+			{
+				using (StreamReader sr = new StreamReader(fsAsync, encoding))
+				{
+					string? line = string.Empty;
 
-                        if (shouldAddLine)
-                        {
-                            lines.Add(line);
-                        }
-                    }
-                }
-            }
-            finally
-            {
-                if (!(fsAsync is null))
-                {
-                    await fsAsync.DisposeAsync().ConfigureAwait(false);
-                }
-            }
-            
-            return lines.ToArray();
-        }
+					while ((line = await sr.ReadLineAsync().ConfigureAwait(false)) != null)
+					{
+						bool shouldAddLine = true;
+
+						if (!String.IsNullOrWhiteSpace(comment))
+						{
+							if (line.StartsWith(comment, StringComparison.OrdinalIgnoreCase))
+							{
+								shouldAddLine = false;
+							}
+						}
+
+						if (shouldAddLine)
+						{
+							lines.Add(line);
+						}
+					}
+				}
+			}
+			finally
+			{
+				if (!(fsAsync is null))
+				{
+					await fsAsync.DisposeAsync().ConfigureAwait(false);
+				}
+			}
+
+			return lines.ToArray();
+		}
 
 		[System.Diagnostics.DebuggerStepThrough]
 		public static ValueTask<bool> WriteLinesToFileAsync(string[] lines, string path, FileMode mode)
-            => WriteLinesToFileAsync(lines, path, mode, Encoding.UTF8);
+			=> WriteLinesToFileAsync(lines, path, mode, Encoding.UTF8);
 
-        public static async ValueTask<bool> WriteLinesToFileAsync(string[] lines, string path, FileMode mode, Encoding encoding)
-        {
-            FileStream fsAsync = new FileStream(path, mode, FileAccess.Write, FileShare.None, 4096, FileOptions.Asynchronous | FileOptions.SequentialScan);
-            
-            try
-            {
-                using (StreamWriter sw = new StreamWriter(fsAsync, encoding))
-                {
-                    foreach (string line in lines)
-                    {
-                        await sw.WriteLineAsync(line).ConfigureAwait(false);
-                    }
+		public static async ValueTask<bool> WriteLinesToFileAsync(string[] lines, string path, FileMode mode, Encoding encoding)
+		{
+			FileStream fsAsync = new FileStream(path, mode, FileAccess.Write, FileShare.None, 4096, FileOptions.Asynchronous | FileOptions.SequentialScan);
 
-                    await sw.FlushAsync().ConfigureAwait(false);
-                }
+			try
+			{
+				using (StreamWriter sw = new StreamWriter(fsAsync, encoding))
+				{
+					foreach (string line in lines)
+					{
+						await sw.WriteLineAsync(line).ConfigureAwait(false);
+					}
 
-                return true;
-            }
-            catch (IOException)
-            {
-                return false;
-            }
-            finally
-            {
-                if (!(fsAsync is null))
-                {
-                    await fsAsync.DisposeAsync().ConfigureAwait(false);
-                }
-            }
-        }
-    }
+					await sw.FlushAsync().ConfigureAwait(false);
+				}
+
+				return true;
+			}
+			catch (IOException)
+			{
+				return false;
+			}
+			finally
+			{
+				if (!(fsAsync is null))
+				{
+					await fsAsync.DisposeAsync().ConfigureAwait(false);
+				}
+			}
+		}
+	}
 }
