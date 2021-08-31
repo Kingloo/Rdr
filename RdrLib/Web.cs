@@ -188,7 +188,7 @@ namespace RdrLib
 		{
 			AllowAutoRedirect = true,
 			AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
-			MaxAutomaticRedirections = 3,
+			MaxAutomaticRedirections = 5,
 			SslProtocols = SslProtocols.Tls12
 		};
 
