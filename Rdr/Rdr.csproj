@@ -1,17 +1,19 @@
-<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
-		<TargetFramework>netcoreapp3.1</TargetFramework>
-		<LangVersion>9.0</LangVersion>
+		<TargetFramework>net6.0-windows</TargetFramework>
+		<LangVersion>10.0</LangVersion>
+		<PlatformTarget>x64</PlatformTarget>
+		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<UseWPF>true</UseWPF>
 		<EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
 		<StartupObject>Rdr.Program</StartupObject>
 		<ApplicationIcon>Assets\Rdr.ico</ApplicationIcon>
-		<PlatformTarget>x64</PlatformTarget>
 		<EnableNETAnalyzers>true</EnableNETAnalyzers>
-		<AnalysisLevel>4</AnalysisLevel>
+		<AnalysisLevel>latest</AnalysisLevel>
+		<Copyright>© Kingloo 2021</Copyright>
 	</PropertyGroup>
 
 	<ItemGroup>

@@ -30,15 +30,15 @@ namespace RdrLib.Helpers
 			return feedType switch
 			{
 				FeedType.Atom => GetName(document.Root),
-				FeedType.RSS => GetName(document.Root.Element("channel")),
+				FeedType.RSS => GetName(document.Root?.Element("channel")),
 				_ => string.Empty,
 			};
 		}
 
-		private static string GetName(XElement element)
+		private static string GetName(XElement? element)
 		{
 			return element
-				.Elements()
+				?.Elements()
 				.Where(x => x.Name.LocalName.Equals("title", StringComparison.OrdinalIgnoreCase) && !String.IsNullOrEmpty(x.Value))
 				.FirstOrDefault()
 				?.Value
@@ -54,8 +54,8 @@ namespace RdrLib.Helpers
 
 			return feedType switch
 			{
-				FeedType.Atom => ItemHelpers.CreateItems(document.Root.Elements(XName.Get("entry", "http://www.w3.org/2005/Atom")), feedName),
-				FeedType.RSS => ItemHelpers.CreateItems(document.Root.Element("channel").Elements("item"), feedName),
+				FeedType.Atom => ItemHelpers.CreateItems(document.Root?.Elements(XName.Get("entry", "http://www.w3.org/2005/Atom")) ?? Enumerable.Empty<XElement>(), feedName),
+				FeedType.RSS => ItemHelpers.CreateItems(document.Root?.Element("channel")?.Elements("item") ?? Enumerable.Empty<XElement>(), feedName),
 				_ => new List<Item>(0).AsReadOnly()
 			};
 		}

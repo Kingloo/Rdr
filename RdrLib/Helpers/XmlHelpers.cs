@@ -25,11 +25,11 @@ namespace RdrLib.Helpers
 		{
 			var oic = StringComparison.OrdinalIgnoreCase;
 
-			if (document.Root.Name.LocalName.Equals("feed", oic))
+			if (document.Root?.Name.LocalName.Equals("feed", oic) ?? false)
 			{
 				return FeedType.Atom;
 			}
-			else if (document.Root.Name.LocalName.Equals("rss", oic))
+			else if (document.Root?.Name.LocalName.Equals("rss", oic) ?? false)
 			{
 				return FeedType.RSS;
 			}

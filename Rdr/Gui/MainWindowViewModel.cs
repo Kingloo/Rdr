@@ -115,7 +115,7 @@ namespace Rdr.Gui
 		public DelegateCommandAsync<Enclosure> DownloadEnclosureCommand
 			=> new DelegateCommandAsync<Enclosure>(DownloadEnclosureAsync, CanExecuteAsync);
 
-		private bool CanExecuteAsync(object _) => !Activity;
+		private bool CanExecuteAsync(object? _) => !Activity;
 
 		private readonly DispatcherTimer refreshTimer = new DispatcherTimer(DispatcherPriority.ApplicationIdle)
 		{
@@ -293,7 +293,7 @@ namespace Rdr.Gui
 
 		public async Task ReloadAsync()
 		{
-			string[] lines = await ReadLinesAsync(feedsFilePath, "#");
+			string[] lines = await ReadLinesAsync(feedsFilePath, '#');
 
 			IReadOnlyCollection<Feed> feeds = CreateFeeds(lines);
 
@@ -323,7 +323,7 @@ namespace Rdr.Gui
 			await RefreshAsync(toRefresh);
 		}
 
-		private static async Task<string[]> ReadLinesAsync(string path, string commentChar)
+		private static async Task<string[]> ReadLinesAsync(string path, char commentChar)
 		{
 			try
 			{

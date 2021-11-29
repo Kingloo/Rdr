@@ -87,17 +87,17 @@ namespace RdrLib.Model
 			return removed;
 		}
 
-		public bool Equals(Feed other)
+		public bool Equals(Feed? other)
 		{
 			var oic = StringComparison.OrdinalIgnoreCase;
 
-			bool sameHost = Link.DnsSafeHost.Equals(other.Link.DnsSafeHost, oic);
-			bool samePathAndQuery = Link.PathAndQuery.Equals(other.Link.PathAndQuery, oic);
+			bool sameHost = Link.DnsSafeHost.Equals(other?.Link.DnsSafeHost, oic);
+			bool samePathAndQuery = Link.PathAndQuery.Equals(other?.Link.PathAndQuery, oic);
 
 			return sameHost && samePathAndQuery;
 		}
 
-		public int CompareTo(Feed other) => Name.CompareTo(other.Name);
+		public int CompareTo(Feed? other) => Name.CompareTo(other?.Name);
 
 		public override string ToString()
 		{

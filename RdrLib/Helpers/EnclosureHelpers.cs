@@ -32,7 +32,7 @@ namespace RdrLib.Helpers
 
 			foreach (XAttribute each in linkAttributes)
 			{
-				if (Uri.TryCreate(each.Value, UriKind.Absolute, out Uri uri))
+				if (Uri.TryCreate(each.Value, UriKind.Absolute, out Uri? uri))
 				{
 					return uri;
 				}

@@ -10,12 +10,17 @@ namespace RdrLib.Helpers
 {
 	internal static class ItemHelpers
 	{
-		internal static IReadOnlyCollection<Item> CreateItems(IEnumerable<XElement> elements, string feedTitle)
+		internal static IReadOnlyCollection<Item> CreateItems(IEnumerable<XElement?> elements, string feedTitle)
 		{
 			List<Item> items = new List<Item>();
 
-			foreach (XElement element in elements)
+			foreach (XElement? element in elements)
 			{
+				if (element is null)
+				{
+					continue;
+				}
+
 				Uri? link = GetLink(element);
 				string name = GetName(element);
 				DateTimeOffset published = GetPublished(element);
@@ -35,12 +40,9 @@ namespace RdrLib.Helpers
 			return items.AsReadOnly();
 		}
 
-		private static Uri? GetLink(XElement element)
+		private static Uri? GetLink(XElement? element)
 		{
-			XElement linkElement = element
-				.Elements()
-				.Where(x => x.Name.LocalName.Equals("link", StringComparison.Ordinal))
-				.FirstOrDefault();
+			XElement? linkElement = element?.Elements().Where(x => x.Name.LocalName.Equals("link", StringComparison.Ordinal)).FirstOrDefault();
 
 			Uri? uri = null;
 
@@ -58,12 +60,9 @@ namespace RdrLib.Helpers
 			return uri;
 		}
 
-		private static string GetName(XElement element)
+		private static string GetName(XElement? element)
 		{
-			XElement titleElement = element
-				.Elements()
-				.Where(x => x.Name.LocalName.Equals("title", StringComparison.OrdinalIgnoreCase))
-				.FirstOrDefault();
+			XElement? titleElement = element?.Elements().Where(x => x.Name.LocalName.Equals("title", StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
 
 			if (titleElement != null)
 			{
@@ -79,12 +78,17 @@ namespace RdrLib.Helpers
 			return "title not found";
 		}
 
-		private static DateTimeOffset GetPublished(XElement element)
+		private static DateTimeOffset GetPublished(XElement? element)
 		{
-			IEnumerable<XElement> allPubDateElements = element.Elements().Where(x => IsByAnyPubDateName(x));
+			IEnumerable<XElement?> allPubDateElements = element?.Elements().Where(x => IsByAnyPubDateName(x)) ?? Enumerable.Empty<XElement>();
 
-			foreach (XElement pubDateElement in allPubDateElements)
+			foreach (XElement? pubDateElement in allPubDateElements)
 			{
+				if (pubDateElement is null)
+				{
+					continue;
+				}
+
 				if (DateTimeOffset.TryParse(pubDateElement.Value, out DateTimeOffset dto))
 				{
 					return dto;

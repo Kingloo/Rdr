@@ -2,12 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Rdr.Common
 {
 	public static class FileSystem
 	{
+		private const char defaultCommentChar = '#';
+
 		public static void EnsureDirectoryExists(string folder)
 		{
 			if (!Directory.Exists(folder))
@@ -25,7 +28,7 @@ namespace Rdr.Common
 		{
 			if (!File.Exists(path))
 			{
-				EnsureDirectoryExists(new FileInfo(path).DirectoryName);
+				EnsureDirectoryExists(new FileInfo(path)?.DirectoryName ?? string.Empty);
 
 				using (File.Create(path)) { }
 
@@ -38,13 +41,17 @@ namespace Rdr.Common
 
 		[System.Diagnostics.DebuggerStepThrough]
 		public static ValueTask<string[]> LoadLinesFromFileAsync(string path)
-			=> LoadLinesFromFileAsync(path, string.Empty, Encoding.UTF8);
+			=> LoadLinesFromFileAsync(path, defaultCommentChar, Encoding.UTF8, CancellationToken.None);
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static ValueTask<string[]> LoadLinesFromFileAsync(string path, string comment)
-			=> LoadLinesFromFileAsync(path, comment, Encoding.UTF8);
+		public static ValueTask<string[]> LoadLinesFromFileAsync(string path, char comment)
+			=> LoadLinesFromFileAsync(path, comment, Encoding.UTF8, CancellationToken.None);
 
-		public static async ValueTask<string[]> LoadLinesFromFileAsync(string path, string comment, Encoding encoding)
+		[System.Diagnostics.DebuggerStepThrough]
+		public static ValueTask<string[]> LoadLinesFromFileAsync(string path, Encoding encoding)
+			=> LoadLinesFromFileAsync(path, defaultCommentChar, Encoding.UTF8, CancellationToken.None);
+
+		public static async ValueTask<string[]> LoadLinesFromFileAsync(string path, char comment, Encoding encoding, CancellationToken token)
 		{
 			List<string> lines = new List<string>();
 
@@ -56,13 +63,18 @@ namespace Rdr.Common
 				{
 					string? line = string.Empty;
 
-					while ((line = await sr.ReadLineAsync().ConfigureAwait(false)) != null)
+					while (!String.IsNullOrEmpty(line = await sr.ReadLineAsync().ConfigureAwait(false)))
 					{
+						if (token.IsCancellationRequested)
+						{
+							break;
+						}
+
 						bool shouldAddLine = true;
 
-						if (!String.IsNullOrWhiteSpace(comment))
+						if (!Char.IsWhiteSpace(comment))
 						{
-							if (line.StartsWith(comment, StringComparison.OrdinalIgnoreCase))
+							if (line[0] == comment)
 							{
 								shouldAddLine = false;
 							}
@@ -77,7 +89,7 @@ namespace Rdr.Common
 			}
 			finally
 			{
-				if (!(fsAsync is null))
+				if (fsAsync is not null)
 				{
 					await fsAsync.DisposeAsync().ConfigureAwait(false);
 				}
@@ -87,10 +99,10 @@ namespace Rdr.Common
 		}
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static ValueTask<bool> WriteLinesToFileAsync(string[] lines, string path, FileMode mode)
-			=> WriteLinesToFileAsync(lines, path, mode, Encoding.UTF8);
+		public static ValueTask WriteLinesToFileAsync(string[] lines, string path, FileMode mode)
+			=> WriteLinesToFileAsync(lines, path, mode, Encoding.UTF8, CancellationToken.None);
 
-		public static async ValueTask<bool> WriteLinesToFileAsync(string[] lines, string path, FileMode mode, Encoding encoding)
+		public static async ValueTask WriteLinesToFileAsync(string[] lines, string path, FileMode mode, Encoding encoding, CancellationToken token)
 		{
 			FileStream fsAsync = new FileStream(path, mode, FileAccess.Write, FileShare.None, 4096, FileOptions.Asynchronous | FileOptions.SequentialScan);
 
@@ -100,21 +112,20 @@ namespace Rdr.Common
 				{
 					foreach (string line in lines)
 					{
+						if (token.IsCancellationRequested)
+						{
+							break;
+						}
+
 						await sw.WriteLineAsync(line).ConfigureAwait(false);
 					}
 
 					await sw.FlushAsync().ConfigureAwait(false);
 				}
-
-				return true;
-			}
-			catch (IOException)
-			{
-				return false;
 			}
 			finally
 			{
-				if (!(fsAsync is null))
+				if (fsAsync is not null)
 				{
 					await fsAsync.DisposeAsync().ConfigureAwait(false);
 				}

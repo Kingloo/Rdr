@@ -458,7 +458,7 @@ namespace RdrLib
 
 		private static string GetExtension(string path, string extension)
 		{
-			Directory.CreateDirectory(new FileInfo(path).DirectoryName);
+			Directory.CreateDirectory(new FileInfo(path)?.DirectoryName ?? string.Empty);
 
 			string newPath = $"{path}.{extension}";
 

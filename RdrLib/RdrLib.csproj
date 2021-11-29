@@ -1,11 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>netstandard2.1</TargetFramework>
-		<LangVersion>9.0</LangVersion>
+		<TargetFramework>net6.0</TargetFramework>
+		<LangVersion>10.0</LangVersion>
 		<Nullable>enable</Nullable>
+		<ImplicitUsings>disable</ImplicitUsings>
 		<EnableNETAnalyzers>true</EnableNETAnalyzers>
-		<AnalysisLevel>4</AnalysisLevel>
+		<AnalysisLevel>latest</AnalysisLevel>
 	</PropertyGroup>
 
 </Project>

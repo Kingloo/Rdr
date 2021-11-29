@@ -32,10 +32,10 @@ namespace RdrLib.Model
 			FeedName = feedName;
 		}
 
-		public bool Equals(Item other)
+		public bool Equals(Item? other)
 		{
-			bool sameName = Name.Equals(other.Name, StringComparison.OrdinalIgnoreCase);
-			bool sameLink = AreLinksTheSame(Link, other.Link);
+			bool sameName = Name.Equals(other?.Name, StringComparison.OrdinalIgnoreCase);
+			bool sameLink = AreLinksTheSame(Link, other?.Link);
 
 			return sameName && sameLink;
 		}
@@ -65,13 +65,13 @@ namespace RdrLib.Model
 			return mine.AbsolutePath.Equals(other.AbsolutePath, StringComparison.OrdinalIgnoreCase);
 		}
 
-		public int CompareTo(Item other)
+		public int CompareTo(Item? other)
 		{
-			if (other.Published > Published)
+			if (other?.Published > Published)
 			{
 				return 1;
 			}
-			else if (other.Published < Published)
+			else if (other?.Published < Published)
 			{
 				return -1;
 			}
