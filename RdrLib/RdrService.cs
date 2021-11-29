@@ -46,7 +46,7 @@ namespace RdrLib
 
 			static void configRequest(HttpRequestMessage request)
 			{
-				request.Headers.UserAgent.ParseAdd(UserAgents.Firefox_89_Windows);
+				request.Headers.UserAgent.ParseAdd(UserAgents.Firefox_94_Windows);
 			}
 
 			StringResponse response = await Web.DownloadStringAsync(feed.Link, configRequest).ConfigureAwait(false);
