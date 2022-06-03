@@ -13,7 +13,7 @@
 		<ApplicationIcon>Assets\Rdr.ico</ApplicationIcon>
 		<EnableNETAnalyzers>true</EnableNETAnalyzers>
 		<AnalysisLevel>latest</AnalysisLevel>
-		<Copyright>© Kingloo 2021</Copyright>
+		<Copyright>© Kingloo 2022</Copyright>
 	</PropertyGroup>
 
 	<ItemGroup>
