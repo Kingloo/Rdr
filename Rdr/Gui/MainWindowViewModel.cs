@@ -138,7 +138,14 @@ namespace Rdr.Gui
 		private readonly RdrService service;
 		private Feed? selectedFeed = null;
 
-		public IReadOnlyCollection<Feed> Feeds => service.Feeds;
+		private string _statusMessage = "no status message";
+		public string StatusMessage
+		{
+			get => _statusMessage;
+			set => SetProperty(ref _statusMessage, value, nameof(StatusMessage));
+		}
+
+		public IReadOnlyCollection<Feed> Feeds { get => service.Feeds; }
 
 		private readonly ObservableCollection<Item> _items = new ObservableCollection<Item>();
 		public IReadOnlyCollection<Item> Items => _items;
@@ -200,6 +207,8 @@ namespace Rdr.Gui
 				MoveItems(selectedFeed);
 			}
 
+			ShowLastUpdatedMessage();
+
 			Activity = false;
 		}
 
@@ -236,6 +245,8 @@ namespace Rdr.Gui
 			{
 				MoveItems(selectedFeed);
 			}
+
+			ShowLastUpdatedMessage();
 
 			Activity = false;
 		}
@@ -450,6 +461,13 @@ namespace Rdr.Gui
 					_items.Add(item);
 				}
 			}
+		}
+
+		private void ShowLastUpdatedMessage()
+		{
+			string time = DateTimeOffset.Now.ToString("dd/MM/yyyy HH:mm:ss", CultureInfo.CurrentCulture);
+
+			StatusMessage = string.Format(CultureInfo.CurrentCulture, "last updated at {0}", time);
 		}
 	}
 }

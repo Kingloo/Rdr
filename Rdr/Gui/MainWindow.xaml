@@ -6,7 +6,11 @@
         xmlns:gui="clr-namespace:Rdr.Gui"
         xmlns:converters="clr-namespace:Rdr.Gui.Converters"
         xmlns:rdrModel="clr-namespace:RdrLib.Model;assembly=RdrLib"
-        Loaded="Window_Loaded"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		mc:Ignorable="d"
+		d:DataContext="{d:DesignInstance Type=gui:MainWindowViewModel}"
+		Loaded="Window_Loaded"
         KeyDown="Window_KeyDown"
         Closing="Window_Closing"
         Closed="Window_Closed">
@@ -180,7 +184,27 @@
 			<RowDefinition Height="*" />
 		</Grid.RowDefinitions>
 
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="*" MinWidth="70" />
+			<ColumnDefinition Width="3*" MinWidth="500" />
+			<ColumnDefinition Width="*" MinWidth="70" />
+		</Grid.ColumnDefinitions>
+
+		<Label Grid.Row="0"
+			   Grid.Column="0"
+			   HorizontalAlignment="Left"
+			   HorizontalContentAlignment="Left"
+			   Foreground="#FF7A7A7A"
+			   FontSize="12"
+			   Padding="10,0,0,0">
+			<Label.Content>
+				<TextBlock Text="{Binding Path=StatusMessage, FallbackValue='status unknown'}"
+						   TextTrimming="CharacterEllipsis" />
+			</Label.Content>
+		</Label>
+
 		<StackPanel Grid.Row="0"
+					Grid.Column="1"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Stretch"
                     Orientation="Horizontal">
@@ -190,7 +214,21 @@
 			<Button Content="Reload Feeds" Command="{Binding ReloadCommand, Mode=OneTime}" />
 		</StackPanel>
 
-		<Grid Grid.Row="1">
+		<Label Grid.Row="0"
+			   Grid.Column="2"
+			   HorizontalAlignment="Right"
+			   HorizontalContentAlignment="Right"
+			   Foreground="#FF7A7A7A"
+			   FontSize="12"
+			   Padding="0,0,10,0">
+			<Label.Content>
+				<TextBlock Text="{Binding Path=Count, Source={StaticResource sortedFeeds}, StringFormat='{}{0} feeds', FallbackValue='unknown number of feeds'}"
+						   TextTrimming="CharacterEllipsis" />
+			</Label.Content>
+		</Label>
+
+		<Grid Grid.Row="1"
+			  Grid.ColumnSpan="3">
 			<Grid.ColumnDefinitions>
 				<ColumnDefinition Width="250" />
 				<ColumnDefinition Width="*" />
