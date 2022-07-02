@@ -12,8 +12,10 @@ namespace Rdr.Common
 		public abstract bool CanExecute(object? parameter);
 
 		[System.Diagnostics.DebuggerStepThrough]
+#pragma warning disable CA1030
 		public void RaiseCanExecuteChanged()
 			=> CanExecuteChanged?.Invoke(this, new EventArgs());
+#pragma warning restore CA1030
 	}
 
 	public class DelegateCommand : Command
@@ -73,7 +75,7 @@ namespace Rdr.Common
 
 		[System.Diagnostics.DebuggerStepThrough]
 		public async override void Execute(object? parameter)
-			=> await ExecuteAsync();
+			=> await ExecuteAsync().ConfigureAwait(true);
 
 		[System.Diagnostics.DebuggerStepThrough]
 		private async Task ExecuteAsync()
@@ -81,7 +83,7 @@ namespace Rdr.Common
 			_isExecuting = true;
 			RaiseCanExecuteChanged();
 
-			await _executeAsync();
+			await _executeAsync().ConfigureAwait(true);
 
 			_isExecuting = false;
 			RaiseCanExecuteChanged();
@@ -107,7 +109,7 @@ namespace Rdr.Common
 
 		[System.Diagnostics.DebuggerStepThrough]
 		public override async void Execute(object? parameter)
-			=> await ExecuteAsync((T)parameter!);
+			=> await ExecuteAsync((T)parameter!).ConfigureAwait(true);
 
 		[System.Diagnostics.DebuggerStepThrough]
 		private async Task ExecuteAsync(T parameter)
@@ -115,7 +117,7 @@ namespace Rdr.Common
 			_isExecuting = true;
 			RaiseCanExecuteChanged();
 
-			await _executeAsync(parameter);
+			await _executeAsync(parameter).ConfigureAwait(true);
 
 			_isExecuting = false;
 			RaiseCanExecuteChanged();

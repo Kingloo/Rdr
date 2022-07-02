@@ -46,11 +46,11 @@ namespace Rdr.Common
 			Severity = severity;
 		}
 
-		public void Message(string msg, Severity severity)
+		public void Message(string message, Severity severity)
 		{
 			if (severity >= Severity)
 			{
-				string text = FormatMessage(msg);
+				string text = FormatMessage(message);
 
 				WriteToFile(text, Path);
 			}
@@ -167,7 +167,9 @@ namespace Rdr.Common
 			catch (IOException) { }
 			finally
 			{
-				fs?.Close();
+#pragma warning disable CA1508
+                fs?.Close();
+#pragma warning restore CA1508
 			}
 		}
 
@@ -197,7 +199,12 @@ namespace Rdr.Common
 			catch (IOException) { }
 			finally
 			{
-				fsAsync?.Close();
+#pragma warning disable CA1508
+                if (fsAsync is not null)
+                {
+                    await fsAsync.DisposeAsync().ConfigureAwait(false);
+                }
+#pragma warning restore CA1508
 			}
 		}
 	}
