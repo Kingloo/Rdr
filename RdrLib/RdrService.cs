@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using RdrLib.Common;
+using RdrLib.Exceptions;
 using RdrLib.Helpers;
 using RdrLib.Model;
 
@@ -18,35 +19,39 @@ namespace RdrLib
 
 		public RdrService() { }
 
-		[System.Diagnostics.DebuggerStepThrough]
-		public Task UpdateAsync(Feed feed)
-			=> UpdateFeedAsync(feed);
+		public ValueTask UpdateAsync(Feed feed)
+        {
+            if (feed is null)
+            {
+                throw new ArgumentNullException(nameof(feed));
+            }
+            
+            return UpdateFeedAsync(feed, CancellationToken.None);
+        }
 
-		public Task UpdateAsync(IEnumerable<Feed> feedsToUpdate)
+		public async ValueTask UpdateAsync(IEnumerable<Feed> feedsToUpdate)
 		{
-			Collection<Task> tasks = new Collection<Task>();
-
-			foreach (Feed feed in feedsToUpdate)
-			{
-				Task task = Task.Run(() => UpdateAsync(feed));
-
-				tasks.Add(task);
-			}
-
-			return Task.WhenAll(tasks);
+            await Parallel.ForEachAsync(feedsToUpdate, UpdateFeedAsync).ConfigureAwait(true);
 		}
 
-		[System.Diagnostics.DebuggerStepThrough]
-		public Task UpdateAllAsync()
+		public ValueTask UpdateAllAsync()
 			=> UpdateAsync(_feeds);
 
-		private async Task UpdateFeedAsync(Feed feed)
+		private async ValueTask UpdateFeedAsync(Feed feed, CancellationToken cancellationToken)
 		{
 			feed.Status = FeedStatus.Updating;
 
 			static void configRequest(HttpRequestMessage request)
 			{
-				request.Headers.UserAgent.ParseAdd(UserAgents.Firefox_94_Windows);
+                string userAgentHeaderValue = UserAgents.Get(UserAgents.Firefox_102_Windows);
+
+                if (!request.Headers.UserAgent.TryParseAdd(userAgentHeaderValue))
+                {
+                    throw new HeaderException
+                    {
+                        UnaddableHeader = userAgentHeaderValue
+                    };
+                }
 			}
 
 			StringResponse response = await Web.DownloadStringAsync(feed.Link, configRequest).ConfigureAwait(false);
@@ -79,25 +84,27 @@ namespace RdrLib
 			feed.Status = FeedStatus.Ok;
 		}
 
-		[System.Diagnostics.DebuggerStepThrough]
 		public Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path)
 			=> DownloadEnclosureAsync(enclosure, path, null);
 
-		public async Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress>? progress)
+		public Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress>? progress)
 		{
-			if (progress is null)
-			{
-				return await Web.DownloadFileAsync(enclosure.Link, path).ConfigureAwait(false);
-			}
-			else
-			{
-				return await Web.DownloadFileAsync(enclosure.Link, path, progress).ConfigureAwait(false);
-			}
+			if (enclosure is null)
+            {
+                throw new ArgumentNullException(nameof(enclosure));
+            }
+
+            return Web.DownloadFileAsync(enclosure.Link, path, progress);
 		}
 
 		public bool Add(Feed feed)
 		{
-			if (!_feeds.Contains(feed))
+			if (feed is null)
+            {
+                throw new ArgumentNullException(nameof(feed));
+            }
+
+            if (!_feeds.Contains(feed))
 			{
 				_feeds.Add(feed);
 
@@ -109,7 +116,12 @@ namespace RdrLib
 
 		public int Add(IReadOnlyCollection<Feed> feeds)
 		{
-			int added = 0;
+			if (feeds is null)
+            {
+                throw new ArgumentNullException(nameof(feeds));
+            }
+
+            int added = 0;
 
 			foreach (Feed feed in feeds)
 			{
@@ -124,7 +136,12 @@ namespace RdrLib
 
 		public bool Remove(Feed feed)
 		{
-			if (_feeds.Contains(feed))
+			if (feed is null)
+            {
+                throw new ArgumentNullException(nameof(feed));
+            }
+
+            if (_feeds.Contains(feed))
 			{
 				return _feeds.Remove(feed);
 			}
@@ -136,7 +153,12 @@ namespace RdrLib
 
 		public int Remove(IReadOnlyCollection<Feed> feeds)
 		{
-			int removed = 0;
+			if (feeds is null)
+            {
+                throw new ArgumentNullException(nameof(feeds));
+            }
+
+            int removed = 0;
 
 			foreach (Feed feed in feeds)
 			{
@@ -162,6 +184,14 @@ namespace RdrLib
 			}
 		}
 
-		public void MarkAsRead(Item item) => item.Unread = false;
+		public void MarkAsRead(Item item)
+        {
+            if (item is null)
+            {
+                throw new ArgumentNullException(nameof(item));
+            }
+
+            item.Unread = false;
+        }
 	}
 }
