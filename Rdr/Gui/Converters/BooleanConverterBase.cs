@@ -37,6 +37,6 @@ namespace Rdr.Gui.Converters
 			=> (bool)value ? True : False;
 
 		public virtual object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-			=> throw new NotImplementedException($"converting from {value.GetType().ToString()} to {targetType.ToString()} is not implemented!");
+			=> throw new NotImplementedException($"converting from {value?.GetType().ToString() ?? "value is null"} to {targetType?.ToString() ?? "targetType is null"} is not implemented!");
 	}
 }
