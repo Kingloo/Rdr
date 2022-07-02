@@ -11,7 +11,6 @@ namespace Rdr.Common
 		public abstract void Execute(object? parameter);
 		public abstract bool CanExecute(object? parameter);
 
-		[System.Diagnostics.DebuggerStepThrough]
 #pragma warning disable CA1030
 		public void RaiseCanExecuteChanged()
 			=> CanExecuteChanged?.Invoke(this, new EventArgs());
@@ -23,18 +22,15 @@ namespace Rdr.Common
 		private readonly Action _execute;
 		private readonly Predicate<object?> _canExecute;
 
-		[System.Diagnostics.DebuggerStepThrough]
 		public DelegateCommand(Action execute, Predicate<object?> canExecute)
 		{
 			_execute = execute ?? throw new ArgumentNullException(nameof(execute));
 			_canExecute = canExecute ?? throw new ArgumentNullException(nameof(canExecute));
 		}
 
-		[System.Diagnostics.DebuggerStepThrough]
 		public override void Execute(object? parameter)
 			=> _execute();
 
-		[System.Diagnostics.DebuggerStepThrough]
 		public override bool CanExecute(object? parameter)
 			=> _canExecute(parameter);
 	}
@@ -44,18 +40,15 @@ namespace Rdr.Common
 		private readonly Action<T> _execute;
 		private readonly Predicate<T> _canExecute;
 
-		[System.Diagnostics.DebuggerStepThrough]
 		public DelegateCommand(Action<T> execute, Predicate<T> canExecute)
 		{
 			_execute = execute ?? throw new ArgumentNullException(nameof(execute));
 			_canExecute = canExecute ?? throw new ArgumentNullException(nameof(canExecute));
 		}
 
-		[System.Diagnostics.DebuggerStepThrough]
 		public override void Execute(object? parameter)
 			=> _execute((T)parameter!);
 
-		[System.Diagnostics.DebuggerStepThrough]
 		public override bool CanExecute(object? parameter)
 			=> _canExecute((T)parameter!);
 	}
@@ -66,18 +59,15 @@ namespace Rdr.Common
 		private readonly Predicate<object?> _canExecute;
 		private bool _isExecuting = false;
 
-		[System.Diagnostics.DebuggerStepThrough]
 		public DelegateCommandAsync(Func<Task> executeAsync, Predicate<object?> canExecute)
 		{
 			_executeAsync = executeAsync ?? throw new ArgumentNullException(nameof(executeAsync));
 			_canExecute = canExecute ?? throw new ArgumentNullException(nameof(canExecute));
 		}
 
-		[System.Diagnostics.DebuggerStepThrough]
 		public async override void Execute(object? parameter)
 			=> await ExecuteAsync().ConfigureAwait(true);
 
-		[System.Diagnostics.DebuggerStepThrough]
 		private async Task ExecuteAsync()
 		{
 			_isExecuting = true;
@@ -89,7 +79,6 @@ namespace Rdr.Common
 			RaiseCanExecuteChanged();
 		}
 
-		[System.Diagnostics.DebuggerStepThrough]
 		public override bool CanExecute(object? parameter)
 			=> _isExecuting ? false : _canExecute(parameter);
 	}
@@ -100,18 +89,15 @@ namespace Rdr.Common
 		private readonly Predicate<T> _canExecute;
 		private bool _isExecuting = false;
 
-		[System.Diagnostics.DebuggerStepThrough]
 		public DelegateCommandAsync(Func<T, Task> executeAsync, Predicate<T> canExecute)
 		{
 			_executeAsync = executeAsync ?? throw new ArgumentNullException(nameof(executeAsync));
 			_canExecute = canExecute ?? throw new ArgumentNullException(nameof(canExecute));
 		}
 
-		[System.Diagnostics.DebuggerStepThrough]
 		public override async void Execute(object? parameter)
 			=> await ExecuteAsync((T)parameter!).ConfigureAwait(true);
 
-		[System.Diagnostics.DebuggerStepThrough]
 		private async Task ExecuteAsync(T parameter)
 		{
 			_isExecuting = true;
@@ -123,7 +109,6 @@ namespace Rdr.Common
 			RaiseCanExecuteChanged();
 		}
 
-		[System.Diagnostics.DebuggerStepThrough]
 		public override bool CanExecute(object? parameter)
 			=> _isExecuting ? false : _canExecute((T)parameter!);
 	}
