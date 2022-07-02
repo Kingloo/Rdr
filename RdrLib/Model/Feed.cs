@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Text;
 
 namespace RdrLib.Model
@@ -28,14 +29,24 @@ namespace RdrLib.Model
 
 		public Feed(Uri uri)
 		{
-			Link = uri;
+			if (uri is null)
+            {
+                throw new ArgumentNullException(nameof(uri));
+            }
+
+            Link = uri;
 
 			_name = Link.AbsoluteUri;
 		}
 
 		public bool Add(Item item)
 		{
-			if (!_items.Contains(item))
+			if (item is null)
+            {
+                throw new ArgumentNullException(nameof(item));
+            }
+
+            if (!_items.Contains(item))
 			{
 				_items.Add(item);
 
@@ -47,7 +58,12 @@ namespace RdrLib.Model
 
 		public int AddMany(IEnumerable<Item> items)
 		{
-			int added = 0;
+			if (items is null)
+            {
+                throw new ArgumentNullException(nameof(items));
+            }
+
+            int added = 0;
 
 			foreach (Item item in items)
 			{
@@ -62,7 +78,12 @@ namespace RdrLib.Model
 
 		public bool Remove(Item item)
 		{
-			if (_items.Contains(item))
+			if (item is null)
+            {
+                throw new ArgumentNullException(nameof(item));
+            }
+
+            if (_items.Contains(item))
 			{
 				_items.Remove(item);
 
@@ -74,7 +95,12 @@ namespace RdrLib.Model
 
 		public int RemoveMany(IEnumerable<Item> items)
 		{
-			int removed = 0;
+			if (items is null)
+            {
+                throw new ArgumentNullException(nameof(items));
+            }
+
+            int removed = 0;
 
 			foreach (Item item in items)
 			{
@@ -89,15 +115,158 @@ namespace RdrLib.Model
 
 		public bool Equals(Feed? other)
 		{
-			var oic = StringComparison.OrdinalIgnoreCase;
-
-			bool sameHost = Link.DnsSafeHost.Equals(other?.Link.DnsSafeHost, oic);
-			bool samePathAndQuery = Link.PathAndQuery.Equals(other?.Link.PathAndQuery, oic);
-
-			return sameHost && samePathAndQuery;
+			return other is not null && EqualsInternal(this, other);
 		}
 
-		public int CompareTo(Feed? other) => Name.CompareTo(other?.Name);
+		public override bool Equals(object? obj)
+		{
+			return obj is Feed feed && EqualsInternal(this, feed);
+		}
+
+        private static bool EqualsInternal(Feed thisOne, Feed otherOne)
+        {
+            var oic = StringComparison.OrdinalIgnoreCase;
+
+			bool sameHost = thisOne.Link.DnsSafeHost.Equals(otherOne.Link.DnsSafeHost, oic);
+			bool samePathAndQuery = thisOne.Link.PathAndQuery.Equals(otherOne.Link.PathAndQuery, oic);
+
+			return sameHost && samePathAndQuery;
+        }
+
+        public static bool operator ==(Feed lhs, Feed rhs)
+        {
+            if (lhs is null && rhs is null)
+            {
+                return true;
+            }
+
+            if (lhs is null)
+            {
+                return false;
+            }
+
+            if (rhs is null)
+            {
+                return false;
+            }
+
+            return EqualsInternal(lhs, rhs);
+        }
+
+        public static bool operator !=(Feed lhs, Feed rhs)
+        {
+            if (lhs is null && rhs is null)
+            {
+                return false;
+            }
+
+            if (lhs is null)
+            {
+                return true;
+            }
+
+            if (rhs is null)
+            {
+                return true;
+            }
+
+            return !EqualsInternal(lhs, rhs);
+        }
+
+        public static bool operator <(Feed lhs, Feed rhs)
+        {
+            if (lhs is null && rhs is null)
+            {
+                return false;
+            }
+
+            if (lhs is null)
+            {
+                return true;
+            }
+
+            if (rhs is null)
+            {
+                return false;
+            }
+
+            return lhs.CompareTo(rhs) < 0;
+        }
+
+        public static bool operator <=(Feed lhs, Feed rhs)
+        {
+            if (lhs is null && rhs is null)
+            {
+                return false;
+            }
+
+            if (lhs is null)
+            {
+                return true;
+            }
+
+            if (rhs is null)
+            {
+                return false;
+            }
+
+            return lhs.CompareTo(rhs) <= 0;
+        }
+
+        public static bool operator >(Feed lhs, Feed rhs)
+        {
+            if (lhs is null && rhs is null)
+            {
+                return false;
+            }
+
+            if (lhs is null)
+            {
+                return false;
+            }
+
+            if (rhs is null)
+            {
+                return true;
+            }
+
+            return lhs.CompareTo(rhs) > 0;
+        }
+
+        public static bool operator >=(Feed lhs, Feed rhs)
+        {
+            if (lhs is null && rhs is null)
+            {
+                return false;
+            }
+
+            if (lhs is null)
+            {
+                return false;
+            }
+
+            if (rhs is null)
+            {
+                return true;
+            }
+
+            return lhs.CompareTo(rhs) >= 0;
+        }
+
+		public override int GetHashCode()
+		{
+			return Link.GetHashCode();
+		}
+
+		public int CompareTo(Feed? other)
+        {
+            if (other is null)
+            {
+                return -1;
+            }
+
+            return String.CompareOrdinal(Name, other.Name);
+        }
 
 		public override string ToString()
 		{
@@ -105,8 +274,8 @@ namespace RdrLib.Model
 
 			sb.AppendLine(Link.AbsoluteUri);
 			sb.AppendLine(Name);
-			sb.AppendLine($"Status: {Status.ToString()}");
-			sb.AppendLine($"items count: {Items.Count}");
+			sb.AppendLine(CultureInfo.CurrentCulture, $"Status: {Status.ToString()}");
+			sb.AppendLine(CultureInfo.CurrentCulture, $"items count: {Items.Count}");
 
 			return sb.ToString();
 		}

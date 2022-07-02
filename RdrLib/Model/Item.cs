@@ -25,19 +25,159 @@ namespace RdrLib.Model
 		}
 
 		public Enclosure? Enclosure { get; set; } = null;
-		public bool HasEnclosure => !(Enclosure is null);
+		public bool HasEnclosure { get => Enclosure is not null; }
 
 		public Item(string feedName)
 		{
-			FeedName = feedName;
+			if (String.IsNullOrWhiteSpace(feedName))
+            {
+                throw new ArgumentNullException(nameof(feedName), "feed name cannot be null-or-whitespace");
+            }
+
+            FeedName = feedName;
 		}
 
 		public bool Equals(Item? other)
 		{
-			bool sameName = Name.Equals(other?.Name, StringComparison.OrdinalIgnoreCase);
-			bool sameLink = AreLinksTheSame(Link, other?.Link);
+            return other is not null && EqualsInternal(this, other);
+		}
+
+		public override bool Equals(object? obj)
+		{
+			return obj is Item item && EqualsInternal(this, item);
+		}
+
+        private static bool EqualsInternal(Item thisOne, Item otherOne)
+        {
+            bool sameName = thisOne.Name.Equals(otherOne.Name, StringComparison.OrdinalIgnoreCase);
+			bool sameLink = AreLinksTheSame(thisOne.Link, otherOne.Link);
 
 			return sameName && sameLink;
+        }
+
+        public static bool operator ==(Item lhs, Item rhs)
+        {
+            if (lhs is null && rhs is null)
+            {
+                return true;
+            }
+
+            if (lhs is null)
+            {
+                return false;
+            }
+
+            if (rhs is null)
+            {
+                return false;
+            }
+
+            return EqualsInternal(lhs, rhs);
+        }
+
+        public static bool operator !=(Item lhs, Item rhs)
+        {
+            if (lhs is null && rhs is null)
+            {
+                return false;
+            }
+
+            if (lhs is null)
+            {
+                return true;
+            }
+
+            if (rhs is null)
+            {
+                return true;
+            }
+
+            return !EqualsInternal(lhs, rhs);
+        }
+
+        public static bool operator <(Item lhs, Item rhs)
+        {
+            if (lhs is null && rhs is null)
+            {
+                return false;
+            }
+
+            if (lhs is null)
+            {
+                return true;
+            }
+
+            if (rhs is null)
+            {
+                return false;
+            }
+
+            return lhs.CompareTo(rhs) < 0;
+        }
+
+        public static bool operator <=(Item lhs, Item rhs)
+        {
+            if (lhs is null && rhs is null)
+            {
+                return false;
+            }
+
+            if (lhs is null)
+            {
+                return true;
+            }
+
+            if (rhs is null)
+            {
+                return false;
+            }
+
+            return lhs.CompareTo(rhs) <= 0;
+        }
+
+        public static bool operator >(Item lhs, Item rhs)
+        {
+            if (lhs is null && rhs is null)
+            {
+                return false;
+            }
+
+            if (lhs is null)
+            {
+                return false;
+            }
+
+            if (rhs is null)
+            {
+                return true;
+            }
+
+            return lhs.CompareTo(rhs) > 0;
+        }
+
+        public static bool operator >=(Item lhs, Item rhs)
+        {
+            if (lhs is null && rhs is null)
+            {
+                return false;
+            }
+
+            if (lhs is null)
+            {
+                return false;
+            }
+
+            if (rhs is null)
+            {
+                return true;
+            }
+
+            return lhs.CompareTo(rhs) >= 0;
+        }
+
+		public override int GetHashCode()
+		{
+			return FeedName.GetHashCode(StringComparison.Ordinal);
 		}
 
 		private static bool AreLinksTheSame(Uri? mine, Uri? other)
