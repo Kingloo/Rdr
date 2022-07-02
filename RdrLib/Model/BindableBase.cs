@@ -1,3 +1,4 @@
+﻿using System;
 using System.ComponentModel;
 
 namespace RdrLib.Model
@@ -8,6 +9,11 @@ namespace RdrLib.Model
 
 		protected bool SetProperty<T>(ref T storage, T value, string propertyName)
 		{
+			if (String.IsNullOrWhiteSpace(propertyName))
+			{
+				throw new ArgumentNullException(nameof(propertyName));
+			}
+
 			if (Equals(storage, value))
 			{
 				return false;
@@ -20,7 +26,9 @@ namespace RdrLib.Model
 			return true;
 		}
 
+#pragma warning disable CA1030
 		protected virtual void RaisePropertyChanged(string propertyName)
 			=> PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+#pragma warning restore CA1030
 	}
 }
