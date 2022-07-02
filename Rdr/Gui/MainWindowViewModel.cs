@@ -196,6 +196,8 @@ namespace Rdr.Gui
 		{
 			Activity = true;
 
+            StatusMessage = "updating ...";
+
 			await service.UpdateAllAsync().ConfigureAwait(true);
 
 			if (selectedFeed is null)
@@ -234,6 +236,8 @@ namespace Rdr.Gui
 		public async Task RefreshAsync(IEnumerable<Feed> feeds)
 		{
 			Activity = true;
+
+            StatusMessage = "updating ...";
 
 			await service.UpdateAsync(feeds).ConfigureAwait(true);
 
