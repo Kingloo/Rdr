@@ -117,23 +117,7 @@ namespace Rdr.Gui
 
 		private bool CanExecuteAsync(object? _) => !Activity;
 
-		private readonly DispatcherTimer refreshTimer = new DispatcherTimer(DispatcherPriority.ApplicationIdle)
-		{
-			Interval = TimeSpan.FromMinutes(10d)
-		};
-
-		private readonly string feedsFilePath = string.Empty;
-		private readonly RdrService service = new RdrService();
-		private Feed? selectedFeed = null;
-
-		public IReadOnlyCollection<Feed> Feeds => service.Feeds;
-
-		private readonly ObservableCollection<Item> _items = new ObservableCollection<Item>();
-		public IReadOnlyCollection<Item> Items => _items;
-
-		public bool IsRefreshTimerRunning => refreshTimer.IsEnabled;
-
-		private bool _activity = false;
+        private bool _activity = false;
 		public bool Activity
 		{
 			get => _activity;
@@ -144,6 +128,22 @@ namespace Rdr.Gui
 				RaiseCanExecuteChangedOnAsyncCommands();
 			}
 		}
+
+		private readonly DispatcherTimer refreshTimer = new DispatcherTimer(DispatcherPriority.ApplicationIdle)
+		{
+			Interval = TimeSpan.FromMinutes(15d)
+		};
+
+		private readonly string feedsFilePath;
+		private readonly RdrService service;
+		private Feed? selectedFeed = null;
+
+		public IReadOnlyCollection<Feed> Feeds => service.Feeds;
+
+		private readonly ObservableCollection<Item> _items = new ObservableCollection<Item>();
+		public IReadOnlyCollection<Item> Items => _items;
+
+        public bool IsRefreshTimerRunning { get => refreshTimer.IsEnabled; }
 
 		private int activeDownloads = 0;
 		public bool HasActiveDownload => activeDownloads > 0;
@@ -158,6 +158,8 @@ namespace Rdr.Gui
 		public MainWindowViewModel(string feedsFilePath)
 		{
 			this.feedsFilePath = feedsFilePath;
+
+            service = new RdrService();
 
 			refreshTimer.Tick += RefreshTimer_Tick;
 		}
@@ -187,7 +189,7 @@ namespace Rdr.Gui
 		{
 			Activity = true;
 
-			await service.UpdateAllAsync();
+			await service.UpdateAllAsync().ConfigureAwait(true);
 
 			if (selectedFeed is null)
 			{
@@ -203,11 +205,16 @@ namespace Rdr.Gui
 
 		public async Task RefreshAsync(Feed feed)
 		{
-			Activity = true;
+			if (feed is null)
+            {
+                throw new ArgumentNullException(nameof(feed));
+            }
 
-			await service.UpdateAsync(feed);
+            Activity = true;
 
-			if (selectedFeed == feed)
+			await service.UpdateAsync(feed).ConfigureAwait(true);
+
+			if (selectedFeed is not null && selectedFeed == feed)
 			{
 				MoveItems(feed);
 			}
@@ -219,7 +226,7 @@ namespace Rdr.Gui
 		{
 			Activity = true;
 
-			await service.UpdateAsync(feeds);
+			await service.UpdateAsync(feeds).ConfigureAwait(true);
 
 			if (selectedFeed is null)
 			{
@@ -293,7 +300,7 @@ namespace Rdr.Gui
 
 		public async Task ReloadAsync()
 		{
-			string[] lines = await ReadLinesAsync(feedsFilePath, '#');
+			string[] lines = await ReadLinesAsync(feedsFilePath, '#').ConfigureAwait(true);
 
 			IReadOnlyCollection<Feed> feeds = CreateFeeds(lines);
 
@@ -320,7 +327,7 @@ namespace Rdr.Gui
 				}
 			}
 
-			await RefreshAsync(toRefresh);
+			await RefreshAsync(toRefresh).ConfigureAwait(true);
 		}
 
 		private static async Task<string[]> ReadLinesAsync(string path, char commentChar)
@@ -356,7 +363,12 @@ namespace Rdr.Gui
 
 		public async Task DownloadEnclosureAsync(Enclosure enclosure)
 		{
-			string profileFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+			if (enclosure is null)
+            {
+                throw new ArgumentNullException(nameof(enclosure));
+            }
+
+            string profileFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 			string filename = enclosure.Link.Segments.Last();
 
 			string path = Path.Combine(profileFolder, "share", filename);
@@ -376,7 +388,7 @@ namespace Rdr.Gui
 			enclosure.IsDownloading = true;
 			activeDownloads++;
 
-			FileResponse response = await service.DownloadEnclosureAsync(enclosure, path, progress);
+			FileResponse response = await service.DownloadEnclosureAsync(enclosure, path, progress).ConfigureAwait(true);
 
 			enclosure.IsDownloading = false;
 			activeDownloads--;
