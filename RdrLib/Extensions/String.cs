@@ -12,9 +12,9 @@ namespace RdrLib.Extensions
 		internal static bool ContainsExt(this string target, string toFind, StringComparison comparison)
 		{
 			if (target is null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
+			{
+				throw new ArgumentNullException(nameof(target));
+			}
 
 			return (target.IndexOf(toFind, comparison) > -1);
 		}
@@ -22,9 +22,9 @@ namespace RdrLib.Extensions
 		internal static string RemoveNewLines(this string value)
 		{
 			if (value is null)
-            {
-                throw new ArgumentNullException(nameof(value));
-            }
+			{
+				throw new ArgumentNullException(nameof(value));
+			}
 
 			var sco = StringComparison.Ordinal;
 
@@ -56,14 +56,14 @@ namespace RdrLib.Extensions
 		internal static string RemoveUnicodeCategories(this string self, IEnumerable<UnicodeCategory> categories)
 		{
 			if (self is null)
-            {
-                throw new ArgumentNullException(nameof(self));
-            }
-			
-            if (categories is null)
-            {
-                throw new ArgumentNullException(nameof(categories));
-            }
+			{
+				throw new ArgumentNullException(nameof(self));
+			}
+
+			if (categories is null)
+			{
+				throw new ArgumentNullException(nameof(categories));
+			}
 
 			var sb = new StringBuilder();
 
@@ -81,19 +81,19 @@ namespace RdrLib.Extensions
 		internal static IReadOnlyCollection<string> FindBetween(this string text, string beginning, string ending)
 		{
 			if (text is null)
-            {
-                throw new ArgumentNullException(nameof(text));
-            }
+			{
+				throw new ArgumentNullException(nameof(text));
+			}
 
 			if (String.IsNullOrEmpty(beginning))
-            {
-                throw new ArgumentException("beginning was NullOrEmpty", nameof(beginning));
-            }
-			
-            if (String.IsNullOrEmpty(ending))
-            {
-                throw new ArgumentException("ending was NullOrEmpty", nameof(ending));
-            }
+			{
+				throw new ArgumentException("beginning was NullOrEmpty", nameof(beginning));
+			}
+
+			if (String.IsNullOrEmpty(ending))
+			{
+				throw new ArgumentException("ending was NullOrEmpty", nameof(ending));
+			}
 
 			List<string> results = new List<string>();
 
@@ -115,9 +115,9 @@ namespace RdrLib.Extensions
 		internal static string EnsureStartsWithHttps(this string input)
 		{
 			if (input is null)
-            {
-                throw new ArgumentNullException(nameof(input));
-            }
+			{
+				throw new ArgumentNullException(nameof(input));
+			}
 
 			const string https = "https://";
 			const string http = "http://";

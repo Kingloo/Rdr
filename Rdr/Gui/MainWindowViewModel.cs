@@ -117,7 +117,7 @@ namespace Rdr.Gui
 
 		private bool CanExecuteAsync(object? _) => !Activity;
 
-        private bool _activity = false;
+		private bool _activity = false;
 		public bool Activity
 		{
 			get => _activity;
@@ -150,7 +150,7 @@ namespace Rdr.Gui
 		private readonly ObservableCollection<Item> _items = new ObservableCollection<Item>();
 		public IReadOnlyCollection<Item> Items => _items;
 
-        public bool IsRefreshTimerRunning { get => refreshTimer.IsEnabled; }
+		public bool IsRefreshTimerRunning { get => refreshTimer.IsEnabled; }
 
 		private int activeDownloads = 0;
 		public bool HasActiveDownload => activeDownloads > 0;
@@ -166,7 +166,7 @@ namespace Rdr.Gui
 		{
 			this.feedsFilePath = feedsFilePath;
 
-            service = new RdrService();
+			service = new RdrService();
 
 			refreshTimer.Tick += RefreshTimer_Tick;
 		}
@@ -215,11 +215,11 @@ namespace Rdr.Gui
 		public async Task RefreshAsync(Feed feed)
 		{
 			if (feed is null)
-            {
-                throw new ArgumentNullException(nameof(feed));
-            }
+			{
+				throw new ArgumentNullException(nameof(feed));
+			}
 
-            Activity = true;
+			Activity = true;
 
 			await service.UpdateAsync(feed).ConfigureAwait(true);
 
@@ -375,11 +375,11 @@ namespace Rdr.Gui
 		public async Task DownloadEnclosureAsync(Enclosure enclosure)
 		{
 			if (enclosure is null)
-            {
-                throw new ArgumentNullException(nameof(enclosure));
-            }
+			{
+				throw new ArgumentNullException(nameof(enclosure));
+			}
 
-            string profileFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+			string profileFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 			string filename = enclosure.Link.Segments.Last();
 
 			string path = Path.Combine(profileFolder, "share", filename);

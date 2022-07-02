@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -168,7 +168,7 @@ namespace Rdr.Common
 			finally
 			{
 #pragma warning disable CA1508
-                fs?.Close();
+				fs?.Close();
 #pragma warning restore CA1508
 			}
 		}
@@ -200,10 +200,10 @@ namespace Rdr.Common
 			finally
 			{
 #pragma warning disable CA1508
-                if (fsAsync is not null)
-                {
-                    await fsAsync.DisposeAsync().ConfigureAwait(false);
-                }
+				if (fsAsync is not null)
+				{
+					await fsAsync.DisposeAsync().ConfigureAwait(false);
+				}
 #pragma warning restore CA1508
 			}
 		}

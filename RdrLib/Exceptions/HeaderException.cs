@@ -7,19 +7,19 @@ namespace RdrLib.Exceptions
 	{
 		public string UnaddableHeader { get; init; } = string.Empty;
 
-        public HeaderException()
+		public HeaderException()
 		{ }
 
 		public HeaderException(string? message)
-            : base(message)
+			: base(message)
 		{ }
 
 		public HeaderException(string? message, Exception? innerException)
-            : base(message, innerException)
+			: base(message, innerException)
 		{ }
 
 		protected HeaderException(SerializationInfo info, StreamingContext context)
-            : base(info, context)
+			: base(info, context)
 		{ }
 	}
 }

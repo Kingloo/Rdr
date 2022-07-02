@@ -20,18 +20,18 @@ namespace RdrLib
 		public RdrService() { }
 
 		public ValueTask UpdateAsync(Feed feed)
-        {
-            if (feed is null)
-            {
-                throw new ArgumentNullException(nameof(feed));
-            }
-            
-            return UpdateFeedAsync(feed, CancellationToken.None);
-        }
+		{
+			if (feed is null)
+			{
+				throw new ArgumentNullException(nameof(feed));
+			}
+
+			return UpdateFeedAsync(feed, CancellationToken.None);
+		}
 
 		public async ValueTask UpdateAsync(IEnumerable<Feed> feedsToUpdate)
 		{
-            await Parallel.ForEachAsync(feedsToUpdate, UpdateFeedAsync).ConfigureAwait(true);
+			await Parallel.ForEachAsync(feedsToUpdate, UpdateFeedAsync).ConfigureAwait(true);
 		}
 
 		public ValueTask UpdateAllAsync()
@@ -43,15 +43,15 @@ namespace RdrLib
 
 			static void configRequest(HttpRequestMessage request)
 			{
-                string userAgentHeaderValue = UserAgents.Get(UserAgents.Firefox_102_Windows);
+				string userAgentHeaderValue = UserAgents.Get(UserAgents.Firefox_102_Windows);
 
-                if (!request.Headers.UserAgent.TryParseAdd(userAgentHeaderValue))
-                {
-                    throw new HeaderException
-                    {
-                        UnaddableHeader = userAgentHeaderValue
-                    };
-                }
+				if (!request.Headers.UserAgent.TryParseAdd(userAgentHeaderValue))
+				{
+					throw new HeaderException
+					{
+						UnaddableHeader = userAgentHeaderValue
+					};
+				}
 			}
 
 			StringResponse response = await Web.DownloadStringAsync(feed.Link, configRequest).ConfigureAwait(false);
@@ -90,21 +90,21 @@ namespace RdrLib
 		public Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress>? progress)
 		{
 			if (enclosure is null)
-            {
-                throw new ArgumentNullException(nameof(enclosure));
-            }
+			{
+				throw new ArgumentNullException(nameof(enclosure));
+			}
 
-            return Web.DownloadFileAsync(enclosure.Link, path, progress);
+			return Web.DownloadFileAsync(enclosure.Link, path, progress);
 		}
 
 		public bool Add(Feed feed)
 		{
 			if (feed is null)
-            {
-                throw new ArgumentNullException(nameof(feed));
-            }
+			{
+				throw new ArgumentNullException(nameof(feed));
+			}
 
-            if (!_feeds.Contains(feed))
+			if (!_feeds.Contains(feed))
 			{
 				_feeds.Add(feed);
 
@@ -117,11 +117,11 @@ namespace RdrLib
 		public int Add(IReadOnlyCollection<Feed> feeds)
 		{
 			if (feeds is null)
-            {
-                throw new ArgumentNullException(nameof(feeds));
-            }
+			{
+				throw new ArgumentNullException(nameof(feeds));
+			}
 
-            int added = 0;
+			int added = 0;
 
 			foreach (Feed feed in feeds)
 			{
@@ -137,11 +137,11 @@ namespace RdrLib
 		public bool Remove(Feed feed)
 		{
 			if (feed is null)
-            {
-                throw new ArgumentNullException(nameof(feed));
-            }
+			{
+				throw new ArgumentNullException(nameof(feed));
+			}
 
-            if (_feeds.Contains(feed))
+			if (_feeds.Contains(feed))
 			{
 				return _feeds.Remove(feed);
 			}
@@ -154,11 +154,11 @@ namespace RdrLib
 		public int Remove(IReadOnlyCollection<Feed> feeds)
 		{
 			if (feeds is null)
-            {
-                throw new ArgumentNullException(nameof(feeds));
-            }
+			{
+				throw new ArgumentNullException(nameof(feeds));
+			}
 
-            int removed = 0;
+			int removed = 0;
 
 			foreach (Feed feed in feeds)
 			{
@@ -185,13 +185,13 @@ namespace RdrLib
 		}
 
 		public void MarkAsRead(Item item)
-        {
-            if (item is null)
-            {
-                throw new ArgumentNullException(nameof(item));
-            }
+		{
+			if (item is null)
+			{
+				throw new ArgumentNullException(nameof(item));
+			}
 
-            item.Unread = false;
-        }
+			item.Unread = false;
+		}
 	}
 }

@@ -30,16 +30,16 @@ namespace RdrLib.Model
 		public Item(string feedName)
 		{
 			if (String.IsNullOrWhiteSpace(feedName))
-            {
-                throw new ArgumentNullException(nameof(feedName), "feed name cannot be null-or-whitespace");
-            }
+			{
+				throw new ArgumentNullException(nameof(feedName), "feed name cannot be null-or-whitespace");
+			}
 
-            FeedName = feedName;
+			FeedName = feedName;
 		}
 
 		public bool Equals(Item? other)
 		{
-            return other is not null && EqualsInternal(this, other);
+			return other is not null && EqualsInternal(this, other);
 		}
 
 		public override bool Equals(object? obj)
@@ -47,133 +47,133 @@ namespace RdrLib.Model
 			return obj is Item item && EqualsInternal(this, item);
 		}
 
-        private static bool EqualsInternal(Item thisOne, Item otherOne)
-        {
-            bool sameName = thisOne.Name.Equals(otherOne.Name, StringComparison.OrdinalIgnoreCase);
+		private static bool EqualsInternal(Item thisOne, Item otherOne)
+		{
+			bool sameName = thisOne.Name.Equals(otherOne.Name, StringComparison.OrdinalIgnoreCase);
 			bool sameLink = AreLinksTheSame(thisOne.Link, otherOne.Link);
 
 			return sameName && sameLink;
-        }
+		}
 
-        public static bool operator ==(Item lhs, Item rhs)
-        {
-            if (lhs is null && rhs is null)
-            {
-                return true;
-            }
+		public static bool operator ==(Item lhs, Item rhs)
+		{
+			if (lhs is null && rhs is null)
+			{
+				return true;
+			}
 
-            if (lhs is null)
-            {
-                return false;
-            }
+			if (lhs is null)
+			{
+				return false;
+			}
 
-            if (rhs is null)
-            {
-                return false;
-            }
+			if (rhs is null)
+			{
+				return false;
+			}
 
-            return EqualsInternal(lhs, rhs);
-        }
+			return EqualsInternal(lhs, rhs);
+		}
 
-        public static bool operator !=(Item lhs, Item rhs)
-        {
-            if (lhs is null && rhs is null)
-            {
-                return false;
-            }
+		public static bool operator !=(Item lhs, Item rhs)
+		{
+			if (lhs is null && rhs is null)
+			{
+				return false;
+			}
 
-            if (lhs is null)
-            {
-                return true;
-            }
+			if (lhs is null)
+			{
+				return true;
+			}
 
-            if (rhs is null)
-            {
-                return true;
-            }
+			if (rhs is null)
+			{
+				return true;
+			}
 
-            return !EqualsInternal(lhs, rhs);
-        }
+			return !EqualsInternal(lhs, rhs);
+		}
 
-        public static bool operator <(Item lhs, Item rhs)
-        {
-            if (lhs is null && rhs is null)
-            {
-                return false;
-            }
+		public static bool operator <(Item lhs, Item rhs)
+		{
+			if (lhs is null && rhs is null)
+			{
+				return false;
+			}
 
-            if (lhs is null)
-            {
-                return true;
-            }
+			if (lhs is null)
+			{
+				return true;
+			}
 
-            if (rhs is null)
-            {
-                return false;
-            }
+			if (rhs is null)
+			{
+				return false;
+			}
 
-            return lhs.CompareTo(rhs) < 0;
-        }
+			return lhs.CompareTo(rhs) < 0;
+		}
 
-        public static bool operator <=(Item lhs, Item rhs)
-        {
-            if (lhs is null && rhs is null)
-            {
-                return false;
-            }
+		public static bool operator <=(Item lhs, Item rhs)
+		{
+			if (lhs is null && rhs is null)
+			{
+				return false;
+			}
 
-            if (lhs is null)
-            {
-                return true;
-            }
+			if (lhs is null)
+			{
+				return true;
+			}
 
-            if (rhs is null)
-            {
-                return false;
-            }
+			if (rhs is null)
+			{
+				return false;
+			}
 
-            return lhs.CompareTo(rhs) <= 0;
-        }
+			return lhs.CompareTo(rhs) <= 0;
+		}
 
-        public static bool operator >(Item lhs, Item rhs)
-        {
-            if (lhs is null && rhs is null)
-            {
-                return false;
-            }
+		public static bool operator >(Item lhs, Item rhs)
+		{
+			if (lhs is null && rhs is null)
+			{
+				return false;
+			}
 
-            if (lhs is null)
-            {
-                return false;
-            }
+			if (lhs is null)
+			{
+				return false;
+			}
 
-            if (rhs is null)
-            {
-                return true;
-            }
+			if (rhs is null)
+			{
+				return true;
+			}
 
-            return lhs.CompareTo(rhs) > 0;
-        }
+			return lhs.CompareTo(rhs) > 0;
+		}
 
-        public static bool operator >=(Item lhs, Item rhs)
-        {
-            if (lhs is null && rhs is null)
-            {
-                return false;
-            }
+		public static bool operator >=(Item lhs, Item rhs)
+		{
+			if (lhs is null && rhs is null)
+			{
+				return false;
+			}
 
-            if (lhs is null)
-            {
-                return false;
-            }
+			if (lhs is null)
+			{
+				return false;
+			}
 
-            if (rhs is null)
-            {
-                return true;
-            }
+			if (rhs is null)
+			{
+				return true;
+			}
 
-            return lhs.CompareTo(rhs) >= 0;
-        }
+			return lhs.CompareTo(rhs) >= 0;
+		}
 
 		public override int GetHashCode()
 		{

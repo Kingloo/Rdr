@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace RdrLib
 {
-    public static class UserAgents
+	public static class UserAgents
 	{
 		public const string HeaderName = "User-Agent";
 

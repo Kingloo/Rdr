@@ -30,11 +30,11 @@ namespace RdrLib.Model
 		public Feed(Uri uri)
 		{
 			if (uri is null)
-            {
-                throw new ArgumentNullException(nameof(uri));
-            }
+			{
+				throw new ArgumentNullException(nameof(uri));
+			}
 
-            Link = uri;
+			Link = uri;
 
 			_name = Link.AbsoluteUri;
 		}
@@ -42,11 +42,11 @@ namespace RdrLib.Model
 		public bool Add(Item item)
 		{
 			if (item is null)
-            {
-                throw new ArgumentNullException(nameof(item));
-            }
+			{
+				throw new ArgumentNullException(nameof(item));
+			}
 
-            if (!_items.Contains(item))
+			if (!_items.Contains(item))
 			{
 				_items.Add(item);
 
@@ -59,11 +59,11 @@ namespace RdrLib.Model
 		public int AddMany(IEnumerable<Item> items)
 		{
 			if (items is null)
-            {
-                throw new ArgumentNullException(nameof(items));
-            }
+			{
+				throw new ArgumentNullException(nameof(items));
+			}
 
-            int added = 0;
+			int added = 0;
 
 			foreach (Item item in items)
 			{
@@ -79,11 +79,11 @@ namespace RdrLib.Model
 		public bool Remove(Item item)
 		{
 			if (item is null)
-            {
-                throw new ArgumentNullException(nameof(item));
-            }
+			{
+				throw new ArgumentNullException(nameof(item));
+			}
 
-            if (_items.Contains(item))
+			if (_items.Contains(item))
 			{
 				_items.Remove(item);
 
@@ -96,11 +96,11 @@ namespace RdrLib.Model
 		public int RemoveMany(IEnumerable<Item> items)
 		{
 			if (items is null)
-            {
-                throw new ArgumentNullException(nameof(items));
-            }
+			{
+				throw new ArgumentNullException(nameof(items));
+			}
 
-            int removed = 0;
+			int removed = 0;
 
 			foreach (Item item in items)
 			{
@@ -123,135 +123,135 @@ namespace RdrLib.Model
 			return obj is Feed feed && EqualsInternal(this, feed);
 		}
 
-        private static bool EqualsInternal(Feed thisOne, Feed otherOne)
-        {
-            var oic = StringComparison.OrdinalIgnoreCase;
+		private static bool EqualsInternal(Feed thisOne, Feed otherOne)
+		{
+			var oic = StringComparison.OrdinalIgnoreCase;
 
 			bool sameHost = thisOne.Link.DnsSafeHost.Equals(otherOne.Link.DnsSafeHost, oic);
 			bool samePathAndQuery = thisOne.Link.PathAndQuery.Equals(otherOne.Link.PathAndQuery, oic);
 
 			return sameHost && samePathAndQuery;
-        }
+		}
 
-        public static bool operator ==(Feed lhs, Feed rhs)
-        {
-            if (lhs is null && rhs is null)
-            {
-                return true;
-            }
+		public static bool operator ==(Feed lhs, Feed rhs)
+		{
+			if (lhs is null && rhs is null)
+			{
+				return true;
+			}
 
-            if (lhs is null)
-            {
-                return false;
-            }
+			if (lhs is null)
+			{
+				return false;
+			}
 
-            if (rhs is null)
-            {
-                return false;
-            }
+			if (rhs is null)
+			{
+				return false;
+			}
 
-            return EqualsInternal(lhs, rhs);
-        }
+			return EqualsInternal(lhs, rhs);
+		}
 
-        public static bool operator !=(Feed lhs, Feed rhs)
-        {
-            if (lhs is null && rhs is null)
-            {
-                return false;
-            }
+		public static bool operator !=(Feed lhs, Feed rhs)
+		{
+			if (lhs is null && rhs is null)
+			{
+				return false;
+			}
 
-            if (lhs is null)
-            {
-                return true;
-            }
+			if (lhs is null)
+			{
+				return true;
+			}
 
-            if (rhs is null)
-            {
-                return true;
-            }
+			if (rhs is null)
+			{
+				return true;
+			}
 
-            return !EqualsInternal(lhs, rhs);
-        }
+			return !EqualsInternal(lhs, rhs);
+		}
 
-        public static bool operator <(Feed lhs, Feed rhs)
-        {
-            if (lhs is null && rhs is null)
-            {
-                return false;
-            }
+		public static bool operator <(Feed lhs, Feed rhs)
+		{
+			if (lhs is null && rhs is null)
+			{
+				return false;
+			}
 
-            if (lhs is null)
-            {
-                return true;
-            }
+			if (lhs is null)
+			{
+				return true;
+			}
 
-            if (rhs is null)
-            {
-                return false;
-            }
+			if (rhs is null)
+			{
+				return false;
+			}
 
-            return lhs.CompareTo(rhs) < 0;
-        }
+			return lhs.CompareTo(rhs) < 0;
+		}
 
-        public static bool operator <=(Feed lhs, Feed rhs)
-        {
-            if (lhs is null && rhs is null)
-            {
-                return false;
-            }
+		public static bool operator <=(Feed lhs, Feed rhs)
+		{
+			if (lhs is null && rhs is null)
+			{
+				return false;
+			}
 
-            if (lhs is null)
-            {
-                return true;
-            }
+			if (lhs is null)
+			{
+				return true;
+			}
 
-            if (rhs is null)
-            {
-                return false;
-            }
+			if (rhs is null)
+			{
+				return false;
+			}
 
-            return lhs.CompareTo(rhs) <= 0;
-        }
+			return lhs.CompareTo(rhs) <= 0;
+		}
 
-        public static bool operator >(Feed lhs, Feed rhs)
-        {
-            if (lhs is null && rhs is null)
-            {
-                return false;
-            }
+		public static bool operator >(Feed lhs, Feed rhs)
+		{
+			if (lhs is null && rhs is null)
+			{
+				return false;
+			}
 
-            if (lhs is null)
-            {
-                return false;
-            }
+			if (lhs is null)
+			{
+				return false;
+			}
 
-            if (rhs is null)
-            {
-                return true;
-            }
+			if (rhs is null)
+			{
+				return true;
+			}
 
-            return lhs.CompareTo(rhs) > 0;
-        }
+			return lhs.CompareTo(rhs) > 0;
+		}
 
-        public static bool operator >=(Feed lhs, Feed rhs)
-        {
-            if (lhs is null && rhs is null)
-            {
-                return false;
-            }
+		public static bool operator >=(Feed lhs, Feed rhs)
+		{
+			if (lhs is null && rhs is null)
+			{
+				return false;
+			}
 
-            if (lhs is null)
-            {
-                return false;
-            }
+			if (lhs is null)
+			{
+				return false;
+			}
 
-            if (rhs is null)
-            {
-                return true;
-            }
+			if (rhs is null)
+			{
+				return true;
+			}
 
-            return lhs.CompareTo(rhs) >= 0;
-        }
+			return lhs.CompareTo(rhs) >= 0;
+		}
 
 		public override int GetHashCode()
 		{
@@ -259,14 +259,14 @@ namespace RdrLib.Model
 		}
 
 		public int CompareTo(Feed? other)
-        {
-            if (other is null)
-            {
-                return -1;
-            }
+		{
+			if (other is null)
+			{
+				return -1;
+			}
 
-            return String.CompareOrdinal(Name, other.Name);
-        }
+			return String.CompareOrdinal(Name, other.Name);
+		}
 
 		public override string ToString()
 		{

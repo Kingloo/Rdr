@@ -44,12 +44,12 @@ namespace RdrLib
 		public StringResponse(Uri uri, Reason reason)
 		{
 			if (uri is null)
-            {
-                throw new ArgumentNullException(nameof(uri));
-            }
+			{
+				throw new ArgumentNullException(nameof(uri));
+			}
 
-            this.uri = uri;
-            
+			this.uri = uri;
+
 			Reason = reason;
 		}
 
@@ -160,11 +160,11 @@ namespace RdrLib
 		public string? GetPercentFormatted(CultureInfo cultureInfo)
 		{
 			if (cultureInfo is null)
-            {
-                throw new ArgumentNullException(nameof(cultureInfo));
-            }
+			{
+				throw new ArgumentNullException(nameof(cultureInfo));
+			}
 
-            if (GetDownloadRatio() is decimal ratio)
+			if (GetDownloadRatio() is decimal ratio)
 			{
 				string percentFormat = GetPercentFormatString(cultureInfo);
 
@@ -196,26 +196,26 @@ namespace RdrLib
 	}
 
 #pragma warning disable CA1724
-    public static class Web
+	public static class Web
 #pragma warning restore CA1724
 	{
-        private static readonly SocketsHttpHandler handler = new SocketsHttpHandler
-        {
-            AllowAutoRedirect = true,
-            AutomaticDecompression = DecompressionMethods.All,
-            ConnectTimeout = TimeSpan.FromSeconds(10),
-            MaxAutomaticRedirections = 5,
-            SslOptions = new SslClientAuthenticationOptions
-            {
-                AllowRenegotiation = false,
-                ApplicationProtocols = new List<SslApplicationProtocol> { SslApplicationProtocol.Http11, SslApplicationProtocol.Http2 },
-                CertificateRevocationCheckMode = X509RevocationMode.Online,
+		private static readonly SocketsHttpHandler handler = new SocketsHttpHandler
+		{
+			AllowAutoRedirect = true,
+			AutomaticDecompression = DecompressionMethods.All,
+			ConnectTimeout = TimeSpan.FromSeconds(10),
+			MaxAutomaticRedirections = 5,
+			SslOptions = new SslClientAuthenticationOptions
+			{
+				AllowRenegotiation = false,
+				ApplicationProtocols = new List<SslApplicationProtocol> { SslApplicationProtocol.Http11, SslApplicationProtocol.Http2 },
+				CertificateRevocationCheckMode = X509RevocationMode.Online,
 #pragma warning disable CA5398
-                EnabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13,
+				EnabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13,
 #pragma warning restore CA5398
-                EncryptionPolicy = EncryptionPolicy.AllowNoEncryption
-            }
-        };
+				EncryptionPolicy = EncryptionPolicy.AllowNoEncryption
+			}
+		};
 
 		private static readonly HttpClient client = new HttpClient(handler, disposeHandler: true)
 		{
@@ -357,14 +357,14 @@ namespace RdrLib
 		public static async Task<FileResponse> DownloadFileAsync(Uri uri, string path, Action<HttpRequestMessage>? configureRequest, IProgress<FileProgress>? progress, CancellationToken cancellationToken)
 		{
 			if (String.IsNullOrWhiteSpace(path))
-            {
-                throw new ArgumentException("path was null-or-whiteSpace", nameof(path));
-            }
-			
-            if (File.Exists(path))
-            {
-                return new FileResponse(uri, path, Reason.FileExists);
-            }
+			{
+				throw new ArgumentException("path was null-or-whiteSpace", nameof(path));
+			}
+
+			if (File.Exists(path))
+			{
+				return new FileResponse(uri, path, Reason.FileExists);
+			}
 
 			string inProgressPath = GetExtension(path, "inprogress");
 
@@ -466,15 +466,15 @@ namespace RdrLib
 				response?.Dispose();
 
 #pragma warning disable CA1508
-                if (receive is not null)
-                {
-                    await receive.DisposeAsync().ConfigureAwait(false);
-                }
+				if (receive is not null)
+				{
+					await receive.DisposeAsync().ConfigureAwait(false);
+				}
 
-                if (save is not null)
-                {
-                    await save.DisposeAsync().ConfigureAwait(false);
-                }
+				if (save is not null)
+				{
+					await save.DisposeAsync().ConfigureAwait(false);
+				}
 #pragma warning restore CA1508
 			}
 
