@@ -112,8 +112,10 @@ namespace Rdr.Gui
 			}
 		}
 
-		public DelegateCommandAsync<Enclosure> DownloadEnclosureCommand
-			=> new DelegateCommandAsync<Enclosure>(DownloadEnclosureAsync, CanExecuteAsync);
+        public DelegateCommandAsync<Enclosure> DownloadEnclosureCommand
+        {
+            get => new DelegateCommandAsync<Enclosure>(DownloadEnclosureAsync, CanExecuteAsync);
+        }
 
 		private bool CanExecuteAsync(object? _) => !Activity;
 
@@ -461,9 +463,9 @@ namespace Rdr.Gui
 
 			foreach (Item[] chunk in items.Chunk(50))
 			{
-                await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
+                await Dispatcher.Yield(DispatcherPriority.DataBind);
 
-                foreach (Item item in chunk)
+				foreach (Item item in chunk)
                 {
                     if (!_items.Contains(item))
                     {
