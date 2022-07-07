@@ -148,7 +148,7 @@ namespace Rdr.Gui
 		public IReadOnlyCollection<Feed> Feeds { get => service.Feeds; }
 
 		private readonly ObservableCollection<Item> _items = new ObservableCollection<Item>();
-		public IReadOnlyCollection<Item> Items => _items;
+		public IReadOnlyCollection<Item> Items { get => _items; }
 
 		public bool IsRefreshTimerRunning { get => refreshTimer.IsEnabled; }
 
@@ -202,11 +202,11 @@ namespace Rdr.Gui
 
 			if (selectedFeed is null)
 			{
-				MoveUnreadItems(false);
+				await MoveUnreadItemsAsync(false).ConfigureAwait(true);
 			}
 			else
 			{
-				MoveItems(selectedFeed);
+				await MoveItemsAsync(selectedFeed).ConfigureAwait(true);
 			}
 
 			ShowLastUpdatedMessage();
@@ -227,7 +227,7 @@ namespace Rdr.Gui
 
 			if (selectedFeed is not null && selectedFeed == feed)
 			{
-				MoveItems(feed);
+				await MoveItemsAsync(feed).ConfigureAwait(true);
 			}
 
 			Activity = false;
@@ -243,11 +243,11 @@ namespace Rdr.Gui
 
 			if (selectedFeed is null)
 			{
-				MoveUnreadItems(false);
+				await MoveUnreadItemsAsync(clearFirst: false).ConfigureAwait(true);
 			}
 			else
 			{
-				MoveItems(selectedFeed);
+				await MoveItemsAsync(selectedFeed).ConfigureAwait(true);
 			}
 
 			ShowLastUpdatedMessage();
@@ -345,7 +345,7 @@ namespace Rdr.Gui
 			await RefreshAsync(toRefresh).ConfigureAwait(true);
 		}
 
-		private static async Task<string[]> ReadLinesAsync(string path, char commentChar)
+		private static async ValueTask<string[]> ReadLinesAsync(string path, char commentChar)
 		{
 			try
 			{
@@ -411,23 +411,23 @@ namespace Rdr.Gui
 			enclosure.Message = (response.Reason == Reason.Success) ? "Download" : response.Reason.ToString();
 		}
 
-		public void SetSelectedFeed(Feed? feed)
+		public async ValueTask SetSelectedFeedAsync(Feed? feed)
 		{
 			if (feed is null)
 			{
 				selectedFeed = null;
 
-				MoveUnreadItems(true);
+				await MoveUnreadItemsAsync(true).ConfigureAwait(true);
 			}
 			else
 			{
 				selectedFeed = feed;
 
-				MoveItems(selectedFeed.Items, clearFirst: true);
+				await MoveItemsAsync(selectedFeed.Items, clearFirst: true).ConfigureAwait(true);
 			}
 		}
 
-		public void SeeAll()
+		public ValueTask SeeAll()
 		{
 			_items.Clear();
 
@@ -436,34 +436,40 @@ namespace Rdr.Gui
 						   orderby item.Published descending
 						   select item;
 
-			MoveItems(allItems, clearFirst: true);
+			return MoveItemsAsync(allItems, clearFirst: true);
 		}
 
-		private void MoveUnreadItems(bool clearFirst)
+		private ValueTask MoveUnreadItemsAsync(bool clearFirst)
 		{
 			var unreadItems = from f in Feeds
 							  from i in f.Items
 							  where i.Unread
 							  select i;
 
-			MoveItems(unreadItems, clearFirst);
+			return MoveItemsAsync(unreadItems, clearFirst);
 		}
 
-		private void MoveItems(Feed feed) => MoveItems(feed.Items, clearFirst: false);
+        private ValueTask MoveItemsAsync(Feed feed)
+            => MoveItemsAsync(feed.Items, clearFirst: false);
 
-		private void MoveItems(IEnumerable<Item> items, bool clearFirst)
+        private async ValueTask MoveItemsAsync(IEnumerable<Item> items, bool clearFirst)
 		{
 			if (clearFirst)
 			{
 				_items.Clear();
 			}
 
-			foreach (Item item in items)
+			foreach (Item[] chunk in items.Chunk(50))
 			{
-				if (!_items.Contains(item))
-				{
-					_items.Add(item);
-				}
+                await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
+
+                foreach (Item item in chunk)
+                {
+                    if (!_items.Contains(item))
+                    {
+                        _items.Add(item);
+                    }
+                }
 			}
 		}
 

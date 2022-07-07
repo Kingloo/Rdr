@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -35,22 +36,22 @@ namespace Rdr.Gui
 			}
 		}
 
-		private void SeeUnread(object sender, RoutedEventArgs e)
+		private async void SeeUnread(object sender, RoutedEventArgs e)
 		{
-			vm.SetSelectedFeed(null);
+			await vm.SetSelectedFeedAsync(null).ConfigureAwait(true);
 		}
 
-		private void SeeAll(object sender, RoutedEventArgs e)
+		private async void SeeAll(object sender, RoutedEventArgs e)
 		{
-			vm.SeeAll();
+			await vm.SeeAll().ConfigureAwait(true);
 		}
 
-		private void Label_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+		private async void Label_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
 		{
 			Label label = (Label)sender;
 			Feed feed = (Feed)label.DataContext;
 
-			vm.SetSelectedFeed(feed);
+			await vm.SetSelectedFeedAsync(feed).ConfigureAwait(true);
 		}
 
 		private void Window_Closing(object sender, CancelEventArgs e)
