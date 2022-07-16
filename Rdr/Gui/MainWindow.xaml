@@ -29,7 +29,7 @@
 
 	<Window.Resources>
 		<CollectionViewSource x:Key="sortedFeeds"
-                              Source="{Binding Feeds, Mode=OneTime}"
+                              Source="{Binding Path=RdrService.Feeds, Mode=OneTime}"
                               IsLiveSortingRequested="True">
 			<CollectionViewSource.SortDescriptions>
 				<scm:SortDescription PropertyName="Name" Direction="Ascending" />
@@ -37,7 +37,7 @@
 		</CollectionViewSource>
 
 		<CollectionViewSource x:Key="sortedItems"
-                              Source="{Binding Items}"
+                              Source="{Binding Path=ViewedItems}"
                               IsLiveSortingRequested="True">
 			<CollectionViewSource.SortDescriptions>
 				<scm:SortDescription PropertyName="Published" Direction="Descending" />
@@ -243,11 +243,11 @@
 
 				<Button Grid.Row="0"
                         Content="Unread"
-                        Click="SeeUnread" />
+                        Command="{Binding Path=SeeUnreadCommand}" />
 
 				<Button Grid.Row="1"
                         Content="All"
-                        Click="SeeAll" />
+                        Command="{Binding Path=SeeAllCommand}" />
 
 				<ItemsControl Grid.Row="2"
                               ItemsSource="{Binding Source={StaticResource sortedFeeds}}">

@@ -11,7 +11,7 @@ namespace Rdr.Gui
 	{
 		private readonly MainWindowViewModel vm;
 
-		public MainWindow(MainWindowViewModel viewModel)
+        public MainWindow(MainWindowViewModel viewModel)
 		{
 			InitializeComponent();
 
@@ -35,22 +35,12 @@ namespace Rdr.Gui
 			}
 		}
 
-		private async void SeeUnread(object sender, RoutedEventArgs e)
+		private void Label_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
 		{
-			await vm.SetSelectedFeedAsync(null).ConfigureAwait(true);
-		}
-
-		private async void SeeAll(object sender, RoutedEventArgs e)
-		{
-			await vm.SeeAll().ConfigureAwait(true);
-		}
-
-		private async void Label_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-		{
-			Label label = (Label)sender;
+            Label label = (Label)sender;
 			Feed feed = (Feed)label.DataContext;
 
-			await vm.SetSelectedFeedAsync(feed).ConfigureAwait(true);
+            vm.ViewFeedItemsCommand.Execute(feed);
 		}
 
 		private void Window_Closing(object sender, CancelEventArgs e)

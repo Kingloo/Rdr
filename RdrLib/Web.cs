@@ -203,12 +203,16 @@ namespace RdrLib
 		{
 			AllowAutoRedirect = true,
 			AutomaticDecompression = DecompressionMethods.All,
-			ConnectTimeout = TimeSpan.FromSeconds(10),
+			ConnectTimeout = TimeSpan.FromSeconds(10d),
 			MaxAutomaticRedirections = 5,
 			SslOptions = new SslClientAuthenticationOptions
 			{
 				AllowRenegotiation = false,
-				ApplicationProtocols = new List<SslApplicationProtocol> { SslApplicationProtocol.Http11, SslApplicationProtocol.Http2 },
+				ApplicationProtocols = new List<SslApplicationProtocol>
+                {
+                    SslApplicationProtocol.Http11,
+                    SslApplicationProtocol.Http2
+                },
 				CertificateRevocationCheckMode = X509RevocationMode.Online,
 #pragma warning disable CA5398
 				EnabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13,
@@ -222,10 +226,16 @@ namespace RdrLib
 			Timeout = TimeSpan.FromSeconds(10d)
 		};
 
-		public static Task<StringResponse> DownloadStringAsync(Uri uri)
-			=> DownloadStringAsync(uri, null);
+		public static ValueTask<StringResponse> DownloadStringAsync(Uri uri)
+			=> DownloadStringAsync(uri, null, CancellationToken.None);
 
-		public static async Task<StringResponse> DownloadStringAsync(Uri uri, Action<HttpRequestMessage>? configureRequest)
+		public static ValueTask<StringResponse> DownloadStringAsync(Uri uri, Action<HttpRequestMessage>? configureRequest)
+			=> DownloadStringAsync(uri, configureRequest, CancellationToken.None);
+
+        public static ValueTask<StringResponse> DownloadStringAsync(Uri uri, CancellationToken cancellationToken)
+			=> DownloadStringAsync(uri, null, cancellationToken);
+
+        public static async ValueTask<StringResponse> DownloadStringAsync(Uri uri, Action<HttpRequestMessage>? configureRequest, CancellationToken cancellationToken)
 		{
 			HttpRequestMessage request = new HttpRequestMessage()
 			{
@@ -238,11 +248,11 @@ namespace RdrLib
 
 			try
 			{
-				response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+				response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
 
 				response.EnsureSuccessStatusCode();
 
-				string text = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+				string text = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
 				return new StringResponse(uri, Reason.Success)
 				{
@@ -280,10 +290,10 @@ namespace RdrLib
 			}
 		}
 
-		public static Task<DataResponse> DownloadDataAsync(Uri uri)
+		public static ValueTask<DataResponse> DownloadDataAsync(Uri uri)
 			=> DownloadDataAsync(uri, null);
 
-		public static async Task<DataResponse> DownloadDataAsync(Uri uri, Action<HttpRequestMessage>? configureRequest)
+		public static async ValueTask<DataResponse> DownloadDataAsync(Uri uri, Action<HttpRequestMessage>? configureRequest)
 		{
 			HttpRequestMessage request = new HttpRequestMessage()
 			{
@@ -345,20 +355,156 @@ namespace RdrLib
 			}
 		}
 
-		public static Task<FileResponse> DownloadFileAsync(Uri uri, string path)
-			=> DownloadFileAsync(uri, path, null, null, CancellationToken.None);
+		public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path)
+        {
+            if (uri is null)
+            {
+                throw new ArgumentNullException(nameof(uri));
+            }
 
-		public static Task<FileResponse> DownloadFileAsync(Uri uri, string path, Action<HttpRequestMessage> configureRequest)
-			=> DownloadFileAsync(uri, path, configureRequest, null, CancellationToken.None);
-
-		public static Task<FileResponse> DownloadFileAsync(Uri uri, string path, IProgress<FileProgress>? progress)
-			=> DownloadFileAsync(uri, path, null, progress, CancellationToken.None);
-
-		public static async Task<FileResponse> DownloadFileAsync(Uri uri, string path, Action<HttpRequestMessage>? configureRequest, IProgress<FileProgress>? progress, CancellationToken cancellationToken)
-		{
-			if (String.IsNullOrWhiteSpace(path))
+            if (String.IsNullOrWhiteSpace(path))
 			{
-				throw new ArgumentException("path was null-or-whiteSpace", nameof(path));
+				throw new ArgumentNullException(nameof(path));
+			}
+            
+            return DownloadFileAsync(uri, path, null, null, CancellationToken.None);
+        }
+
+        public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path, CancellationToken cancellationToken)
+        {
+            if (uri is null)
+            {
+                throw new ArgumentNullException(nameof(uri));
+            }
+
+            if (String.IsNullOrWhiteSpace(path))
+			{
+				throw new ArgumentNullException(nameof(path));
+			}
+            
+            return DownloadFileAsync(uri, path, null, null, cancellationToken);
+        }
+
+		public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path, Action<HttpRequestMessage> configureRequest)
+        {
+            if (uri is null)
+            {
+                throw new ArgumentNullException(nameof(uri));
+            }
+
+            if (String.IsNullOrWhiteSpace(path))
+			{
+				throw new ArgumentNullException(nameof(path));
+			}
+
+            if (configureRequest is null)
+            {
+                throw new ArgumentNullException(nameof(configureRequest));
+            }
+
+            return DownloadFileAsync(uri, path, configureRequest, null, CancellationToken.None);
+        }
+
+        public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path, Action<HttpRequestMessage> configureRequest, CancellationToken cancellationToken)
+        {
+            if (uri is null)
+            {
+                throw new ArgumentNullException(nameof(uri));
+            }
+
+            if (String.IsNullOrWhiteSpace(path))
+			{
+				throw new ArgumentNullException(nameof(path));
+			}
+
+            if (configureRequest is null)
+            {
+                throw new ArgumentNullException(nameof(configureRequest));
+            }
+
+            return DownloadFileAsync(uri, path, configureRequest, null, cancellationToken);
+        }
+        
+        public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path, IProgress<FileProgress> progress)
+        {
+            if (uri is null)
+            {
+                throw new ArgumentNullException(nameof(uri));
+            }
+
+            if (String.IsNullOrWhiteSpace(path))
+			{
+				throw new ArgumentNullException(nameof(path));
+			}
+
+            if (progress is null)
+            {
+                throw new ArgumentNullException(nameof(progress));
+            }
+
+            return DownloadFileAsync(uri, path, null, progress, CancellationToken.None);
+        }
+
+        public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path, IProgress<FileProgress>? progress, CancellationToken cancellationToken)
+		{
+            if (uri is null)
+            {
+                throw new ArgumentNullException(nameof(uri));
+            }
+
+            if (String.IsNullOrWhiteSpace(path))
+			{
+				throw new ArgumentNullException(nameof(path));
+			}
+
+            if (progress is null)
+            {
+                throw new ArgumentNullException(nameof(progress));
+            }
+
+            return DownloadFileAsync(uri, path, null, progress, cancellationToken);
+        }
+
+        public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path, Action<HttpRequestMessage> configureRequest, IProgress<FileProgress> progress)
+        {
+            if (uri is null)
+            {
+                throw new ArgumentNullException(nameof(uri));
+            }
+
+            if (String.IsNullOrWhiteSpace(path))
+			{
+				throw new ArgumentNullException(nameof(path));
+			}
+
+            if (configureRequest is null)
+            {
+                throw new ArgumentNullException(nameof(configureRequest));
+            }
+
+            if (progress is null)
+            {
+                throw new ArgumentNullException(nameof(progress));
+            }
+
+            return DownloadFileAsync(uri, path, configureRequest, progress, CancellationToken.None);
+        }
+
+        public static async ValueTask<FileResponse> DownloadFileAsync(
+            Uri uri,
+            string path,
+            Action<HttpRequestMessage>? configureRequest,
+            IProgress<FileProgress>? progress,
+            CancellationToken cancellationToken)
+		{
+			if (uri is null)
+            {
+                throw new ArgumentNullException(nameof(uri));
+            }
+
+            if (String.IsNullOrWhiteSpace(path))
+			{
+				throw new ArgumentNullException(nameof(path));
 			}
 
 			if (File.Exists(path))

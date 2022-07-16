@@ -12,92 +12,14 @@ using RdrLib.Model;
 
 namespace RdrLib
 {
-	public class RdrService
+	public class RdrService : IRdrService
 	{
 		private readonly ObservableCollection<Feed> _feeds = new ObservableCollection<Feed>();
 		public IReadOnlyCollection<Feed> Feeds { get => _feeds; }
 
 		public RdrService() { }
 
-		public ValueTask UpdateAsync(Feed feed)
-		{
-			if (feed is null)
-			{
-				throw new ArgumentNullException(nameof(feed));
-			}
-
-			return UpdateFeedAsync(feed, CancellationToken.None);
-		}
-
-		public async ValueTask UpdateAsync(IEnumerable<Feed> feedsToUpdate)
-		{
-			await Parallel.ForEachAsync(feedsToUpdate, UpdateFeedAsync).ConfigureAwait(true);
-		}
-
-		public ValueTask UpdateAllAsync()
-			=> UpdateAsync(_feeds);
-
-		private async ValueTask UpdateFeedAsync(Feed feed, CancellationToken cancellationToken)
-		{
-			feed.Status = FeedStatus.Updating;
-
-			static void configRequest(HttpRequestMessage request)
-			{
-				string userAgentHeaderValue = UserAgents.Get(UserAgents.Firefox_102_Windows);
-
-				if (!request.Headers.UserAgent.TryParseAdd(userAgentHeaderValue))
-				{
-					throw new HeaderException
-					{
-						UnaddableHeader = userAgentHeaderValue
-					};
-				}
-			}
-
-			StringResponse response = await Web.DownloadStringAsync(feed.Link, configRequest).ConfigureAwait(false);
-
-			if (response.Reason != Reason.Success)
-			{
-				feed.Status = response.Status switch
-				{
-					HttpStatusCode.Forbidden => FeedStatus.Forbidden,
-					HttpStatusCode.Moved => FeedStatus.MovedCannotFollow,
-					HttpStatusCode.NotFound => FeedStatus.DoesNotExist,
-					_ => FeedStatus.OtherInternetError,
-				};
-
-				return;
-			}
-
-			if (!XmlHelpers.TryParse(response.Text, out XDocument? document))
-			{
-				feed.Status = FeedStatus.ParseFailed;
-				return;
-			}
-
-			feed.Name = FeedHelpers.GetName(document);
-
-			IReadOnlyCollection<Item> items = FeedHelpers.GetItems(document, feed.Name);
-
-			feed.AddMany(items);
-
-			feed.Status = FeedStatus.Ok;
-		}
-
-		public Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path)
-			=> DownloadEnclosureAsync(enclosure, path, null);
-
-		public Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress>? progress)
-		{
-			if (enclosure is null)
-			{
-				throw new ArgumentNullException(nameof(enclosure));
-			}
-
-			return Web.DownloadFileAsync(enclosure.Link, path, progress);
-		}
-
-		public bool Add(Feed feed)
+        public bool Add(Feed feed)
 		{
 			if (feed is null)
 			{
@@ -114,7 +36,7 @@ namespace RdrLib
 			return false;
 		}
 
-		public int Add(IReadOnlyCollection<Feed> feeds)
+		public int Add(IEnumerable<Feed> feeds)
 		{
 			if (feeds is null)
 			{
@@ -151,7 +73,7 @@ namespace RdrLib
 			}
 		}
 
-		public int Remove(IReadOnlyCollection<Feed> feeds)
+		public int Remove(IEnumerable<Feed> feeds)
 		{
 			if (feeds is null)
 			{
@@ -171,7 +93,28 @@ namespace RdrLib
 			return removed;
 		}
 
-		public void Clear() => _feeds.Clear();
+        public void MarkAsRead(Item item)
+		{
+			if (item is null)
+			{
+				throw new ArgumentNullException(nameof(item));
+			}
+
+			item.Unread = false;
+		}
+
+        public void MarkAsRead(Feed feed)
+        {
+            if (feed is null)
+            {
+                throw new ArgumentNullException(nameof(feed));
+            }
+            
+            foreach (Item each in feed.Items)
+            {
+                MarkAsRead(each);
+            }
+        }
 
 		public void MarkAllAsRead()
 		{
@@ -184,14 +127,163 @@ namespace RdrLib
 			}
 		}
 
-		public void MarkAsRead(Item item)
-		{
-			if (item is null)
+		public void Clear() => _feeds.Clear();
+
+		public ValueTask UpdateAsync(Feed feed)
+        {
+            if (feed is null)
 			{
-				throw new ArgumentNullException(nameof(item));
+				throw new ArgumentNullException(nameof(feed));
 			}
 
-			item.Unread = false;
+            return UpdateFeedAsync(feed, CancellationToken.None);
+        }
+
+        public ValueTask UpdateAsync(Feed feed, CancellationToken cancellationToken)
+		{
+			if (feed is null)
+			{
+				throw new ArgumentNullException(nameof(feed));
+			}
+
+			return UpdateFeedAsync(feed, cancellationToken);
 		}
+
+		public ValueTask UpdateAsync(IEnumerable<Feed> feeds)
+        {
+            if (feeds is null)
+            {
+                throw new ArgumentNullException(nameof(feeds));
+            }
+
+            return UpdateAsync(feeds, CancellationToken.None);
+        }
+
+        public async ValueTask UpdateAsync(IEnumerable<Feed> feeds, CancellationToken cancellationToken)
+		{
+			if (feeds is null)
+            {
+                throw new ArgumentNullException(nameof(feeds));
+            }
+
+            await Parallel.ForEachAsync(feeds, cancellationToken, UpdateFeedAsync).ConfigureAwait(true);
+		}
+
+		private async ValueTask UpdateFeedAsync(Feed feed, CancellationToken cancellationToken)
+		{
+			feed.Status = FeedStatus.Updating;
+
+			static void configRequest(HttpRequestMessage request)
+			{
+				string userAgentHeaderValue = UserAgents.Get(UserAgents.Firefox_102_Windows);
+
+				if (!request.Headers.UserAgent.TryParseAdd(userAgentHeaderValue))
+				{
+					throw new HeaderException
+					{
+						UnaddableHeader = userAgentHeaderValue
+					};
+				}
+			}
+
+			StringResponse response = await Web.DownloadStringAsync(feed.Link, configRequest, cancellationToken).ConfigureAwait(false);
+
+			if (response.Reason != Reason.Success)
+			{
+				feed.Status = response.Status switch
+				{
+					HttpStatusCode.Forbidden => FeedStatus.Forbidden,
+					HttpStatusCode.Moved => FeedStatus.MovedCannotFollow,
+					HttpStatusCode.NotFound => FeedStatus.DoesNotExist,
+					_ => FeedStatus.OtherInternetError,
+				};
+
+				return;
+			}
+
+			if (!XmlHelpers.TryParse(response.Text, out XDocument? document))
+			{
+				feed.Status = FeedStatus.ParseFailed;
+				return;
+			}
+
+			feed.Name = FeedHelpers.GetName(document);
+
+			IReadOnlyCollection<Item> items = FeedHelpers.GetItems(document, feed.Name);
+
+			feed.AddMany(items);
+
+			feed.Status = FeedStatus.Ok;
+		}
+
+		public ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path)
+        {
+			if (enclosure is null)
+            {
+                throw new ArgumentNullException(nameof(enclosure));
+            }
+
+            if (String.IsNullOrWhiteSpace(path))
+            {
+                throw new ArgumentNullException(path);
+            }
+
+            return Web.DownloadFileAsync(enclosure.Link, path);
+        }
+
+        public ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress> progress)
+        {
+			if (enclosure is null)
+            {
+                throw new ArgumentNullException(nameof(enclosure));
+            }
+
+            if (String.IsNullOrWhiteSpace(path))
+            {
+                throw new ArgumentNullException(path);
+            }
+
+            if (progress is null)
+            {
+                throw new ArgumentNullException(nameof(progress));
+            }
+
+            return Web.DownloadFileAsync(enclosure.Link, path, progress);
+        }
+
+        public ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, CancellationToken cancellationToken)
+        {
+			if (enclosure is null)
+            {
+                throw new ArgumentNullException(nameof(enclosure));
+            }
+
+            if (String.IsNullOrWhiteSpace(path))
+            {
+                throw new ArgumentNullException(path);
+            }
+
+            return Web.DownloadFileAsync(enclosure.Link, path, cancellationToken);
+        }
+
+        public ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress> progress, CancellationToken cancellationToken)
+        {
+			if (enclosure is null)
+            {
+                throw new ArgumentNullException(nameof(enclosure));
+            }
+
+            if (String.IsNullOrWhiteSpace(path))
+            {
+                throw new ArgumentNullException(path);
+            }
+
+            if (progress is null)
+            {
+                throw new ArgumentNullException(nameof(progress));
+            }
+
+            return Web.DownloadFileAsync(enclosure.Link, path, progress, cancellationToken);
+        }
 	}
 }
