@@ -206,7 +206,7 @@ namespace RdrLib.Model
 				return false;
 			}
 
-			return mine.AbsolutePath.Equals(other.AbsolutePath, StringComparison.OrdinalIgnoreCase);
+            return mine.PathAndQuery.Equals(other.PathAndQuery, StringComparison.OrdinalIgnoreCase);
 		}
 
 		public int CompareTo(Item? other)
