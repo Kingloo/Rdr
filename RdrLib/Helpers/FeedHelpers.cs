@@ -39,7 +39,7 @@ namespace RdrLib.Helpers
 		{
 			return element
 				?.Elements()
-				.Where(x => x.Name.LocalName.Equals("title", StringComparison.OrdinalIgnoreCase) && !String.IsNullOrEmpty(x.Value))
+				.Where(static x => x.Name.LocalName.Equals("title", StringComparison.OrdinalIgnoreCase) && !String.IsNullOrEmpty(x.Value))
 				.FirstOrDefault()
 				?.Value
 				.RemoveUnicodeCategories(new[] { UnicodeCategory.OtherSymbol })

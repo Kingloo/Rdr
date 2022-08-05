@@ -48,7 +48,7 @@ namespace RdrLib.Helpers
 
             XElement? uniqueIdElement = element
                 .Elements()
-                .Where(x => x.Name.LocalName.Equals("guid", StringComparison.Ordinal) || x.Name.LocalName.Equals("id", StringComparison.Ordinal))
+                .Where(static x => x.Name.LocalName.Equals("guid", StringComparison.Ordinal) || x.Name.LocalName.Equals("id", StringComparison.Ordinal))
                 .FirstOrDefault();
 
             return uniqueIdElement?.Value ?? null;
@@ -58,7 +58,7 @@ namespace RdrLib.Helpers
 		{
 			XElement? linkElement = element?
                 .Elements()
-                .Where(x => x.Name.LocalName.Equals("link", StringComparison.Ordinal))
+                .Where(static x => x.Name.LocalName.Equals("link", StringComparison.Ordinal))
                 .FirstOrDefault();
 
 			Uri? uri = null;
@@ -81,7 +81,7 @@ namespace RdrLib.Helpers
 		{
 			XElement? titleElement = element?
                 .Elements()
-                .Where(x => x.Name.LocalName.Equals("title", StringComparison.OrdinalIgnoreCase))
+                .Where(static x => x.Name.LocalName.Equals("title", StringComparison.OrdinalIgnoreCase))
                 .FirstOrDefault();
 
 			if (titleElement != null)
@@ -102,7 +102,7 @@ namespace RdrLib.Helpers
 		{
 			IEnumerable<XElement?> allPubDateElements = element?
                 .Elements()
-                .Where(x => IsByAnyPubDateName(x))
+                .Where(static x => IsByAnyPubDateName(x))
             ?? Enumerable.Empty<XElement>();
 
 			foreach (XElement? pubDateElement in allPubDateElements)
@@ -152,9 +152,7 @@ namespace RdrLib.Helpers
 		{
 			IEnumerable<XElement> enclosureElements = element
 				.Elements()
-				.Where(
-					x => x.Name.LocalName.Equals("enclosure", StringComparison.OrdinalIgnoreCase)
-					|| x.Attributes("rel").Any());
+				.Where(static x => x.Name.LocalName.Equals("enclosure", StringComparison.OrdinalIgnoreCase) || x.Attributes("rel").Any());
 
 			foreach (XElement each in enclosureElements)
 			{

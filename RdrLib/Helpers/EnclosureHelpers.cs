@@ -26,9 +26,7 @@ namespace RdrLib.Helpers
 		{
 			IEnumerable<XAttribute> linkAttributes = element
 				.Attributes()
-				.Where(
-					x => x.Name.LocalName.Equals("url", StringComparison.OrdinalIgnoreCase)
-					|| x.Name.LocalName.Equals("href", StringComparison.OrdinalIgnoreCase));
+				.Where(static x => x.Name.LocalName.Equals("url", StringComparison.OrdinalIgnoreCase) || x.Name.LocalName.Equals("href", StringComparison.OrdinalIgnoreCase));
 
 			foreach (XAttribute each in linkAttributes)
 			{
@@ -45,7 +43,7 @@ namespace RdrLib.Helpers
 		{
 			IEnumerable<XAttribute> lengthAttributes = element
 				.Attributes()
-				.Where(x => x.Name.LocalName.Equals("length", StringComparison.OrdinalIgnoreCase));
+				.Where(static x => x.Name.LocalName.Equals("length", StringComparison.OrdinalIgnoreCase));
 
 			foreach (XAttribute each in lengthAttributes)
 			{
