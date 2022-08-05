@@ -6,6 +6,7 @@ namespace RdrLib.Model
 {
 	public class Item : BindableBase, IEquatable<Item>, IComparable<Item>
 	{
+		public string? UniqueId { get; set; } = string.Empty;
 		public Uri? Link { get; set; } = null;
 		public string Name { get; set; } = string.Empty;
 		public string FeedName { get; set; } = string.Empty;
@@ -49,21 +50,74 @@ namespace RdrLib.Model
 
 		private static bool EqualsInternal(Item thisOne, Item otherOne)
 		{
-            if (AreLinksTheSame(thisOne.Link, otherOne.Link) == false)
+            if (BothItemsHaveUniqueId(thisOne, otherOne))
             {
-                // if the links are different, they are definitely different items
-
-                return false;
+                return AreUniqueIdsTheSame(thisOne, otherOne);
             }
 
-            bool sameName = thisOne.Name.Equals(otherOne.Name, StringComparison.OrdinalIgnoreCase);
+			if (AreLinksTheSame(thisOne, otherOne) && AreNamesTheSame(thisOne, otherOne))
+			{
+				// if both the link and the name are the same, they must be the same item
 
-            if (AreLinksTheSame(thisOne.Link, otherOne.Link) && sameName)
-            {
-                return true;
-            }
+				return true;
+			}
 
-            return false;
+			if (AreLinksTheSame(thisOne, otherOne) == false)
+			{
+				// if the links are different, they are definitely different items
+
+				return false;
+			}
+
+			if (AreNamesTheSame(thisOne, otherOne))
+			{
+				// if the names are the same, they are definitely the same item
+
+				return true;
+			}
+
+			return false;
+		}
+
+        private static bool BothItemsHaveUniqueId(Item a, Item b)
+        {
+            return String.IsNullOrWhiteSpace(a.UniqueId) == false
+                && String.IsNullOrWhiteSpace(b.UniqueId) == false;
+        }
+
+		private static bool AreUniqueIdsTheSame(Item a, Item b)
+		{
+			return String.Equals(a.UniqueId, b.UniqueId, StringComparison.Ordinal);
+		}
+
+		private static bool AreLinksTheSame(Item a, Item b)
+		{
+			if (a.Link is null && b.Link is null)
+			{
+				return true;
+			}
+
+			if ((a.Link is null) != (b.Link is null))
+			{
+				return false;
+			}
+
+			if (a.Link is null)
+			{
+				return false;
+			}
+
+			if (b.Link is null)
+			{
+				return false;
+			}
+
+            return String.Equals(a.Link.PathAndQuery, b.Link.PathAndQuery, StringComparison.Ordinal);
+		}
+
+		private static bool AreNamesTheSame(Item a, Item b)
+		{
+            return String.Equals(a.Name, b.Name, StringComparison.Ordinal);
 		}
 
 		public static bool operator ==(Item lhs, Item rhs)
@@ -189,31 +243,6 @@ namespace RdrLib.Model
 		public override int GetHashCode()
 		{
 			return FeedName.GetHashCode(StringComparison.Ordinal);
-		}
-
-		private static bool AreLinksTheSame(Uri? mine, Uri? other)
-		{
-			if (mine is null && other is null)
-			{
-				return true;
-			}
-
-			if ((mine is null) != (other is null))
-			{
-				return false;
-			}
-
-			if (mine is null)
-			{
-				return false;
-			}
-
-			if (other is null)
-			{
-				return false;
-			}
-
-            return mine.PathAndQuery.Equals(other.PathAndQuery, StringComparison.OrdinalIgnoreCase);
 		}
 
 		public int CompareTo(Item? other)
