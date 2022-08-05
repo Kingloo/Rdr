@@ -49,14 +49,21 @@ namespace RdrLib.Model
 
 		private static bool EqualsInternal(Item thisOne, Item otherOne)
 		{
-            if (AreLinksTheSame(thisOne.Link, otherOne.Link))
+            if (AreLinksTheSame(thisOne.Link, otherOne.Link) == false)
+            {
+                // if the links are different, they are definitely different items
+
+                return false;
+            }
+
+            bool sameName = thisOne.Name.Equals(otherOne.Name, StringComparison.OrdinalIgnoreCase);
+
+            if (AreLinksTheSame(thisOne.Link, otherOne.Link) && sameName)
             {
                 return true;
             }
-            
-            bool sameName = thisOne.Name.Equals(otherOne.Name, StringComparison.OrdinalIgnoreCase);
 
-            return sameName;
+            return false;
 		}
 
 		public static bool operator ==(Item lhs, Item rhs)
