@@ -339,7 +339,7 @@ namespace Rdr.Gui
 
 		public async Task ReloadAsync()
 		{
-			string[] lines = await ReadLinesAsync(feedsFilePath, '#').ConfigureAwait(true);
+			string[] lines = await ReadLinesAsync(feedsFilePath).ConfigureAwait(true);
 
 			IReadOnlyCollection<Feed> feeds = CreateFeeds(lines);
 
@@ -374,11 +374,11 @@ namespace Rdr.Gui
 			await RefreshAsync(toRefresh).ConfigureAwait(true);
 		}
 
-		private static async ValueTask<string[]> ReadLinesAsync(string path, char commentChar)
+		private static async ValueTask<string[]> ReadLinesAsync(string path)
 		{
 			try
 			{
-				return await FileSystem.LoadLinesFromFileAsync(path, commentChar).ConfigureAwait(false);
+				return await FileSystem.LoadLinesFromFileAsync(path).ConfigureAwait(false);
 			}
 			catch (FileNotFoundException)
 			{

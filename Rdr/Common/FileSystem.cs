@@ -15,7 +15,7 @@ namespace Rdr.Common
 		{
 			if (String.IsNullOrWhiteSpace(folder))
 			{
-				throw new ArgumentNullException(nameof(folder), "folder was null or empty");
+				throw new ArgumentNullException(nameof(folder));
 			}
 
 			if (!Directory.Exists(folder))
@@ -31,9 +31,14 @@ namespace Rdr.Common
 
 		public static void EnsureFileExists(string path)
 		{
+			if (String.IsNullOrWhiteSpace(path))
+			{
+				throw new ArgumentNullException(nameof(path));
+			}
+
 			if (!File.Exists(path))
 			{
-				EnsureDirectoryExists(new FileInfo(path).DirectoryName ?? string.Empty);
+				EnsureDirectoryExists(new FileInfo(path).DirectoryName);
 
 				using (File.Create(path)) { }
 
@@ -49,46 +54,41 @@ namespace Rdr.Common
 			=> LoadLinesFromFileAsync(path, defaultCommentChar, Encoding.UTF8, CancellationToken.None);
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static ValueTask<string[]> LoadLinesFromFileAsync(string path, char comment)
-			=> LoadLinesFromFileAsync(path, comment, Encoding.UTF8, CancellationToken.None);
-
-		[System.Diagnostics.DebuggerStepThrough]
-		public static ValueTask<string[]> LoadLinesFromFileAsync(string path, Encoding encoding)
-			=> LoadLinesFromFileAsync(path, defaultCommentChar, Encoding.UTF8, CancellationToken.None);
+		public static ValueTask<string[]> LoadLinesFromFileAsync(string path, CancellationToken cancellationToken)
+			=> LoadLinesFromFileAsync(path, defaultCommentChar, Encoding.UTF8, cancellationToken);
 
 		public static async ValueTask<string[]> LoadLinesFromFileAsync(string path, char comment, Encoding encoding, CancellationToken token)
 		{
 			List<string> lines = new List<string>();
 
-			FileStream fsAsync = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None, 4096, FileOptions.Asynchronous | FileOptions.SequentialScan);
+			FileStream fsAsync = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous | FileOptions.SequentialScan);
 
 			try
 			{
-				using (StreamReader sr = new StreamReader(fsAsync, encoding))
+				using StreamReader sr = new StreamReader(fsAsync, encoding);
+
+				string? line = string.Empty;
+
+				while (!String.IsNullOrEmpty(line = await sr.ReadLineAsync().ConfigureAwait(false)))
 				{
-					string? line = string.Empty;
-
-					while (!String.IsNullOrEmpty(line = await sr.ReadLineAsync().ConfigureAwait(false)))
+					if (token.IsCancellationRequested)
 					{
-						if (token.IsCancellationRequested)
-						{
-							break;
-						}
+						break;
+					}
 
-						bool shouldAddLine = true;
+					bool shouldAddLine = true;
 
-						if (!Char.IsWhiteSpace(comment))
+					if (!Char.IsWhiteSpace(comment))
+					{
+						if (line[0] == comment)
 						{
-							if (line[0] == comment)
-							{
-								shouldAddLine = false;
-							}
+							shouldAddLine = false;
 						}
+					}
 
-						if (shouldAddLine)
-						{
-							lines.Add(line);
-						}
+					if (shouldAddLine)
+					{
+						lines.Add(line);
 					}
 				}
 			}
@@ -104,26 +104,36 @@ namespace Rdr.Common
 		public static ValueTask WriteLinesToFileAsync(string[] lines, string path, FileMode mode)
 			=> WriteLinesToFileAsync(lines, path, mode, Encoding.UTF8, CancellationToken.None);
 
+		[System.Diagnostics.DebuggerStepThrough]
+		public static ValueTask WriteLinesToFileAsync(string[] lines, string path, FileMode mode, CancellationToken cancellationToken)
+			=> WriteLinesToFileAsync(lines, path, mode, Encoding.UTF8, cancellationToken);
+
 		public static async ValueTask WriteLinesToFileAsync(string[] lines, string path, FileMode mode, Encoding encoding, CancellationToken token)
 		{
-			if (lines is null)
+			ArgumentNullException.ThrowIfNull(lines, nameof(lines));
+
+			if (lines.Length == 0)
 			{
-				throw new ArgumentNullException(nameof(lines));
+				return;
 			}
 
 			FileStream fsAsync = new FileStream(path, mode, FileAccess.Write, FileShare.None, 4096, FileOptions.Asynchronous | FileOptions.SequentialScan);
 
 			try
 			{
-				using (StreamWriter sw = new StreamWriter(fsAsync, encoding))
+				using StreamWriter sw = new StreamWriter(fsAsync, encoding);
+
+				foreach (string line in lines)
 				{
-					foreach (string line in lines)
+					if (token.IsCancellationRequested)
 					{
-						await sw.WriteLineAsync(line.AsMemory(), token).ConfigureAwait(false);
+						break;
 					}
 
-					await sw.FlushAsync().ConfigureAwait(false);
+					await sw.WriteLineAsync(line).ConfigureAwait(false);
 				}
+
+				await sw.FlushAsync().ConfigureAwait(false);
 			}
 			finally
 			{
