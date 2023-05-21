@@ -29,10 +29,7 @@ namespace RdrLib.Model
 
 		public Feed(Uri uri)
 		{
-			if (uri is null)
-			{
-				throw new ArgumentNullException(nameof(uri));
-			}
+			ArgumentNullException.ThrowIfNull(uri);
 
 			Link = uri;
 
@@ -41,10 +38,7 @@ namespace RdrLib.Model
 
 		public bool Add(Item item)
 		{
-			if (item is null)
-			{
-				throw new ArgumentNullException(nameof(item));
-			}
+			ArgumentNullException.ThrowIfNull(item);
 
 			if (!_items.Contains(item))
 			{
@@ -58,10 +52,7 @@ namespace RdrLib.Model
 
 		public int AddMany(IEnumerable<Item> items)
 		{
-			if (items is null)
-			{
-				throw new ArgumentNullException(nameof(items));
-			}
+			ArgumentNullException.ThrowIfNull(items);
 
 			int added = 0;
 
@@ -78,10 +69,7 @@ namespace RdrLib.Model
 
 		public bool Remove(Item item)
 		{
-			if (item is null)
-			{
-				throw new ArgumentNullException(nameof(item));
-			}
+			ArgumentNullException.ThrowIfNull(item);
 
 			if (_items.Contains(item))
 			{
@@ -95,10 +83,7 @@ namespace RdrLib.Model
 
 		public int RemoveMany(IEnumerable<Item> items)
 		{
-			if (items is null)
-			{
-				throw new ArgumentNullException(nameof(items));
-			}
+			ArgumentNullException.ThrowIfNull(items);
 
 			int removed = 0;
 

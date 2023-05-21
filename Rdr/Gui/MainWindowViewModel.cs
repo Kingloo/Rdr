@@ -230,10 +230,7 @@ namespace Rdr.Gui
                 throw new ArgumentNullException(nameof(feedsFilePath));
             }
 
-            if (rdrService is null)
-            {
-                throw new ArgumentNullException(nameof(rdrService));
-            }
+			ArgumentNullException.ThrowIfNull(rdrService);
 
             this.feedsFilePath = feedsFilePath;
 			this.rdrService = rdrService;
@@ -298,10 +295,7 @@ namespace Rdr.Gui
 
         public async Task RefreshAsync(Feed feed)
         {
-            if (feed is null)
-            {
-                throw new ArgumentNullException(nameof(feed));
-            }
+			ArgumentNullException.ThrowIfNull(feed);
 
             Activity = true;
             
@@ -443,10 +437,7 @@ namespace Rdr.Gui
 
 		public async Task DownloadEnclosureAsync(Enclosure enclosure)
 		{
-			if (enclosure is null)
-			{
-				throw new ArgumentNullException(nameof(enclosure));
-			}
+			ArgumentNullException.ThrowIfNull(enclosure);
 
 			string profileFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 			string filename = enclosure.Link.Segments.Last();

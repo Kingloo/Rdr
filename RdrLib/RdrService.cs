@@ -21,10 +21,7 @@ namespace RdrLib
 
         public bool Add(Feed feed)
 		{
-			if (feed is null)
-			{
-				throw new ArgumentNullException(nameof(feed));
-			}
+			ArgumentNullException.ThrowIfNull(feed);
 
 			if (!_feeds.Contains(feed))
 			{
@@ -38,10 +35,7 @@ namespace RdrLib
 
 		public int Add(IEnumerable<Feed> feeds)
 		{
-			if (feeds is null)
-			{
-				throw new ArgumentNullException(nameof(feeds));
-			}
+			ArgumentNullException.ThrowIfNull(feeds);
 
 			int added = 0;
 
@@ -58,10 +52,7 @@ namespace RdrLib
 
 		public bool Remove(Feed feed)
 		{
-			if (feed is null)
-			{
-				throw new ArgumentNullException(nameof(feed));
-			}
+			ArgumentNullException.ThrowIfNull(feed);
 
 			if (_feeds.Contains(feed))
 			{
@@ -75,10 +66,7 @@ namespace RdrLib
 
 		public int Remove(IEnumerable<Feed> feeds)
 		{
-			if (feeds is null)
-			{
-				throw new ArgumentNullException(nameof(feeds));
-			}
+			ArgumentNullException.ThrowIfNull(feeds);
 
 			int removed = 0;
 
@@ -95,20 +83,14 @@ namespace RdrLib
 
         public void MarkAsRead(Item item)
 		{
-			if (item is null)
-			{
-				throw new ArgumentNullException(nameof(item));
-			}
+			ArgumentNullException.ThrowIfNull(item);
 
 			item.Unread = false;
 		}
 
         public void MarkAsRead(Feed feed)
         {
-            if (feed is null)
-            {
-                throw new ArgumentNullException(nameof(feed));
-            }
+			ArgumentNullException.ThrowIfNull(feed);
             
             foreach (Item each in feed.Items)
             {
@@ -131,40 +113,28 @@ namespace RdrLib
 
 		public ValueTask UpdateAsync(Feed feed)
         {
-            if (feed is null)
-			{
-				throw new ArgumentNullException(nameof(feed));
-			}
+			ArgumentNullException.ThrowIfNull(feed);
 
             return UpdateFeedAsync(feed, CancellationToken.None);
         }
 
         public ValueTask UpdateAsync(Feed feed, CancellationToken cancellationToken)
 		{
-			if (feed is null)
-			{
-				throw new ArgumentNullException(nameof(feed));
-			}
+			ArgumentNullException.ThrowIfNull(feed);
 
 			return UpdateFeedAsync(feed, cancellationToken);
 		}
 
 		public ValueTask UpdateAsync(IEnumerable<Feed> feeds)
         {
-            if (feeds is null)
-            {
-                throw new ArgumentNullException(nameof(feeds));
-            }
+			ArgumentNullException.ThrowIfNull(feeds);
 
             return UpdateAsync(feeds, CancellationToken.None);
         }
 
         public async ValueTask UpdateAsync(IEnumerable<Feed> feeds, CancellationToken cancellationToken)
 		{
-			if (feeds is null)
-            {
-                throw new ArgumentNullException(nameof(feeds));
-            }
+			ArgumentNullException.ThrowIfNull(feeds);
 
             await Parallel.ForEachAsync(feeds, cancellationToken, UpdateFeedAsync).ConfigureAwait(true);
 		}
@@ -218,10 +188,7 @@ namespace RdrLib
 
 		public ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path)
         {
-			if (enclosure is null)
-            {
-                throw new ArgumentNullException(nameof(enclosure));
-            }
+			ArgumentNullException.ThrowIfNull(enclosure);
 
             if (String.IsNullOrWhiteSpace(path))
             {
@@ -233,19 +200,12 @@ namespace RdrLib
 
         public ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress> progress)
         {
-			if (enclosure is null)
-            {
-                throw new ArgumentNullException(nameof(enclosure));
-            }
+			ArgumentNullException.ThrowIfNull(enclosure);
+			ArgumentNullException.ThrowIfNull(progress);
 
             if (String.IsNullOrWhiteSpace(path))
             {
                 throw new ArgumentNullException(path);
-            }
-
-            if (progress is null)
-            {
-                throw new ArgumentNullException(nameof(progress));
             }
 
             return Web.DownloadFileAsync(enclosure.Link, path, progress);
@@ -253,10 +213,7 @@ namespace RdrLib
 
         public ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, CancellationToken cancellationToken)
         {
-			if (enclosure is null)
-            {
-                throw new ArgumentNullException(nameof(enclosure));
-            }
+			ArgumentNullException.ThrowIfNull(enclosure);
 
             if (String.IsNullOrWhiteSpace(path))
             {
@@ -268,19 +225,12 @@ namespace RdrLib
 
         public ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress> progress, CancellationToken cancellationToken)
         {
-			if (enclosure is null)
-            {
-                throw new ArgumentNullException(nameof(enclosure));
-            }
+			ArgumentNullException.ThrowIfNull(enclosure);
+			ArgumentNullException.ThrowIfNull(progress);
 
             if (String.IsNullOrWhiteSpace(path))
             {
                 throw new ArgumentNullException(path);
-            }
-
-            if (progress is null)
-            {
-                throw new ArgumentNullException(nameof(progress));
             }
 
             return Web.DownloadFileAsync(enclosure.Link, path, progress, cancellationToken);
