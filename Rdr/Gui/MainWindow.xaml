@@ -123,9 +123,7 @@
 				</Grid.ColumnDefinitions>
 
 				<Grid.Resources>
-					<converters:HasEnclosureConverter x:Key="hasEnclosureConverter"
-                                                      True="Visible"
-                                                      False="Collapsed" />
+					<converters:IsNotNullConverter x:Key="isNotNullConverter" />
 				</Grid.Resources>
 
 				<Grid.InputBindings>
@@ -152,13 +150,22 @@
 				</Label>
 
 				<Button Grid.Column="2"
-                        HorizontalAlignment="Right"
-                        Content="{Binding Enclosure.Message}"
-                        IsEnabled="{Binding Enclosure.IsDownloading, Converter={StaticResource booleanNegationConverter}}"
-                        Command="{Binding DataContext.DownloadEnclosureCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type gui:MainWindow}}}"
-                        CommandParameter="{Binding Enclosure}"
-                        ToolTip="{Binding Enclosure.Link.AbsoluteUri, Mode=OneTime}"
-                        Visibility="{Binding HasEnclosure, Converter={StaticResource hasEnclosureConverter}}" />
+						HorizontalAlignment="Right">
+					<Button.Style>
+						<Style TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Button}}">
+							<Setter Property="Visibility" Value="Collapsed" />
+							<Style.Triggers>
+								<DataTrigger Binding="{Binding Path=Enclosure, Converter={StaticResource isNotNullConverter}, Mode=OneTime}" Value="True">
+									<Setter Property="Visibility" Value="Visible" />
+									<Setter Property="Content" Value="{Binding Path=Enclosure.Message}" />
+									<Setter Property="ToolTip" Value="{Binding Path=Enclosure.Link.AbsoluteUri, Mode=OneTime}" />
+									<Setter Property="Command" Value="{Binding DataContext.DownloadEnclosureCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type gui:MainWindow}}}" />
+									<Setter Property="CommandParameter" Value="{Binding Enclosure}" />
+								</DataTrigger>
+							</Style.Triggers>
+						</Style>
+					</Button.Style>
+				</Button>
 
 				<Label Grid.Column="3"
                        Style="{Binding Unread, Converter={StaticResource isUnreadLabelConverter}}"

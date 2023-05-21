@@ -102,8 +102,6 @@ namespace Rdr.Gui
             }
         }
 
-		
-
 		private DelegateCommandAsync? _seeAllCommand = null;
         public DelegateCommandAsync SeeAllCommand
         {

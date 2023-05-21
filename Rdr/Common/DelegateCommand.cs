@@ -80,8 +80,6 @@ namespace Rdr.Common
 
 		public override bool CanExecute(object? parameter)
 		{
-			ArgumentNullException.ThrowIfNull(parameter);
-
 			return _canExecute((T)parameter);
 		}
 	}
@@ -173,8 +171,6 @@ namespace Rdr.Common
 
 		public override bool CanExecute(object? parameter)
 		{
-			ArgumentNullException.ThrowIfNull(parameter);
-
 			return !_isExecuting && _canExecute((T)parameter);
 		}
 	}

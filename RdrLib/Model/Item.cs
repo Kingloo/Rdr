@@ -26,7 +26,6 @@ namespace RdrLib.Model
 		}
 
 		public Enclosure? Enclosure { get; set; } = null;
-		public bool HasEnclosure { get => Enclosure is not null; }
 
 		public Item(string feedName)
 		{

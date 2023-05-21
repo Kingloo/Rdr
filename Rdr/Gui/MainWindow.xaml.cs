@@ -22,7 +22,7 @@ namespace Rdr.Gui
 
 		private void Window_Loaded(object sender, RoutedEventArgs e)
 		{
-			vm.ReloadCommand.Execute(null);
+			vm.ReloadCommand.Execute();
 
 			vm.StartTimer();
 		}
