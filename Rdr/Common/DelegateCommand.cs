@@ -80,7 +80,7 @@ namespace Rdr.Common
 
 		public override bool CanExecute(object? parameter)
 		{
-			return _canExecute((T)parameter);
+			return (parameter is not null) && _canExecute((T)parameter);
 		}
 	}
 
@@ -171,7 +171,7 @@ namespace Rdr.Common
 
 		public override bool CanExecute(object? parameter)
 		{
-			return !_isExecuting && _canExecute((T)parameter);
+			return !_isExecuting && (parameter is not null) && _canExecute((T)parameter);
 		}
 	}
 }
