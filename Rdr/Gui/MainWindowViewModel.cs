@@ -19,10 +19,7 @@ namespace Rdr.Gui
 		{
 			get
 			{
-				if (_refreshAllCommand is null)
-				{
-					_refreshAllCommand = new DelegateCommandAsync(RefreshAllAsync, CanExecuteAsync);
-				}
+				_refreshAllCommand ??= new DelegateCommandAsync(RefreshAllAsync, CanExecuteAsync);
 
 				return _refreshAllCommand;
 			}
@@ -33,10 +30,7 @@ namespace Rdr.Gui
 		{
 			get
 			{
-				if (_refreshCommand is null)
-				{
-					_refreshCommand = new DelegateCommandAsync<Feed>(RefreshAsync, CanExecuteAsync);
-				}
+				_refreshCommand ??= new DelegateCommandAsync<Feed>(RefreshAsync, CanExecuteAsync);
 
 				return _refreshCommand;
 			}
@@ -47,10 +41,7 @@ namespace Rdr.Gui
 		{
 			get
 			{
-				if (_goToFeedCommand is null)
-				{
-					_goToFeedCommand = new DelegateCommand<Feed>(GoToFeed, (_) => true);
-				}
+				_goToFeedCommand ??= new DelegateCommand<Feed>(GoToFeed, (_) => true);
 
 				return _goToFeedCommand;
 			}
@@ -61,10 +52,7 @@ namespace Rdr.Gui
 		{
 			get
 			{
-				if (_goToItemCommand is null)
-				{
-					_goToItemCommand = new DelegateCommand<Item>(GoToItem, (_) => true);
-				}
+				_goToItemCommand ??= new DelegateCommand<Item>(GoToItem, (_) => true);
 
 				return _goToItemCommand;
 			}
@@ -75,10 +63,7 @@ namespace Rdr.Gui
 		{
 			get
 			{
-				if (_markAllAsReadCommand is null)
-				{
-					_markAllAsReadCommand = new DelegateCommand(MarkAllAsRead, (_) => true);
-				}
+				_markAllAsReadCommand ??= new DelegateCommand(MarkAllAsRead, (_) => true);
 
 				return _markAllAsReadCommand;
 			}
@@ -89,10 +74,7 @@ namespace Rdr.Gui
 		{
 			get
 			{
-				if (_openFeedsFileCommand is null)
-				{
-					_openFeedsFileCommand = new DelegateCommand(OpenFeedsFile, (_) => true);
-				}
+				_openFeedsFileCommand ??= new DelegateCommand(OpenFeedsFile, (_) => true);
 
 				return _openFeedsFileCommand;
 			}
@@ -103,10 +85,7 @@ namespace Rdr.Gui
 		{
 			get
 			{
-				if (_reloadCommand is null)
-				{
-					_reloadCommand = new DelegateCommandAsync(ReloadAsync, CanExecuteAsync);
-				}
+				_reloadCommand ??= new DelegateCommandAsync(ReloadAsync, CanExecuteAsync);
 
 				return _reloadCommand;
 			}
@@ -117,10 +96,7 @@ namespace Rdr.Gui
         {
             get
             {
-                if (_seeUnreadCommand is null)
-                {
-                    _seeUnreadCommand = new DelegateCommandAsync(SeeUnreadAsync, CanExecuteAsync);
-                }
+                _seeUnreadCommand ??= new DelegateCommandAsync(SeeUnreadAsync, CanExecuteAsync);
 
                 return _seeUnreadCommand;
             }
@@ -133,10 +109,7 @@ namespace Rdr.Gui
         {
             get
             {
-                if (_seeAllCommand is null)
-                {
-                    _seeAllCommand = new DelegateCommandAsync(SeeAllAsync, CanExecuteAsync);
-                }
+                _seeAllCommand ??= new DelegateCommandAsync(SeeAllAsync, CanExecuteAsync);
 
                 return _seeAllCommand;
             }
@@ -147,10 +120,7 @@ namespace Rdr.Gui
         {
             get
             {
-                if (_viewFeedItemsCommand is null)
-                {
-                    _viewFeedItemsCommand = new DelegateCommandAsync<Feed?>(ViewFeedItemsAsync, CanExecuteAsync);
-                }
+                _viewFeedItemsCommand ??= new DelegateCommandAsync<Feed?>(ViewFeedItemsAsync, CanExecuteAsync);
 
                 return _viewFeedItemsCommand;
             }
