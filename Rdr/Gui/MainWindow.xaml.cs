@@ -9,9 +9,9 @@ namespace Rdr.Gui
 {
 	public partial class MainWindow : Window
 	{
-		private readonly MainWindowViewModel vm;
+		private readonly IMainWindowViewModel vm;
 
-		public MainWindow(MainWindowViewModel viewModel)
+		public MainWindow(IMainWindowViewModel viewModel)
 		{
 			InitializeComponent();
 
@@ -31,7 +31,7 @@ namespace Rdr.Gui
 		{
 			if (e.Key == Key.Escape)
 			{
-				Close();
+				vm.ExitCommand.Execute(this);
 			}
 		}
 
@@ -45,7 +45,7 @@ namespace Rdr.Gui
 
 		private void Window_Closing(object sender, CancelEventArgs e)
 		{
-			if (vm.Activity || vm.HasActiveDownload)
+			if (vm.Activity || vm.HasActiveDownloads)
 			{
 				MessageBoxResult result = MessageBox.Show("I am doing something. Do you really want to quit?", "Activity!", MessageBoxButton.YesNo, MessageBoxImage.Exclamation);
 

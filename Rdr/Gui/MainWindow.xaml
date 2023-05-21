@@ -180,7 +180,7 @@
 
 	<Window.InputBindings>
 		<KeyBinding Key="F5" Command="{Binding RefreshAllCommand, Mode=OneTime}" />
-		<KeyBinding Key="F6" Command="{Binding MarkAllAsReadCommand, Mode=OneTime}" />
+		<KeyBinding Key="F6" Command="{Binding MarkAsReadCommand, Mode=OneTime}" />
 		<KeyBinding Key="F11" Command="{Binding OpenFeedsFileCommand, Mode=OneTime}" />
 		<KeyBinding Key="F12" Command="{Binding ReloadCommand, Mode=OneTime}" />
 	</Window.InputBindings>
@@ -216,7 +216,7 @@
                     VerticalAlignment="Stretch"
                     Orientation="Horizontal">
 			<Button Content="Refresh" Command="{Binding RefreshAllCommand, Mode=OneTime}" Margin="0,0,10,0" />
-			<Button Content="Mark All As Read" Command="{Binding MarkAllAsReadCommand, Mode=OneTime}" Margin="0,0,10,0" />
+			<Button Content="Mark As Read" Command="{Binding MarkAsReadCommand, Mode=OneTime}" Margin="0,0,10,0" />
 			<Button Content="Open File" Command="{Binding OpenFeedsFileCommand, Mode=OneTime}" Margin="0,0,10,0" />
 			<Button Content="Reload Feeds" Command="{Binding ReloadCommand, Mode=OneTime}" />
 		</StackPanel>

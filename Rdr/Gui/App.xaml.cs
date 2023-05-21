@@ -25,7 +25,7 @@ namespace Rdr.Gui
 		{
 			string path = Path.Combine(defaultDirectory, defaultFileName);
 
-			MainWindowViewModel viewModel = new MainWindowViewModel(path);
+			IMainWindowViewModel viewModel = new MainWindowViewModel(path);
 
 			MainWindow = new MainWindow(viewModel);
 
