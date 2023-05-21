@@ -91,53 +91,53 @@ namespace Rdr.Gui
 			}
 		}
 
-        private DelegateCommandAsync? _seeUnreadCommand = null;
-        public DelegateCommandAsync SeeUnreadCommand
-        {
-            get
-            {
-                _seeUnreadCommand ??= new DelegateCommandAsync(SeeUnreadAsync, CanExecuteAsync);
+		private DelegateCommandAsync? _seeUnreadCommand = null;
+		public DelegateCommandAsync SeeUnreadCommand
+		{
+			get
+			{
+				_seeUnreadCommand ??= new DelegateCommandAsync(SeeUnreadAsync, CanExecuteAsync);
 
-                return _seeUnreadCommand;
-            }
-        }
+				return _seeUnreadCommand;
+			}
+		}
 
 		private DelegateCommandAsync? _seeAllCommand = null;
-        public DelegateCommandAsync SeeAllCommand
-        {
-            get
-            {
-                _seeAllCommand ??= new DelegateCommandAsync(SeeAllAsync, CanExecuteAsync);
+		public DelegateCommandAsync SeeAllCommand
+		{
+			get
+			{
+				_seeAllCommand ??= new DelegateCommandAsync(SeeAllAsync, CanExecuteAsync);
 
-                return _seeAllCommand;
-            }
-        }
+				return _seeAllCommand;
+			}
+		}
 
-        private DelegateCommandAsync<Feed?>? _viewFeedItemsCommand = null;
-        public DelegateCommandAsync<Feed?> ViewFeedItemsCommand
-        {
-            get
-            {
-                _viewFeedItemsCommand ??= new DelegateCommandAsync<Feed?>(ViewFeedItemsAsync, CanExecuteAsync);
+		private DelegateCommandAsync<Feed?>? _viewFeedItemsCommand = null;
+		public DelegateCommandAsync<Feed?> ViewFeedItemsCommand
+		{
+			get
+			{
+				_viewFeedItemsCommand ??= new DelegateCommandAsync<Feed?>(ViewFeedItemsAsync, CanExecuteAsync);
 
-                return _viewFeedItemsCommand;
-            }
-        }
+				return _viewFeedItemsCommand;
+			}
+		}
 
-        public DelegateCommandAsync<Enclosure> DownloadEnclosureCommand
-            => new DelegateCommandAsync<Enclosure>(DownloadEnclosureAsync, CanExecuteAsync);
+		public DelegateCommandAsync<Enclosure> DownloadEnclosureCommand
+			=> new DelegateCommandAsync<Enclosure>(DownloadEnclosureAsync, CanExecuteAsync);
 
 		private bool CanExecuteAsync(object? obj)
-        {
-            if (obj is Enclosure enclosure)
-            {
-                return !enclosure.IsDownloading;
-            }
-            else
-            {
-                return !Activity;
-            }
-        }
+		{
+			if (obj is Enclosure enclosure)
+			{
+				return !enclosure.IsDownloading;
+			}
+			else
+			{
+				return !Activity;
+			}
+		}
 
 		private bool _activity = false;
 		public bool Activity
@@ -151,14 +151,14 @@ namespace Rdr.Gui
 			}
 		}
 
-        private void RaiseCanExecuteChangedOnAsyncCommands()
+		private void RaiseCanExecuteChangedOnAsyncCommands()
 		{
 			RefreshAllCommand.RaiseCanExecuteChanged();
 			RefreshCommand.RaiseCanExecuteChanged();
 			ReloadCommand.RaiseCanExecuteChanged();
-            SeeUnreadCommand.RaiseCanExecuteChanged();
-            SeeAllCommand.RaiseCanExecuteChanged();
-            ViewFeedItemsCommand.RaiseCanExecuteChanged();
+			SeeUnreadCommand.RaiseCanExecuteChanged();
+			SeeAllCommand.RaiseCanExecuteChanged();
+			ViewFeedItemsCommand.RaiseCanExecuteChanged();
 		}
 
 		private string _statusMessage = "no status message";
@@ -169,9 +169,9 @@ namespace Rdr.Gui
 		}
 
 		public bool IsRefreshTimerRunning
-        {
-            get => refreshTimer?.IsEnabled ?? false;
-        }
+		{
+			get => refreshTimer?.IsEnabled ?? false;
+		}
 
 		private int activeDownloads = 0;
 		public bool HasActiveDownload => activeDownloads > 0;
@@ -179,57 +179,57 @@ namespace Rdr.Gui
 		private DispatcherTimer? refreshTimer = null;
 		private Feed? selectedFeed = null;
 
-        private readonly string feedsFilePath;
+		private readonly string feedsFilePath;
 
-        private readonly IRdrService rdrService;
-        public IRdrService RdrService { get => rdrService; }
+		private readonly IRdrService rdrService;
+		public IRdrService RdrService { get => rdrService; }
 
-        private readonly ObservableCollection<Item> vieweditems = new ObservableCollection<Item>();
-        public IReadOnlyCollection<Item> ViewedItems { get => vieweditems; }
+		private readonly ObservableCollection<Item> vieweditems = new ObservableCollection<Item>();
+		public IReadOnlyCollection<Item> ViewedItems { get => vieweditems; }
 
-        public MainWindowViewModel(string feedsFilePath)
-            : this(feedsFilePath, new RdrService())
-        { }
+		public MainWindowViewModel(string feedsFilePath)
+			: this(feedsFilePath, new RdrService())
+		{ }
 
-        public MainWindowViewModel(string feedsFilePath, IRdrService rdrService)
+		public MainWindowViewModel(string feedsFilePath, IRdrService rdrService)
 		{
 			if (String.IsNullOrWhiteSpace(feedsFilePath))
-            {
-                throw new ArgumentNullException(nameof(feedsFilePath));
-            }
+			{
+				throw new ArgumentNullException(nameof(feedsFilePath));
+			}
 
 			ArgumentNullException.ThrowIfNull(rdrService);
 
-            this.feedsFilePath = feedsFilePath;
+			this.feedsFilePath = feedsFilePath;
 			this.rdrService = rdrService;
 		}
 
 		public void StartTimer()
 		{
 			if (refreshTimer is not null)
-            {
-                return;
-            }
+			{
+				return;
+			}
 
-            refreshTimer = new DispatcherTimer(DispatcherPriority.ApplicationIdle)
-            {
-                Interval = TimeSpan.FromMinutes(15d)
-            };
+			refreshTimer = new DispatcherTimer(DispatcherPriority.ApplicationIdle)
+			{
+				Interval = TimeSpan.FromMinutes(15d)
+			};
 
-            refreshTimer.Tick += RefreshTimer_Tick;
-            refreshTimer.Start();
+			refreshTimer.Tick += RefreshTimer_Tick;
+			refreshTimer.Start();
 		}
 
 		public void StopTimer()
 		{
 			if (refreshTimer is null)
-            {
-                return;
-            }
+			{
+				return;
+			}
 
-            refreshTimer.Stop();
-            refreshTimer.Tick -= RefreshTimer_Tick;
-            refreshTimer = null;
+			refreshTimer.Stop();
+			refreshTimer.Tick -= RefreshTimer_Tick;
+			refreshTimer = null;
 		}
 
 		private void RefreshTimer_Tick(object? sender, EventArgs e)
@@ -238,12 +238,12 @@ namespace Rdr.Gui
 		}
 
 		public Task RefreshAllAsync() => RefreshAsync(RdrService.Feeds);
-        
+
 		public async Task RefreshAsync(IEnumerable<Feed> feeds)
 		{
 			Activity = true;
 
-            StatusMessage = "updating ...";
+			StatusMessage = "updating ...";
 
 			await RdrService.UpdateAsync(feeds).ConfigureAwait(true);
 
@@ -261,21 +261,21 @@ namespace Rdr.Gui
 			Activity = false;
 		}
 
-        public async Task RefreshAsync(Feed feed)
-        {
+		public async Task RefreshAsync(Feed feed)
+		{
 			ArgumentNullException.ThrowIfNull(feed);
 
-            Activity = true;
-            
-            await RdrService.UpdateAsync(feed).ConfigureAwait(true);
+			Activity = true;
 
-            if (selectedFeed is not null && selectedFeed == feed)
-            {
-                await MoveItemsAsync(feed).ConfigureAwait(true);
-            }
+			await RdrService.UpdateAsync(feed).ConfigureAwait(true);
 
-            Activity = false;
-        }
+			if (selectedFeed is not null && selectedFeed == feed)
+			{
+				await MoveItemsAsync(feed).ConfigureAwait(true);
+			}
+
+			Activity = false;
+		}
 
 		private void GoToFeed(Feed feed)
 		{
@@ -358,15 +358,15 @@ namespace Rdr.Gui
 
 			foreach (Feed[] chunkOfFeeds in feeds.Chunk(10))
 			{
-                foreach (Feed each in chunkOfFeeds)
-                {
-                    if (RdrService.Add(each))
-                    {
-                        toRefresh.Add(each);
-                    }
-                }
+				foreach (Feed each in chunkOfFeeds)
+				{
+					if (RdrService.Add(each))
+					{
+						toRefresh.Add(each);
+					}
+				}
 
-                await Dispatcher.Yield(DispatcherPriority.Background);
+				await Dispatcher.Yield(DispatcherPriority.Background);
 			}
 
 			await RefreshAsync(toRefresh).ConfigureAwait(true);
@@ -437,41 +437,41 @@ namespace Rdr.Gui
 
 		public async Task ViewFeedItemsAsync(Feed? feed)
 		{
-            if (feed is null)
-            {
-                selectedFeed = null;
+			if (feed is null)
+			{
+				selectedFeed = null;
 
-                await MoveUnreadItemsAsync(clearFirst: true).ConfigureAwait(true);
-            }
-            else if (selectedFeed is null)
-            {
-                selectedFeed = feed;
+				await MoveUnreadItemsAsync(clearFirst: true).ConfigureAwait(true);
+			}
+			else if (selectedFeed is null)
+			{
+				selectedFeed = feed;
 
-                await MoveItemsAsync(feed.Items, clearFirst: true).ConfigureAwait(true);
-            }
-            else
-            {
-                if (feed != selectedFeed)
-                {
-                    selectedFeed = feed;
+				await MoveItemsAsync(feed.Items, clearFirst: true).ConfigureAwait(true);
+			}
+			else
+			{
+				if (feed != selectedFeed)
+				{
+					selectedFeed = feed;
 
-                    await MoveItemsAsync(feed.Items, clearFirst: true).ConfigureAwait(true);
-                }
-            }
+					await MoveItemsAsync(feed.Items, clearFirst: true).ConfigureAwait(true);
+				}
+			}
 		}
 
 		public Task SeeUnreadAsync()
 		{
-            selectedFeed = null;
+			selectedFeed = null;
 
-            return MoveUnreadItemsAsync(clearFirst: true);
+			return MoveUnreadItemsAsync(clearFirst: true);
 		}
 
-        public Task SeeAllAsync()
+		public Task SeeAllAsync()
 		{
 			selectedFeed = null;
 
-            vieweditems.Clear();
+			vieweditems.Clear();
 
 			var allItems = from feed in RdrService.Feeds
 						   from item in feed.Items
@@ -491,27 +491,27 @@ namespace Rdr.Gui
 			return MoveItemsAsync(unreadItems, clearFirst);
 		}
 
-        private Task MoveItemsAsync(Feed feed)
-            => MoveItemsAsync(feed.Items, clearFirst: false);
+		private Task MoveItemsAsync(Feed feed)
+			=> MoveItemsAsync(feed.Items, clearFirst: false);
 
-        private async Task MoveItemsAsync(IEnumerable<Item> items, bool clearFirst)
+		private async Task MoveItemsAsync(IEnumerable<Item> items, bool clearFirst)
 		{
 			if (clearFirst)
 			{
-                vieweditems.Clear();
+				vieweditems.Clear();
 			}
 
 			foreach (Item[] chunk in items.Chunk(50))
 			{
-                foreach (Item each in chunk)
-                {
-                    if (!ViewedItems.Contains(each))
-                    {
-                        vieweditems.Add(each);
-                    }
-                }
+				foreach (Item each in chunk)
+				{
+					if (!ViewedItems.Contains(each))
+					{
+						vieweditems.Add(each);
+					}
+				}
 
-                await Dispatcher.Yield(DispatcherPriority.Background);
+				await Dispatcher.Yield(DispatcherPriority.Background);
 			}
 		}
 

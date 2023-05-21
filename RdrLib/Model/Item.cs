@@ -49,10 +49,10 @@ namespace RdrLib.Model
 
 		private static bool EqualsInternal(Item thisOne, Item otherOne)
 		{
-            if (BothItemsHaveUniqueId(thisOne, otherOne))
-            {
-                return AreUniqueIdsTheSame(thisOne, otherOne);
-            }
+			if (BothItemsHaveUniqueId(thisOne, otherOne))
+			{
+				return AreUniqueIdsTheSame(thisOne, otherOne);
+			}
 
 			if (AreLinksTheSame(thisOne, otherOne) && AreNamesTheSame(thisOne, otherOne))
 			{
@@ -78,11 +78,11 @@ namespace RdrLib.Model
 			return false;
 		}
 
-        private static bool BothItemsHaveUniqueId(Item a, Item b)
-        {
-            return String.IsNullOrWhiteSpace(a.UniqueId) == false
-                && String.IsNullOrWhiteSpace(b.UniqueId) == false;
-        }
+		private static bool BothItemsHaveUniqueId(Item a, Item b)
+		{
+			return String.IsNullOrWhiteSpace(a.UniqueId) == false
+				&& String.IsNullOrWhiteSpace(b.UniqueId) == false;
+		}
 
 		private static bool AreUniqueIdsTheSame(Item a, Item b)
 		{
@@ -111,12 +111,12 @@ namespace RdrLib.Model
 				return false;
 			}
 
-            return String.Equals(a.Link.PathAndQuery, b.Link.PathAndQuery, StringComparison.Ordinal);
+			return String.Equals(a.Link.PathAndQuery, b.Link.PathAndQuery, StringComparison.Ordinal);
 		}
 
 		private static bool AreNamesTheSame(Item a, Item b)
 		{
-            return String.Equals(a.Name, b.Name, StringComparison.Ordinal);
+			return String.Equals(a.Name, b.Name, StringComparison.Ordinal);
 		}
 
 		public static bool operator ==(Item lhs, Item rhs)

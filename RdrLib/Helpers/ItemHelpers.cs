@@ -22,7 +22,7 @@ namespace RdrLib.Helpers
 				}
 
 				string? uniqueId = GetUniqueId(element);
-                Uri? link = GetLink(element);
+				Uri? link = GetLink(element);
 				string name = GetName(element);
 				DateTimeOffset published = GetPublished(element);
 				Enclosure? enclosure = GetEnclosure(element);
@@ -30,7 +30,7 @@ namespace RdrLib.Helpers
 				Item item = new Item(feedTitle)
 				{
 					UniqueId = uniqueId,
-                    Link = link,
+					Link = link,
 					Name = name,
 					Published = published,
 					Enclosure = enclosure
@@ -42,24 +42,24 @@ namespace RdrLib.Helpers
 			return items.AsReadOnly();
 		}
 
-        private static string? GetUniqueId(XElement element)
-        {
-            // Atom: 'id', RSS: 'guid'
+		private static string? GetUniqueId(XElement element)
+		{
+			// Atom: 'id', RSS: 'guid'
 
-            XElement? uniqueIdElement = element
-                .Elements()
-                .Where(static x => x.Name.LocalName.Equals("guid", StringComparison.Ordinal) || x.Name.LocalName.Equals("id", StringComparison.Ordinal))
-                .FirstOrDefault();
+			XElement? uniqueIdElement = element
+				.Elements()
+				.Where(static x => x.Name.LocalName.Equals("guid", StringComparison.Ordinal) || x.Name.LocalName.Equals("id", StringComparison.Ordinal))
+				.FirstOrDefault();
 
-            return uniqueIdElement?.Value ?? null;
-        }
+			return uniqueIdElement?.Value ?? null;
+		}
 
 		private static Uri? GetLink(XElement element)
 		{
 			XElement? linkElement = element?
-                .Elements()
-                .Where(static x => x.Name.LocalName.Equals("link", StringComparison.Ordinal))
-                .FirstOrDefault();
+				.Elements()
+				.Where(static x => x.Name.LocalName.Equals("link", StringComparison.Ordinal))
+				.FirstOrDefault();
 
 			Uri? uri = null;
 
@@ -80,9 +80,9 @@ namespace RdrLib.Helpers
 		private static string GetName(XElement element)
 		{
 			XElement? titleElement = element?
-                .Elements()
-                .Where(static x => x.Name.LocalName.Equals("title", StringComparison.OrdinalIgnoreCase))
-                .FirstOrDefault();
+				.Elements()
+				.Where(static x => x.Name.LocalName.Equals("title", StringComparison.OrdinalIgnoreCase))
+				.FirstOrDefault();
 
 			if (titleElement != null)
 			{
@@ -101,9 +101,9 @@ namespace RdrLib.Helpers
 		private static DateTimeOffset GetPublished(XElement element)
 		{
 			IEnumerable<XElement?> allPubDateElements = element?
-                .Elements()
-                .Where(static x => IsByAnyPubDateName(x))
-            ?? Enumerable.Empty<XElement>();
+				.Elements()
+				.Where(static x => IsByAnyPubDateName(x))
+			?? Enumerable.Empty<XElement>();
 
 			foreach (XElement? pubDateElement in allPubDateElements)
 			{

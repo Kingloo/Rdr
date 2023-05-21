@@ -19,7 +19,7 @@ namespace RdrLib
 
 		public RdrService() { }
 
-        public bool Add(Feed feed)
+		public bool Add(Feed feed)
 		{
 			ArgumentNullException.ThrowIfNull(feed);
 
@@ -81,22 +81,22 @@ namespace RdrLib
 			return removed;
 		}
 
-        public void MarkAsRead(Item item)
+		public void MarkAsRead(Item item)
 		{
 			ArgumentNullException.ThrowIfNull(item);
 
 			item.Unread = false;
 		}
 
-        public void MarkAsRead(Feed feed)
-        {
+		public void MarkAsRead(Feed feed)
+		{
 			ArgumentNullException.ThrowIfNull(feed);
-            
-            foreach (Item each in feed.Items)
-            {
-                MarkAsRead(each);
-            }
-        }
+
+			foreach (Item each in feed.Items)
+			{
+				MarkAsRead(each);
+			}
+		}
 
 		public void MarkAllAsRead()
 		{
@@ -111,7 +111,7 @@ namespace RdrLib
 
 		public void Clear() => _feeds.Clear();
 
-        public ValueTask UpdateAsync(Feed feed)
+		public ValueTask UpdateAsync(Feed feed)
 			=> UpdateAsync(feed, CancellationToken.None);
 
 		public ValueTask UpdateAsync(Feed feed, CancellationToken cancellationToken)
@@ -121,14 +121,14 @@ namespace RdrLib
 			return UpdateFeedAsync(feed, cancellationToken);
 		}
 
-        public ValueTask UpdateAsync(IEnumerable<Feed> feeds)
+		public ValueTask UpdateAsync(IEnumerable<Feed> feeds)
 			=> UpdateAsync(feeds, CancellationToken.None);
 
 		public async ValueTask UpdateAsync(IEnumerable<Feed> feeds, CancellationToken cancellationToken)
 		{
 			ArgumentNullException.ThrowIfNull(feeds);
 
-            await Parallel.ForEachAsync(feeds, cancellationToken, UpdateFeedAsync).ConfigureAwait(true);
+			await Parallel.ForEachAsync(feeds, cancellationToken, UpdateFeedAsync).ConfigureAwait(true);
 		}
 
 		private async ValueTask UpdateFeedAsync(Feed feed, CancellationToken cancellationToken)
@@ -183,17 +183,17 @@ namespace RdrLib
 
 		public ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress> progress)
 			=> DownloadEnclosureAsyncInternal(enclosure, path, progress, CancellationToken.None);
-		
+
 		public ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, CancellationToken cancellationToken)
 			=> DownloadEnclosureAsyncInternal(enclosure, path, null, cancellationToken);
-		
+
 		public ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress> progress, CancellationToken cancellationToken)
 			=> DownloadEnclosureAsyncInternal(enclosure, path, progress, cancellationToken);
 
 		private static ValueTask<FileResponse> DownloadEnclosureAsyncInternal(Enclosure enclosure, string path, IProgress<FileProgress>? progress, CancellationToken cancellationToken)
 		{
 			ArgumentNullException.ThrowIfNull(enclosure);
-			
+
 			if (String.IsNullOrWhiteSpace(path))
 			{
 				throw new ArgumentNullException(nameof(path));

@@ -11,7 +11,7 @@ namespace Rdr.Gui
 	{
 		private readonly MainWindowViewModel vm;
 
-        public MainWindow(MainWindowViewModel viewModel)
+		public MainWindow(MainWindowViewModel viewModel)
 		{
 			InitializeComponent();
 
@@ -37,10 +37,10 @@ namespace Rdr.Gui
 
 		private void Label_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
 		{
-            Label label = (Label)sender;
+			Label label = (Label)sender;
 			Feed feed = (Feed)label.DataContext;
 
-            vm.ViewFeedItemsCommand.Execute(feed);
+			vm.ViewFeedItemsCommand.Execute(feed);
 		}
 
 		private void Window_Closing(object sender, CancelEventArgs e)
