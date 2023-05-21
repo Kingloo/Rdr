@@ -14,8 +14,8 @@ namespace RdrLib
 {
 	public class RdrService : IRdrService
 	{
-		private readonly ObservableCollection<Feed> _feeds = new ObservableCollection<Feed>();
-		public IReadOnlyCollection<Feed> Feeds { get => _feeds; }
+		private readonly ObservableCollection<Feed> feeds = new ObservableCollection<Feed>();
+		public IReadOnlyCollection<Feed> Feeds { get => feeds; }
 
 		public RdrService() { }
 
@@ -23,9 +23,9 @@ namespace RdrLib
 		{
 			ArgumentNullException.ThrowIfNull(feed);
 
-			if (!_feeds.Contains(feed))
+			if (!feeds.Contains(feed))
 			{
-				_feeds.Add(feed);
+				feeds.Add(feed);
 
 				return true;
 			}
@@ -54,9 +54,9 @@ namespace RdrLib
 		{
 			ArgumentNullException.ThrowIfNull(feed);
 
-			if (_feeds.Contains(feed))
+			if (feeds.Contains(feed))
 			{
-				return _feeds.Remove(feed);
+				return feeds.Remove(feed);
 			}
 			else
 			{
@@ -100,7 +100,7 @@ namespace RdrLib
 
 		public void MarkAllAsRead()
 		{
-			foreach (Feed feed in _feeds)
+			foreach (Feed feed in feeds)
 			{
 				foreach (Item item in feed.Items)
 				{
@@ -109,7 +109,7 @@ namespace RdrLib
 			}
 		}
 
-		public void Clear() => _feeds.Clear();
+		public void Clear() => feeds.Clear();
 
 		public ValueTask UpdateAsync(Feed feed)
 			=> UpdateAsync(feed, CancellationToken.None);
@@ -152,7 +152,7 @@ namespace RdrLib
 
 			if (response.Reason != Reason.Success)
 			{
-				feed.Status = response.Status switch
+				feed.Status = response.StatusCode switch
 				{
 					HttpStatusCode.Forbidden => FeedStatus.Forbidden,
 					HttpStatusCode.Moved => FeedStatus.MovedCannotFollow,

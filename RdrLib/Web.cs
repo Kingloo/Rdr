@@ -5,6 +5,7 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Security;
+using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -18,6 +19,7 @@ namespace RdrLib
 		None,
 		Success,
 		WebError,
+		SocketError,
 		Timeout,
 		FileExists,
 		Canceled,
@@ -28,8 +30,9 @@ namespace RdrLib
 	public interface IResponse
 	{
 		Reason Reason { get; }
-		HttpStatusCode? Status { get; set; }
-		Exception? Exception { get; set; }
+		HttpStatusCode? StatusCode { get; init; }
+		SocketError SocketError { get; init; }
+		Exception? Exception { get; init; }
 	}
 
 	public class StringResponse : IResponse
@@ -37,19 +40,16 @@ namespace RdrLib
 		private readonly Uri uri;
 
 		public Reason Reason { get; } = Reason.None;
-		public HttpStatusCode? Status { get; set; } = null;
-		public Exception? Exception { get; set; } = null;
-		public string Text { get; set; } = string.Empty;
+		public HttpStatusCode? StatusCode { get; init; } = null;
+		public Exception? Exception { get; init; } = null;
+		public SocketError SocketError { get; init; } = SocketError.Success;
+		public string Text { get; init; } = string.Empty;
 
 		public StringResponse(Uri uri, Reason reason)
 		{
-			if (uri is null)
-			{
-				throw new ArgumentNullException(nameof(uri));
-			}
+			ArgumentNullException.ThrowIfNull(uri);
 
 			this.uri = uri;
-
 			Reason = reason;
 		}
 
@@ -59,7 +59,7 @@ namespace RdrLib
 
 			sb.AppendLine(base.ToString());
 			sb.AppendLine(uri.AbsoluteUri);
-			sb.AppendLine(Status.HasValue ? Status.Value.ToString() : "no status code");
+			sb.AppendLine(StatusCode.HasValue ? StatusCode.Value.ToString() : "no status code");
 			sb.AppendLine(CultureInfo.CurrentCulture, $"reason: {Reason}");
 			sb.AppendLine(CultureInfo.CurrentCulture, $"string length: {Text.Length.ToString(CultureInfo.CurrentCulture)}");
 
@@ -72,12 +72,15 @@ namespace RdrLib
 		private readonly Uri uri;
 
 		public Reason Reason { get; } = Reason.None;
-		public HttpStatusCode? Status { get; set; } = null;
-		public Exception? Exception { get; set; } = null;
-		public ReadOnlyMemory<byte> Data { get; set; } = new ReadOnlyMemory<byte>();
+		public HttpStatusCode? StatusCode { get; init; } = null;
+		public Exception? Exception { get; init; } = null;
+		public SocketError SocketError { get; init; } = SocketError.Success;
+		public ReadOnlyMemory<byte> Data { get; init; } = new ReadOnlyMemory<byte>();
 
 		public DataResponse(Uri uri, Reason reason)
 		{
+			ArgumentNullException.ThrowIfNull(uri);
+
 			this.uri = uri;
 			Reason = reason;
 		}
@@ -88,7 +91,7 @@ namespace RdrLib
 
 			sb.AppendLine(base.ToString());
 			sb.AppendLine(CultureInfo.CurrentCulture, $"uri: {uri.AbsoluteUri}");
-			sb.AppendLine(Status.HasValue ? Status.Value.ToString() : "no status code");
+			sb.AppendLine(StatusCode.HasValue ? StatusCode.Value.ToString() : "no status code");
 			sb.AppendLine(CultureInfo.CurrentCulture, $"reason: {Reason}");
 			sb.AppendLine(CultureInfo.CurrentCulture, $"data length: {Data.Length.ToString(CultureInfo.CurrentCulture)}");
 
@@ -102,11 +105,15 @@ namespace RdrLib
 		private readonly string path;
 
 		public Reason Reason { get; } = Reason.None;
-		public HttpStatusCode? Status { get; set; } = null;
-		public Exception? Exception { get; set; } = null;
+		public HttpStatusCode? StatusCode { get; init; } = null;
+		public Exception? Exception { get; init; } = null;
+		public SocketError SocketError { get; init; } = SocketError.Success;
 
 		public FileResponse(Uri uri, string path, Reason reason)
 		{
+			ArgumentNullException.ThrowIfNull(uri);
+			ArgumentNullException.ThrowIfNull(path);
+
 			this.uri = uri;
 			this.path = path;
 			Reason = reason;
@@ -119,7 +126,7 @@ namespace RdrLib
 			sb.AppendLine(base.ToString());
 			sb.AppendLine(CultureInfo.CurrentCulture, $"uri: {uri.AbsoluteUri}");
 			sb.AppendLine(CultureInfo.CurrentCulture, $"path: {path}");
-			sb.AppendLine(Status.HasValue ? Status.Value.ToString() : "no status code");
+			sb.AppendLine(StatusCode.HasValue ? StatusCode.Value.ToString() : "no status code");
 			sb.AppendLine(CultureInfo.CurrentCulture, $"reason: {Reason}");
 
 			return sb.ToString();
@@ -130,7 +137,7 @@ namespace RdrLib
 	{
 		public Int64 BytesWritten { get; } = 0L;
 		public Int64 TotalBytesWritten { get; } = 0L;
-		public Int64? ContentLength { get; } = -1L;
+		public Int64? ContentLength { get; } = null;
 
 		public FileProgress(Int64 bytesWritten, Int64 totalBytesWritten)
 			: this(bytesWritten, totalBytesWritten, null)
@@ -145,45 +152,34 @@ namespace RdrLib
 
 		public decimal? GetPercent()
 		{
-			if (GetDownloadRatio() is decimal ratio)
+			return GetDownloadRatio() switch
 			{
-				return ratio * 100m;
-			}
-			else
-			{
-				return null;
-			}
+				decimal ratio => ratio * 100m,
+				_ => null
+			};
 		}
 
-		public string? GetPercentFormatted() => GetPercentFormatted(CultureInfo.CurrentCulture);
+		public string? GetPercentFormatted()
+			=> GetPercentFormatted(CultureInfo.CurrentCulture);
 
 		public string? GetPercentFormatted(CultureInfo cultureInfo)
 		{
-			if (cultureInfo is null)
-			{
-				throw new ArgumentNullException(nameof(cultureInfo));
-			}
+			ArgumentNullException.ThrowIfNull(cultureInfo);
 
-			if (GetDownloadRatio() is decimal ratio)
+			return GetDownloadRatio() switch
 			{
-				string percentFormat = GetPercentFormatString(cultureInfo);
-
-				return ratio.ToString(percentFormat, cultureInfo);
-			}
-			else
-			{
-				return null;
-			}
+				decimal ratio => ratio.ToString(GetPercentFormatString(cultureInfo), cultureInfo),
+				_ => null
+			};
 		}
 
 		private decimal? GetDownloadRatio()
 		{
-			if (!ContentLength.HasValue)
+			return ContentLength.HasValue switch
 			{
-				return null;
-			}
-
-			return Convert.ToDecimal(TotalBytesWritten) / Convert.ToDecimal(ContentLength.Value);
+				true => Convert.ToDecimal(TotalBytesWritten) / Convert.ToDecimal(ContentLength.Value),
+				false => null
+			};
 		}
 
 		private static string GetPercentFormatString(CultureInfo cultureInfo)
@@ -226,16 +222,28 @@ namespace RdrLib
 			Timeout = TimeSpan.FromSeconds(10d)
 		};
 
+		public static void DisposeHttpClient()
+		{
+			client.Dispose();
+		}
+
+		[System.Diagnostics.DebuggerStepThrough]
 		public static ValueTask<StringResponse> DownloadStringAsync(Uri uri)
-			=> DownloadStringAsync(uri, null, CancellationToken.None);
+			=> DownloadStringAsyncInternal(uri, null, CancellationToken.None);
 
-		public static ValueTask<StringResponse> DownloadStringAsync(Uri uri, Action<HttpRequestMessage>? configureRequest)
-			=> DownloadStringAsync(uri, configureRequest, CancellationToken.None);
-
+		[System.Diagnostics.DebuggerStepThrough]
 		public static ValueTask<StringResponse> DownloadStringAsync(Uri uri, CancellationToken cancellationToken)
-			=> DownloadStringAsync(uri, null, cancellationToken);
+			=> DownloadStringAsyncInternal(uri, null, cancellationToken);
 
-		public static async ValueTask<StringResponse> DownloadStringAsync(Uri uri, Action<HttpRequestMessage>? configureRequest, CancellationToken cancellationToken)
+		[System.Diagnostics.DebuggerStepThrough]
+		public static ValueTask<StringResponse> DownloadStringAsync(Uri uri, Action<HttpRequestMessage> configureRequest)
+			=> DownloadStringAsyncInternal(uri, configureRequest, CancellationToken.None);
+
+		[System.Diagnostics.DebuggerStepThrough]
+		public static ValueTask<StringResponse> DownloadStringAsync(Uri uri, Action<HttpRequestMessage> configureRequest, CancellationToken cancellationToken)
+			=> DownloadStringAsyncInternal(uri, configureRequest, cancellationToken);
+
+		private static async ValueTask<StringResponse> DownloadStringAsyncInternal(Uri uri, Action<HttpRequestMessage>? configureRequest, CancellationToken cancellationToken)
 		{
 			HttpRequestMessage request = new HttpRequestMessage()
 			{
@@ -256,16 +264,24 @@ namespace RdrLib
 
 				return new StringResponse(uri, Reason.Success)
 				{
-					Status = response.StatusCode,
+					StatusCode = response.StatusCode,
 					Text = text
+				};
+			}
+			catch (HttpRequestException httpException) when (httpException.InnerException is SocketException socketException)
+			{
+				return new StringResponse(uri, Reason.SocketError)
+				{
+					StatusCode = response?.StatusCode ?? null,
+					Exception = httpException,
+					SocketError = socketException.SocketErrorCode
 				};
 			}
 			catch (HttpRequestException ex)
 			{
 				return new StringResponse(uri, Reason.WebError)
 				{
-					Status = response?.StatusCode ?? null,
-					Text = ex.Message,
+					StatusCode = response?.StatusCode ?? null,
 					Exception = ex
 				};
 			}
@@ -290,10 +306,23 @@ namespace RdrLib
 			}
 		}
 
+		[System.Diagnostics.DebuggerStepThrough]
 		public static ValueTask<DataResponse> DownloadDataAsync(Uri uri)
-			=> DownloadDataAsync(uri, null);
+			=> DownloadDataAsyncInternal(uri, null, CancellationToken.None);
 
-		public static async ValueTask<DataResponse> DownloadDataAsync(Uri uri, Action<HttpRequestMessage>? configureRequest)
+		[System.Diagnostics.DebuggerStepThrough]
+		public static ValueTask<DataResponse> DownloadDataAsync(Uri uri, CancellationToken cancellationToken)
+			=> DownloadDataAsyncInternal(uri, null, cancellationToken);
+		
+		[System.Diagnostics.DebuggerStepThrough]
+		public static ValueTask<DataResponse> DownloadDataAsync(Uri uri, Action<HttpRequestMessage> configureRequest)
+			=> DownloadDataAsyncInternal(uri, configureRequest, CancellationToken.None);
+
+		[System.Diagnostics.DebuggerStepThrough]
+		public static ValueTask<DataResponse> DownloadDataAsync(Uri uri, Action<HttpRequestMessage> configureRequest, CancellationToken cancellationToken)
+			=> DownloadDataAsyncInternal(uri, configureRequest, cancellationToken);
+
+		private static async ValueTask<DataResponse> DownloadDataAsyncInternal(Uri uri, Action<HttpRequestMessage>? configureRequest, CancellationToken cancellationToken)
 		{
 			HttpRequestMessage request = new HttpRequestMessage()
 			{
@@ -306,23 +335,32 @@ namespace RdrLib
 
 			try
 			{
-				response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+				response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
 
 				response.EnsureSuccessStatusCode();
 
-				ReadOnlyMemory<byte> data = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+				ReadOnlyMemory<byte> data = await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
 
 				return new DataResponse(uri, Reason.Success)
 				{
-					Status = response.StatusCode,
+					StatusCode = response.StatusCode,
 					Data = data
+				};
+			}
+			catch (HttpRequestException httpException) when (httpException.InnerException is SocketException socketException)
+			{
+				return new DataResponse(uri, Reason.SocketError)
+				{
+					StatusCode = response?.StatusCode ?? null,
+					Exception = httpException,
+					SocketError = socketException.SocketErrorCode
 				};
 			}
 			catch (HttpRequestException ex)
 			{
 				return new DataResponse(uri, Reason.WebError)
 				{
-					Status = response?.StatusCode ?? null,
+					StatusCode = response?.StatusCode ?? null,
 					Exception = ex
 				};
 			}
@@ -330,7 +368,7 @@ namespace RdrLib
 			{
 				return new DataResponse(uri, Reason.CompressionError)
 				{
-					Status = response?.StatusCode ?? null,
+					StatusCode = response?.StatusCode ?? null,
 					Exception = ex
 				};
 			}
@@ -355,157 +393,47 @@ namespace RdrLib
 			}
 		}
 
+		[System.Diagnostics.DebuggerStepThrough]
 		public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path)
-		{
-			if (uri is null)
-			{
-				throw new ArgumentNullException(nameof(uri));
-			}
+			=> DownloadFileAsyncInternal(uri, path, null, null, CancellationToken.None);
 
-			if (String.IsNullOrWhiteSpace(path))
-			{
-				throw new ArgumentNullException(nameof(path));
-			}
-
-			return DownloadFileAsync(uri, path, null, null, CancellationToken.None);
-		}
-
+		[System.Diagnostics.DebuggerStepThrough]
 		public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path, CancellationToken cancellationToken)
-		{
-			if (uri is null)
-			{
-				throw new ArgumentNullException(nameof(uri));
-			}
+			=> DownloadFileAsyncInternal(uri, path, null, null, cancellationToken);
 
-			if (String.IsNullOrWhiteSpace(path))
-			{
-				throw new ArgumentNullException(nameof(path));
-			}
-
-			return DownloadFileAsync(uri, path, null, null, cancellationToken);
-		}
-
+		[System.Diagnostics.DebuggerStepThrough]
 		public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path, Action<HttpRequestMessage> configureRequest)
-		{
-			if (uri is null)
-			{
-				throw new ArgumentNullException(nameof(uri));
-			}
-
-			if (String.IsNullOrWhiteSpace(path))
-			{
-				throw new ArgumentNullException(nameof(path));
-			}
-
-			if (configureRequest is null)
-			{
-				throw new ArgumentNullException(nameof(configureRequest));
-			}
-
-			return DownloadFileAsync(uri, path, configureRequest, null, CancellationToken.None);
-		}
-
+			=> DownloadFileAsyncInternal(uri, path, configureRequest, null, CancellationToken.None);
+		
+		[System.Diagnostics.DebuggerStepThrough]
 		public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path, Action<HttpRequestMessage> configureRequest, CancellationToken cancellationToken)
-		{
-			if (uri is null)
-			{
-				throw new ArgumentNullException(nameof(uri));
-			}
+			=> DownloadFileAsyncInternal(uri, path, configureRequest, null, cancellationToken);
 
-			if (String.IsNullOrWhiteSpace(path))
-			{
-				throw new ArgumentNullException(nameof(path));
-			}
-
-			if (configureRequest is null)
-			{
-				throw new ArgumentNullException(nameof(configureRequest));
-			}
-
-			return DownloadFileAsync(uri, path, configureRequest, null, cancellationToken);
-		}
-
+		[System.Diagnostics.DebuggerStepThrough]
 		public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path, IProgress<FileProgress> progress)
-		{
-			if (uri is null)
-			{
-				throw new ArgumentNullException(nameof(uri));
-			}
+			=> DownloadFileAsyncInternal(uri, path, null, progress, CancellationToken.None);
 
-			if (String.IsNullOrWhiteSpace(path))
-			{
-				throw new ArgumentNullException(nameof(path));
-			}
+		[System.Diagnostics.DebuggerStepThrough]
+		public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path, IProgress<FileProgress> progress, CancellationToken cancellationToken)
+			=> DownloadFileAsyncInternal(uri, path, null, progress, cancellationToken);
 
-			if (progress is null)
-			{
-				throw new ArgumentNullException(nameof(progress));
-			}
-
-			return DownloadFileAsync(uri, path, null, progress, CancellationToken.None);
-		}
-
-		public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path, IProgress<FileProgress>? progress, CancellationToken cancellationToken)
-		{
-			if (uri is null)
-			{
-				throw new ArgumentNullException(nameof(uri));
-			}
-
-			if (String.IsNullOrWhiteSpace(path))
-			{
-				throw new ArgumentNullException(nameof(path));
-			}
-
-			if (progress is null)
-			{
-				throw new ArgumentNullException(nameof(progress));
-			}
-
-			return DownloadFileAsync(uri, path, null, progress, cancellationToken);
-		}
-
+		[System.Diagnostics.DebuggerStepThrough]
 		public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path, Action<HttpRequestMessage> configureRequest, IProgress<FileProgress> progress)
-		{
-			if (uri is null)
-			{
-				throw new ArgumentNullException(nameof(uri));
-			}
+			=> DownloadFileAsyncInternal(uri, path, configureRequest, progress, CancellationToken.None);
 
-			if (String.IsNullOrWhiteSpace(path))
-			{
-				throw new ArgumentNullException(nameof(path));
-			}
+		[System.Diagnostics.DebuggerStepThrough]
+		public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path, Action<HttpRequestMessage> configureRequest, IProgress<FileProgress> progress, CancellationToken cancellationToken)
+			=> DownloadFileAsyncInternal(uri, path, configureRequest, progress, cancellationToken);
 
-			if (configureRequest is null)
-			{
-				throw new ArgumentNullException(nameof(configureRequest));
-			}
-
-			if (progress is null)
-			{
-				throw new ArgumentNullException(nameof(progress));
-			}
-
-			return DownloadFileAsync(uri, path, configureRequest, progress, CancellationToken.None);
-		}
-
-		public static async ValueTask<FileResponse> DownloadFileAsync(
+		private static async ValueTask<FileResponse> DownloadFileAsyncInternal(
 			Uri uri,
 			string path,
 			Action<HttpRequestMessage>? configureRequest,
 			IProgress<FileProgress>? progress,
 			CancellationToken cancellationToken)
 		{
-			if (uri is null)
-			{
-				throw new ArgumentNullException(nameof(uri));
-			}
-
-			if (String.IsNullOrWhiteSpace(path))
-			{
-				throw new ArgumentNullException(nameof(path));
-			}
+			ArgumentNullException.ThrowIfNull(uri);
+			ArgumentNullException.ThrowIfNull(path);
 
 			if (File.Exists(path))
 			{
@@ -555,7 +483,7 @@ namespace RdrLib
 
 					totalBytesWritten += bytesRead;
 
-					if (progress != null)
+					if (progress is not null)
 					{
 						if ((totalBytesWritten - prevTotalBytesWritten) > progressReportThreshold)
 						{
@@ -572,14 +500,23 @@ namespace RdrLib
 
 				fileResponse = new FileResponse(uri, path, Reason.Success)
 				{
-					Status = response.StatusCode
+					StatusCode = response.StatusCode
+				};
+			}
+			catch (HttpRequestException httpException) when (httpException.InnerException is SocketException socketException)
+			{
+				fileResponse = new FileResponse(uri, path, Reason.SocketError)
+				{
+					StatusCode = response?.StatusCode ?? null,
+					Exception = httpException,
+					SocketError = socketException.SocketErrorCode
 				};
 			}
 			catch (HttpRequestException ex)
 			{
 				fileResponse = new FileResponse(uri, path, Reason.WebError)
 				{
-					Status = response?.StatusCode ?? null,
+					StatusCode = response?.StatusCode ?? null,
 					Exception = ex
 				};
 			}
@@ -611,21 +548,16 @@ namespace RdrLib
 				request?.Dispose();
 				response?.Dispose();
 
-#pragma warning disable CA1508
 				if (receive is not null)
 				{
 					await receive.DisposeAsync().ConfigureAwait(false);
 				}
 
-				if (save is not null)
-				{
-					await save.DisposeAsync().ConfigureAwait(false);
-				}
-#pragma warning restore CA1508
+				await save.DisposeAsync().ConfigureAwait(false);
 			}
 
 			// probably unnecessary to wait beyond the finally, but eh, why not?
-			await Task.Delay(TimeSpan.FromMilliseconds(150d), CancellationToken.None).ConfigureAwait(false);
+			await Task.Delay(TimeSpan.FromMilliseconds(100d), CancellationToken.None).ConfigureAwait(false);
 
 			string finalPath = fileResponse.Reason switch
 			{
