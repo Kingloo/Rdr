@@ -111,28 +111,20 @@ namespace RdrLib
 
 		public void Clear() => _feeds.Clear();
 
-		public ValueTask UpdateAsync(Feed feed)
-        {
-			ArgumentNullException.ThrowIfNull(feed);
+        public ValueTask UpdateAsync(Feed feed)
+			=> UpdateAsync(feed, CancellationToken.None);
 
-            return UpdateFeedAsync(feed, CancellationToken.None);
-        }
-
-        public ValueTask UpdateAsync(Feed feed, CancellationToken cancellationToken)
+		public ValueTask UpdateAsync(Feed feed, CancellationToken cancellationToken)
 		{
 			ArgumentNullException.ThrowIfNull(feed);
 
 			return UpdateFeedAsync(feed, cancellationToken);
 		}
 
-		public ValueTask UpdateAsync(IEnumerable<Feed> feeds)
-        {
-			ArgumentNullException.ThrowIfNull(feeds);
+        public ValueTask UpdateAsync(IEnumerable<Feed> feeds)
+			=> UpdateAsync(feeds, CancellationToken.None);
 
-            return UpdateAsync(feeds, CancellationToken.None);
-        }
-
-        public async ValueTask UpdateAsync(IEnumerable<Feed> feeds, CancellationToken cancellationToken)
+		public async ValueTask UpdateAsync(IEnumerable<Feed> feeds, CancellationToken cancellationToken)
 		{
 			ArgumentNullException.ThrowIfNull(feeds);
 
@@ -187,53 +179,31 @@ namespace RdrLib
 		}
 
 		public ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path)
-        {
+			=> DownloadEnclosureAsyncInternal(enclosure, path, null, CancellationToken.None);
+
+		public ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress> progress)
+			=> DownloadEnclosureAsyncInternal(enclosure, path, progress, CancellationToken.None);
+		
+		public ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, CancellationToken cancellationToken)
+			=> DownloadEnclosureAsyncInternal(enclosure, path, null, cancellationToken);
+		
+		public ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress> progress, CancellationToken cancellationToken)
+			=> DownloadEnclosureAsyncInternal(enclosure, path, progress, cancellationToken);
+
+		private static ValueTask<FileResponse> DownloadEnclosureAsyncInternal(Enclosure enclosure, string path, IProgress<FileProgress>? progress, CancellationToken cancellationToken)
+		{
 			ArgumentNullException.ThrowIfNull(enclosure);
+			
+			if (String.IsNullOrWhiteSpace(path))
+			{
+				throw new ArgumentNullException(nameof(path));
+			}
 
-            if (String.IsNullOrWhiteSpace(path))
-            {
-                throw new ArgumentNullException(path);
-            }
-
-            return Web.DownloadFileAsync(enclosure.Link, path);
-        }
-
-        public ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress> progress)
-        {
-			ArgumentNullException.ThrowIfNull(enclosure);
-			ArgumentNullException.ThrowIfNull(progress);
-
-            if (String.IsNullOrWhiteSpace(path))
-            {
-                throw new ArgumentNullException(path);
-            }
-
-            return Web.DownloadFileAsync(enclosure.Link, path, progress);
-        }
-
-        public ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, CancellationToken cancellationToken)
-        {
-			ArgumentNullException.ThrowIfNull(enclosure);
-
-            if (String.IsNullOrWhiteSpace(path))
-            {
-                throw new ArgumentNullException(path);
-            }
-
-            return Web.DownloadFileAsync(enclosure.Link, path, cancellationToken);
-        }
-
-        public ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress> progress, CancellationToken cancellationToken)
-        {
-			ArgumentNullException.ThrowIfNull(enclosure);
-			ArgumentNullException.ThrowIfNull(progress);
-
-            if (String.IsNullOrWhiteSpace(path))
-            {
-                throw new ArgumentNullException(path);
-            }
-
-            return Web.DownloadFileAsync(enclosure.Link, path, progress, cancellationToken);
-        }
+			return (progress is not null) switch
+			{
+				true => Web.DownloadFileAsync(enclosure.Link, path, progress, cancellationToken),
+				false => Web.DownloadFileAsync(enclosure.Link, path, cancellationToken)
+			};
+		}
 	}
 }
