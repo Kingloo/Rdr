@@ -126,7 +126,7 @@ namespace RdrLib.Helpers
 
 					if (end > 0)
 					{
-						string valueWithoutTimeZone = pubDateElement.Value.Substring(0, end);
+						string valueWithoutTimeZone = pubDateElement.Value[..end];
 
 						if (DateTimeOffset.TryParse(valueWithoutTimeZone, out DateTimeOffset fixedDto))
 						{
