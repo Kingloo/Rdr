@@ -335,7 +335,7 @@ namespace Rdr.Gui
 			else // selectedFeed is null means unread-view
 			{
 				RdrService.MarkAllAsRead();
-				
+
 				viewedItems.Clear();
 			}
 		}

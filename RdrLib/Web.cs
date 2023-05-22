@@ -313,7 +313,7 @@ namespace RdrLib
 		[System.Diagnostics.DebuggerStepThrough]
 		public static ValueTask<DataResponse> DownloadDataAsync(Uri uri, CancellationToken cancellationToken)
 			=> DownloadDataAsyncInternal(uri, null, cancellationToken);
-		
+
 		[System.Diagnostics.DebuggerStepThrough]
 		public static ValueTask<DataResponse> DownloadDataAsync(Uri uri, Action<HttpRequestMessage> configureRequest)
 			=> DownloadDataAsyncInternal(uri, configureRequest, CancellationToken.None);
@@ -404,7 +404,7 @@ namespace RdrLib
 		[System.Diagnostics.DebuggerStepThrough]
 		public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path, Action<HttpRequestMessage> configureRequest)
 			=> DownloadFileAsyncInternal(uri, path, configureRequest, null, CancellationToken.None);
-		
+
 		[System.Diagnostics.DebuggerStepThrough]
 		public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path, Action<HttpRequestMessage> configureRequest, CancellationToken cancellationToken)
 			=> DownloadFileAsyncInternal(uri, path, configureRequest, null, cancellationToken);

@@ -8,7 +8,7 @@ namespace Rdr.Gui
 {
 	public interface IMainWindowViewModel
 	{
-		public DelegateCommandAsync RefreshAllCommand { get; }		
+		public DelegateCommandAsync RefreshAllCommand { get; }
 		public DelegateCommandAsync<Feed> RefreshCommand { get; }
 		public DelegateCommand<Feed> GoToFeedCommand { get; }
 		public DelegateCommand<Item> GoToItemCommand { get; }
