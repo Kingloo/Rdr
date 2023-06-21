@@ -49,10 +49,10 @@ namespace Rdr.Common
 			=> _canExecute(parameter);
 	}
 
-	public class DelegateCommand<T> : Command
+	public class DelegateCommand<T> : Command where T : class?
 	{
 		private readonly Action<T> _execute;
-		private readonly Predicate<T> _canExecute;
+		private readonly Predicate<T?> _canExecute;
 
 		public DelegateCommand(Action<T> execute)
 		{
@@ -62,7 +62,7 @@ namespace Rdr.Common
 			_canExecute = (_) => true;
 		}
 
-		public DelegateCommand(Action<T> execute, Predicate<T> canExecute)
+		public DelegateCommand(Action<T> execute, Predicate<T?> canExecute)
 		{
 			ArgumentNullException.ThrowIfNull(execute);
 			ArgumentNullException.ThrowIfNull(canExecute);
@@ -80,7 +80,11 @@ namespace Rdr.Common
 
 		public override bool CanExecute(object? parameter)
 		{
-			return (parameter is not null) && _canExecute((T)parameter);
+			return (parameter is null) switch
+			{
+				true => _canExecute(null),
+				false => _canExecute((T)parameter)
+			};
 		}
 	}
 
@@ -128,10 +132,10 @@ namespace Rdr.Common
 			=> !_isExecuting && _canExecute(parameter);
 	}
 
-	public class DelegateCommandAsync<T> : Command
+	public class DelegateCommandAsync<T> : Command where T : class?
 	{
 		private readonly Func<T, Task> _executeAsync;
-		private readonly Predicate<T> _canExecute;
+		private readonly Predicate<T?> _canExecute;
 		private bool _isExecuting = false;
 
 		public DelegateCommandAsync(Func<T, Task> executeAsync)
@@ -142,7 +146,7 @@ namespace Rdr.Common
 			_canExecute = (_) => true;
 		}
 
-		public DelegateCommandAsync(Func<T, Task> executeAsync, Predicate<T> canExecute)
+		public DelegateCommandAsync(Func<T, Task> executeAsync, Predicate<T?> canExecute)
 		{
 			ArgumentNullException.ThrowIfNull(executeAsync);
 			ArgumentNullException.ThrowIfNull(canExecute);
@@ -171,7 +175,15 @@ namespace Rdr.Common
 
 		public override bool CanExecute(object? parameter)
 		{
-			return !_isExecuting && (parameter is not null) && _canExecute((T)parameter);
+			return _isExecuting switch
+			{
+				true => false,
+				false => (parameter is null) switch
+				{
+					true => _canExecute(null),
+					false => _canExecute((T)parameter)
+				}
+			};
 		}
 	}
 }
