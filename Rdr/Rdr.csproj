@@ -7,7 +7,7 @@
 		<EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
 		<StartupObject>Rdr.Program</StartupObject>
 		<ApplicationIcon>Assets\Rdr.ico</ApplicationIcon>
-		<Copyright>© Kingloo 2022</Copyright>
+		<RuntimeIdentifiers>win10-x64</RuntimeIdentifiers>
 	</PropertyGroup>
 
 	<ItemGroup>
