@@ -242,7 +242,7 @@ namespace Rdr.Gui
 
 		private void RefreshTimer_Tick(object? sender, EventArgs e)
 		{
-			RefreshAllCommand.Execute(null);
+			RefreshAllCommand.Execute();
 		}
 
 		private Task RefreshAllAsync()
@@ -272,8 +272,6 @@ namespace Rdr.Gui
 
 		private async Task RefreshAsync(Feed feed)
 		{
-			ArgumentNullException.ThrowIfNull(feed);
-
 			Activity = true;
 
 			await RdrService.UpdateAsync(feed).ConfigureAwait(true);
