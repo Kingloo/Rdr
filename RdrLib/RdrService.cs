@@ -128,16 +128,22 @@ namespace RdrLib
 		{
 			ArgumentNullException.ThrowIfNull(feeds);
 
-			await Parallel.ForEachAsync(feeds, cancellationToken, UpdateFeedAsync).ConfigureAwait(true);
+			ParallelOptions parallelOptions = new ParallelOptions
+			{
+				CancellationToken = cancellationToken,
+				MaxDegreeOfParallelism = Math.Min(Environment.ProcessorCount, 6)
+			};
+
+			await Parallel.ForEachAsync(feeds, parallelOptions, UpdateFeedAsync).ConfigureAwait(true);
 		}
 
-		private async ValueTask UpdateFeedAsync(Feed feed, CancellationToken cancellationToken)
+		private static async ValueTask UpdateFeedAsync(Feed feed, CancellationToken cancellationToken)
 		{
 			feed.Status = FeedStatus.Updating;
 
 			static void configRequest(HttpRequestMessage request)
 			{
-				string userAgentHeaderValue = UserAgents.Get(UserAgents.Firefox_102_Windows);
+				string userAgentHeaderValue = UserAgents.Get(UserAgents.Firefox_119_Windows);
 
 				if (!request.Headers.UserAgent.TryParseAdd(userAgentHeaderValue))
 				{
