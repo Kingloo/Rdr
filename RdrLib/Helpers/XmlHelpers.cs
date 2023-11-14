@@ -11,7 +11,7 @@ namespace RdrLib.Helpers
 		{
 			try
 			{
-				document = XDocument.Parse(raw);
+				document = XDocument.Parse(raw.TrimStart()); // parsing fails if there is any leading whitespace
 				return true;
 			}
 			catch (XmlException)
