@@ -213,7 +213,7 @@ namespace RdrLib
 #pragma warning disable CA5398
 				EnabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13,
 #pragma warning restore CA5398
-				EncryptionPolicy = EncryptionPolicy.AllowNoEncryption
+				EncryptionPolicy = EncryptionPolicy.RequireEncryption
 			}
 		};
 

@@ -397,7 +397,7 @@ namespace Rdr.Gui
 			}
 		}
 
-		private static IReadOnlyCollection<Feed> CreateFeeds(string[] lines)
+		private static ReadOnlyCollection<Feed> CreateFeeds(string[] lines)
 		{
 			List<Feed> feeds = new List<Feed>();
 

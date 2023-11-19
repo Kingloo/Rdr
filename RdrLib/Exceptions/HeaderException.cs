@@ -17,9 +17,5 @@ namespace RdrLib.Exceptions
 		public HeaderException(string? message, Exception? innerException)
 			: base(message, innerException)
 		{ }
-
-		protected HeaderException(SerializationInfo info, StreamingContext context)
-			: base(info, context)
-		{ }
 	}
 }

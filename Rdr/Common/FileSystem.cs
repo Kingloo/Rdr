@@ -69,7 +69,7 @@ namespace Rdr.Common
 
 				string? line = string.Empty;
 
-				while (!String.IsNullOrEmpty(line = await sr.ReadLineAsync().ConfigureAwait(false)))
+				while (!String.IsNullOrEmpty(line = await sr.ReadLineAsync(token).ConfigureAwait(false)))
 				{
 					if (token.IsCancellationRequested)
 					{
@@ -133,7 +133,7 @@ namespace Rdr.Common
 					await sw.WriteLineAsync(line).ConfigureAwait(false);
 				}
 
-				await sw.FlushAsync().ConfigureAwait(false);
+				await sw.FlushAsync(CancellationToken.None).ConfigureAwait(false);
 			}
 			finally
 			{

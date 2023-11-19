@@ -82,7 +82,7 @@ namespace Rdr.Common
 
 		public void Exception(Exception ex, string message, bool includeStackTrace)
 		{
-			if (ex is null) { throw new ArgumentNullException(nameof(ex)); }
+			ArgumentNullException.ThrowIfNull(ex);
 
 			string text = FormatException(ex, message, includeStackTrace);
 
@@ -100,7 +100,7 @@ namespace Rdr.Common
 
 		public Task ExceptionAsync(Exception ex, string message, bool includeStackTrace)
 		{
-			if (ex is null) { throw new ArgumentNullException(nameof(ex)); }
+			ArgumentNullException.ThrowIfNull(ex);
 
 			string text = FormatException(ex, message, includeStackTrace);
 
