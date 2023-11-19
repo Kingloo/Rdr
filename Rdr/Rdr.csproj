@@ -2,12 +2,12 @@
 
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
-		<TargetFramework>net6.0-windows</TargetFramework>
+		<TargetFramework>net8.0-windows</TargetFramework>
 		<UseWPF>true</UseWPF>
 		<EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
 		<StartupObject>Rdr.Program</StartupObject>
 		<ApplicationIcon>Assets\Rdr.ico</ApplicationIcon>
-		<RuntimeIdentifiers>win10-x64</RuntimeIdentifiers>
+		<RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
 	</PropertyGroup>
 
 	<ItemGroup>
