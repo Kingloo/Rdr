@@ -71,14 +71,7 @@ namespace RdrLib.Model
 		{
 			ArgumentNullException.ThrowIfNull(item);
 
-			if (_items.Contains(item))
-			{
-				_items.Remove(item);
-
-				return true;
-			}
-
-			return false;
+			return _items.Remove(item);
 		}
 
 		public int RemoveMany(IEnumerable<Item> items)
