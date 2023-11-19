@@ -9,7 +9,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/Rdr/bin/Debug/net6.0-windows/Rdr.dll",
+            "program": "${workspaceFolder}/Rdr/bin/Debug/net8.0-windows/Rdr.dll",
             "args": [],
             "cwd": "${workspaceFolder}/Rdr",
             "console": "internalConsole",
