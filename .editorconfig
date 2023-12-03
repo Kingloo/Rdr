@@ -21,3 +21,6 @@ dotnet_diagnostic.CA1805.severity = none
 
 # CA1822: does not access instance data, can be marked as static
 dotnet_diagnostic.CA1822.severity = none
+
+# CA1848: LoggerMessage
+dotnet_diagnostic.CA1848.severity = none
