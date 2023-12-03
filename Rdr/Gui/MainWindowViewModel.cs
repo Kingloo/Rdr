@@ -7,6 +7,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Rdr.Common;
 using RdrLib;
 using RdrLib.Model;
@@ -141,14 +143,11 @@ namespace Rdr.Gui
 
 		private bool CanExecuteAsync(object? obj)
 		{
-			if (obj is Enclosure enclosure)
+			return obj switch
 			{
-				return !enclosure.IsDownloading;
-			}
-			else
-			{
-				return !Activity;
-			}
+				Enclosure enclosure => !enclosure.IsDownloading,
+				_ => !Activity
+			};
 		}
 
 		private bool activity = false;
@@ -182,62 +181,65 @@ namespace Rdr.Gui
 
 		public bool IsRefreshTimerRunning
 		{
-			get => refreshTimer?.IsEnabled ?? false;
+			get => updateTimer?.IsEnabled ?? false;
 		}
 
 		private int activeDownloads = 0;
 		public bool HasActiveDownloads => activeDownloads > 0;
 
-		private DispatcherTimer? refreshTimer = null;
-		private Feed? selectedFeed = null;
-
-		private readonly string feedsFilePath;
-
-		private readonly IRdrService rdrService;
-		public IRdrService RdrService { get => rdrService; }
-
 		private readonly ObservableCollection<Item> viewedItems = new ObservableCollection<Item>();
 		public IReadOnlyCollection<Item> ViewedItems { get => viewedItems; }
 
-		public MainWindowViewModel(string feedsFilePath)
-			: this(feedsFilePath, new RdrService())
-		{ }
+		private readonly IRdrService rdrService;
+		public IRdrService RdrService { get => rdrService; }
+		
+		private readonly IOptionsMonitor<RdrOptions> rdrOptionsMonitor;
+		private readonly ILogger<MainWindowViewModel> logger;
 
-		public MainWindowViewModel(string feedsFilePath, IRdrService rdrService)
+		private DispatcherTimer? updateTimer = null;
+		private Feed? selectedFeed = null;
+		private static readonly string defaultDownloadDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+
+		public MainWindowViewModel(
+			IRdrService rdrService,
+			IOptionsMonitor<RdrOptions> rdrOptionsMonitor,
+			ILogger<MainWindowViewModel> logger)
 		{
-			ArgumentNullException.ThrowIfNull(feedsFilePath);
 			ArgumentNullException.ThrowIfNull(rdrService);
+			ArgumentNullException.ThrowIfNull(rdrOptionsMonitor);
+			ArgumentNullException.ThrowIfNull(logger);
 
-			this.feedsFilePath = feedsFilePath;
 			this.rdrService = rdrService;
+			this.rdrOptionsMonitor = rdrOptionsMonitor;
+			this.logger = logger;
 		}
 
 		public void StartTimer()
 		{
-			if (refreshTimer is not null)
+			if (updateTimer is not null)
 			{
 				return;
 			}
 
-			refreshTimer = new DispatcherTimer(DispatcherPriority.ApplicationIdle)
+			updateTimer = new DispatcherTimer(DispatcherPriority.ApplicationIdle)
 			{
-				Interval = TimeSpan.FromMinutes(15d)
+				Interval = rdrOptionsMonitor.CurrentValue.UpdateInterval
 			};
 
-			refreshTimer.Tick += RefreshTimer_Tick;
-			refreshTimer.Start();
+			updateTimer.Tick += RefreshTimer_Tick;
+			updateTimer.Start();
 		}
 
 		public void StopTimer()
 		{
-			if (refreshTimer is null)
+			if (updateTimer is null)
 			{
 				return;
 			}
 
-			refreshTimer.Stop();
-			refreshTimer.Tick -= RefreshTimer_Tick;
-			refreshTimer = null;
+			updateTimer.Stop();
+			updateTimer.Tick -= RefreshTimer_Tick;
+			updateTimer = null;
 		}
 
 		private void RefreshTimer_Tick(object? sender, EventArgs e)
@@ -246,7 +248,7 @@ namespace Rdr.Gui
 		}
 
 		private Task RefreshAllAsync()
-			=> RefreshAsync(RdrService.Feeds);
+			=> RefreshAsync(rdrService.Feeds);
 
 		private async Task RefreshAsync(IEnumerable<Feed> feeds)
 		{
@@ -254,7 +256,7 @@ namespace Rdr.Gui
 
 			StatusMessage = "updating ...";
 
-			await RdrService.UpdateAsync(feeds).ConfigureAwait(true);
+			await rdrService.UpdateAsync(feeds).ConfigureAwait(true);
 
 			if (selectedFeed is null)
 			{
@@ -274,7 +276,7 @@ namespace Rdr.Gui
 		{
 			Activity = true;
 
-			await RdrService.UpdateAsync(feed).ConfigureAwait(true);
+			await rdrService.UpdateAsync(feed).ConfigureAwait(true);
 
 			if (selectedFeed is not null && selectedFeed == feed)
 			{
@@ -290,37 +292,37 @@ namespace Rdr.Gui
 			{
 				if (!SystemLaunch.Uri(uri))
 				{
-					LogStatic.Message($"feed link launch failed ({feed.Name})");
+					logger.LogError("feed link launch failed ({FeedName})", feed.Name);
 				}
 			}
 			else
 			{
-				LogStatic.Message($"feed link was null ({feed.Name})");
+				logger.LogWarning("feed link was null ({FeedName})", feed.Name);
 			}
 		}
 
 		private void GoToItem(Item item)
 		{
-			if (item.Link is Uri uri)
+			if (item.Link is null)
 			{
-				if (SystemLaunch.Uri(uri))
-				{
-					RdrService.MarkAsRead(item);
+				logger.LogWarning("item link was null ({FeedName}: {ItemName})", item.FeedName, item.Name);
 
-					// we only want to remove the item if we are looking at unread items and items contains it
-					if (selectedFeed is null && viewedItems.Contains(item))
-					{
-						viewedItems.Remove(item);
-					}
-				}
-				else
-				{
-					LogStatic.Message($"item link launch failed ({item.Name})");
-				}
+				return;
 			}
-			else
+
+			if (!SystemLaunch.Uri(item.Link))
 			{
-				LogStatic.Message($"item link was null ({item.Name})");
+				logger.LogWarning("failed to launch item URI: {ItemLink}", item.Link.AbsoluteUri);
+
+				return;
+			}
+
+			rdrService.MarkAsRead(item);
+
+			// we only want to remove the item if we are looking at unread items and items contains it
+			if (selectedFeed is null && viewedItems.Contains(item))
+			{
+				viewedItems.Remove(item);
 			}
 		}
 
@@ -328,11 +330,11 @@ namespace Rdr.Gui
 		{
 			if (selectedFeed is not null)
 			{
-				RdrService.MarkAsRead(selectedFeed);
+				rdrService.MarkAsRead(selectedFeed);
 			}
 			else // selectedFeed is null means unread-view
 			{
-				RdrService.MarkAllAsRead();
+				rdrService.MarkAllAsRead();
 
 				viewedItems.Clear();
 			}
@@ -340,30 +342,33 @@ namespace Rdr.Gui
 
 		private void OpenFeedsFile()
 		{
-			if (!SystemLaunch.Path(feedsFilePath))
+			string currentFeedsFilePath = rdrOptionsMonitor.CurrentValue.FeedsFilePath;
+
+			if (!SystemLaunch.Path(currentFeedsFilePath))
 			{
-				LogStatic.Message($"feeds file path does not exist ({feedsFilePath}), or process launch failed");
+				logger.LogError("feeds file path does not exist ({FeedsFilePath}), or process launch failed", rdrOptionsMonitor.CurrentValue.FeedsFilePath);
 			}
 		}
 
 		private async Task ReloadAsync()
 		{
-			string[] lines = await ReadLinesAsync(feedsFilePath).ConfigureAwait(true);
+			string[] lines = await ReadLinesAsync(rdrOptionsMonitor.CurrentValue.FeedsFilePath).ConfigureAwait(true);
 
 			IReadOnlyCollection<Feed> feeds = CreateFeeds(lines);
 
 			if (feeds.Count == 0)
 			{
-				RdrService.Clear();
+				rdrService.ClearFeeds();
+				
 				viewedItems.Clear();
 
 				return;
 			}
 
 			// something service.Feeds has that our loaded feeds doesn't
-			var toRemove = RdrService.Feeds.Where(f => !feeds.Contains(f)).ToList();
+			var toRemove = rdrService.Feeds.Where(f => !feeds.Contains(f)).ToList();
 
-			RdrService.Remove(toRemove);
+			rdrService.Remove(toRemove);
 
 			List<Feed> toRefresh = new List<Feed>();
 
@@ -371,7 +376,7 @@ namespace Rdr.Gui
 			{
 				foreach (Feed each in chunkOfFeeds)
 				{
-					if (RdrService.Add(each))
+					if (rdrService.Add(each))
 					{
 						toRefresh.Add(each);
 					}
@@ -383,15 +388,15 @@ namespace Rdr.Gui
 			await RefreshAsync(toRefresh).ConfigureAwait(true);
 		}
 
-		private static async ValueTask<string[]> ReadLinesAsync(string path)
+		private async ValueTask<string[]> ReadLinesAsync(string path)
 		{
 			try
 			{
 				return await FileSystem.LoadLinesFromFileAsync(path).ConfigureAwait(false);
 			}
-			catch (FileNotFoundException)
+			catch (FileNotFoundException ex)
 			{
-				await LogStatic.MessageAsync($"file not found: {path}").ConfigureAwait(false);
+				logger.LogError(ex, "feeds file does not exist: '{FeedFilePath}'", rdrOptionsMonitor.CurrentValue.FeedsFilePath);
 
 				return Array.Empty<string>();
 			}
@@ -418,32 +423,67 @@ namespace Rdr.Gui
 		{
 			ArgumentNullException.ThrowIfNull(enclosure);
 
-			string profileFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-			string filename = enclosure.Link.Segments.Last();
+			string downloadDirectory = DetermineDownloadDirectory(rdrOptionsMonitor.CurrentValue);
+			string filename = DetermineFileName(enclosure);
+			string fullPath = Path.Combine(downloadDirectory, filename);
 
-			string path = Path.Combine(profileFolder, "share", filename);
+			logger.LogDebug("will attempt to download '{Uri}' to '{LocalFilePath}'", enclosure.Link, fullPath);
 
-			var progress = new Progress<FileProgress>(e =>
+			Progress<FileProgress> progress = new Progress<FileProgress>((FileProgress e) =>
 			{
-				if (e.ContentLength.HasValue)
-				{
-					enclosure.Message = e.GetPercentFormatted(CultureInfo.CurrentCulture) ?? "error!";
-				}
-				else
-				{
-					enclosure.Message = $"{e.TotalBytesWritten} bytes written";
-				}
+				string message = e.ContentLength.HasValue
+					? e.GetPercentFormatted(CultureInfo.CurrentCulture) ?? "error!"
+					: $"{e.TotalBytesWritten} bytes written";
+
+				enclosure.Message = message;
+
+				logger.LogTrace("progress of '{Uri}' to '{LocalFilePath}': {Message}", enclosure.Link.AbsoluteUri, fullPath, message);
 			});
 
 			enclosure.IsDownloading = true;
 			activeDownloads++;
 
-			FileResponse response = await RdrService.DownloadEnclosureAsync(enclosure, path, progress).ConfigureAwait(true);
+			FileResponse response = await rdrService.DownloadEnclosureAsync(enclosure, fullPath, progress).ConfigureAwait(true);
+
+			if (response.Reason == Reason.Success)
+			{
+				logger.LogInformation("successfully downloaded '{Uri}' to '{LocalFilePath}'", enclosure.Link.AbsoluteUri, fullPath);
+			}
+			else
+			{
+				logger.LogError(
+					"enclosure download was {Reason} for '{Uri}' ({StatusCode})",
+					response.Reason,
+					enclosure.Link,
+					response.StatusCode);
+			}
 
 			enclosure.IsDownloading = false;
 			activeDownloads--;
 
 			enclosure.Message = (response.Reason == Reason.Success) ? "Download" : response.Reason.ToString();
+		}
+
+		private static string DetermineDownloadDirectory(RdrOptions rdrOptions)
+		{
+			return rdrOptions.DownloadDirectory switch
+			{
+				string { Length: > 0 } value => Path.IsPathRooted(value)
+					? Directory.Exists(value)
+						? value
+						: defaultDownloadDirectory
+					: Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), value),
+				_ => defaultDownloadDirectory
+			};
+		}
+
+		private static string DetermineFileName(Enclosure enclosure)
+		{
+			return enclosure.Link.Segments.Last() switch
+			{
+				string { Length: > 0 } value => value,
+				_ => $"rdr-unnamed-download-{DateTimeOffset.Now.Ticks}"
+			};
 		}
 
 		private async Task ViewFeedItemsAsync(Feed? feed)
@@ -484,7 +524,7 @@ namespace Rdr.Gui
 
 			viewedItems.Clear();
 
-			var allItems = from feed in RdrService.Feeds
+			var allItems = from feed in rdrService.Feeds
 						   from item in feed.Items
 						   orderby item.Published descending
 						   select item;
@@ -494,7 +534,7 @@ namespace Rdr.Gui
 
 		private Task MoveUnreadItemsAsync(bool clearFirst)
 		{
-			var unreadItems = from f in RdrService.Feeds
+			var unreadItems = from f in rdrService.Feeds
 							  from i in f.Items
 							  where i.Unread
 							  select i;
