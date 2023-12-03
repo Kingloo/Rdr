@@ -20,16 +20,16 @@ namespace RdrLib
 		void MarkAsRead(Feed feed);
 		void MarkAllAsRead();
 
-		void Clear();
+		void ClearFeeds();
 
-		ValueTask UpdateAsync(Feed feed);
-		ValueTask UpdateAsync(Feed feed, CancellationToken cancellationToken);
-		ValueTask UpdateAsync(IEnumerable<Feed> feeds);
-		ValueTask UpdateAsync(IEnumerable<Feed> feeds, CancellationToken cancellationToken);
+		Task UpdateAsync(Feed feed);
+		Task UpdateAsync(Feed feed, CancellationToken cancellationToken);
+		Task UpdateAsync(IEnumerable<Feed> feeds);
+		Task UpdateAsync(IEnumerable<Feed> feeds, CancellationToken cancellationToken);
 
-		ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path);
-		ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress> progress);
-		ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, CancellationToken cancellationToken);
-		ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress> progress, CancellationToken cancellationToken);
+		Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path);
+		Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress> progress);
+		Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, CancellationToken cancellationToken);
+		Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress> progress, CancellationToken cancellationToken);
 	}
 }

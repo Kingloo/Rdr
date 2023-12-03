@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using Microsoft.Extensions.Options;
 using RdrLib.Exceptions;
 using RdrLib.Helpers;
 using RdrLib.Model;
@@ -17,7 +18,14 @@ namespace RdrLib
 		private readonly ObservableCollection<Feed> feeds = new ObservableCollection<Feed>();
 		public IReadOnlyCollection<Feed> Feeds { get => feeds; }
 
-		public RdrService() { }
+		private readonly IOptionsMonitor<RdrOptions> rdrOptionsMonitor;
+
+		public RdrService(IOptionsMonitor<RdrOptions> rdrOptionsMonitor)
+		{
+			ArgumentNullException.ThrowIfNull(rdrOptionsMonitor);
+
+			this.rdrOptionsMonitor = rdrOptionsMonitor;
+		}
 
 		public bool Add(Feed feed)
 		{
@@ -109,41 +117,47 @@ namespace RdrLib
 			}
 		}
 
-		public void Clear() => feeds.Clear();
+		public void ClearFeeds()
+		{
+			feeds.Clear();
+		}
 
-		public ValueTask UpdateAsync(Feed feed)
-			=> UpdateAsync(feed, CancellationToken.None);
+		public Task UpdateAsync(Feed feed)
+			=> UpdateAsyncInternal(feed, CancellationToken.None);
 
-		public ValueTask UpdateAsync(Feed feed, CancellationToken cancellationToken)
+		public Task UpdateAsync(Feed feed, CancellationToken cancellationToken)
+			=> UpdateAsyncInternal(feed, cancellationToken);
+
+		private async Task UpdateAsyncInternal(Feed feed, CancellationToken cancellationToken)
 		{
 			ArgumentNullException.ThrowIfNull(feed);
 
-			return UpdateFeedAsync(feed, cancellationToken);
+			await UpdateFeedAsync(feed, cancellationToken).ConfigureAwait(false);
 		}
 
-		public ValueTask UpdateAsync(IEnumerable<Feed> feeds)
+		public Task UpdateAsync(IEnumerable<Feed> feeds)
 			=> UpdateAsync(feeds, CancellationToken.None);
 
-		public async ValueTask UpdateAsync(IEnumerable<Feed> feeds, CancellationToken cancellationToken)
+		public async Task UpdateAsync(IEnumerable<Feed> feeds, CancellationToken cancellationToken)
 		{
 			ArgumentNullException.ThrowIfNull(feeds);
 
 			ParallelOptions parallelOptions = new ParallelOptions
 			{
 				CancellationToken = cancellationToken,
-				MaxDegreeOfParallelism = Math.Min(Environment.ProcessorCount, 6)
+				MaxDegreeOfParallelism = rdrOptionsMonitor.CurrentValue.UpdateConcurrency
 			};
 
 			await Parallel.ForEachAsync(feeds, parallelOptions, UpdateFeedAsync).ConfigureAwait(true);
 		}
 
-		private static async ValueTask UpdateFeedAsync(Feed feed, CancellationToken cancellationToken)
+		private async ValueTask UpdateFeedAsync(Feed feed, CancellationToken cancellationToken)
 		{
 			feed.Status = FeedStatus.Updating;
 
-			static void configRequest(HttpRequestMessage request)
+			void configureRequest(HttpRequestMessage request)
 			{
-				string userAgentHeaderValue = UserAgents.Get(UserAgents.Firefox_119_Windows);
+				string userAgentHeaderValue = rdrOptionsMonitor.CurrentValue.CustomUserAgent;
 
 				if (!request.Headers.UserAgent.TryParseAdd(userAgentHeaderValue))
 				{
@@ -154,7 +168,7 @@ namespace RdrLib
 				}
 			}
 
-			StringResponse response = await Web.DownloadStringAsync(feed.Link, configRequest, cancellationToken).ConfigureAwait(false);
+			StringResponse response = await Web.DownloadStringAsync(feed.Link, configureRequest, cancellationToken).ConfigureAwait(false);
 
 			if (response.Reason != Reason.Success)
 			{
@@ -184,19 +198,19 @@ namespace RdrLib
 			feed.Status = FeedStatus.Ok;
 		}
 
-		public ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path)
+		public Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path)
 			=> DownloadEnclosureAsyncInternal(enclosure, path, null, CancellationToken.None);
 
-		public ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress> progress)
+		public Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress> progress)
 			=> DownloadEnclosureAsyncInternal(enclosure, path, progress, CancellationToken.None);
 
-		public ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, CancellationToken cancellationToken)
+		public Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, CancellationToken cancellationToken)
 			=> DownloadEnclosureAsyncInternal(enclosure, path, null, cancellationToken);
 
-		public ValueTask<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress> progress, CancellationToken cancellationToken)
+		public Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress> progress, CancellationToken cancellationToken)
 			=> DownloadEnclosureAsyncInternal(enclosure, path, progress, cancellationToken);
 
-		private static ValueTask<FileResponse> DownloadEnclosureAsyncInternal(Enclosure enclosure, string path, IProgress<FileProgress>? progress, CancellationToken cancellationToken)
+		private static Task<FileResponse> DownloadEnclosureAsyncInternal(Enclosure enclosure, string path, IProgress<FileProgress>? progress, CancellationToken cancellationToken)
 		{
 			ArgumentNullException.ThrowIfNull(enclosure);
 
