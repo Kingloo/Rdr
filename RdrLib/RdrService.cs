@@ -6,10 +6,12 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RdrLib.Exceptions;
 using RdrLib.Helpers;
 using RdrLib.Model;
+using static RdrLib.EventIds.RdrService;
 
 namespace RdrLib
 {
@@ -19,12 +21,15 @@ namespace RdrLib
 		public IReadOnlyCollection<Feed> Feeds { get => feeds; }
 
 		private readonly IOptionsMonitor<RdrOptions> rdrOptionsMonitor;
+		private readonly ILogger<RdrService> logger;
 
-		public RdrService(IOptionsMonitor<RdrOptions> rdrOptionsMonitor)
+		public RdrService(IOptionsMonitor<RdrOptions> rdrOptionsMonitor, ILogger<RdrService> logger)
 		{
 			ArgumentNullException.ThrowIfNull(rdrOptionsMonitor);
+			ArgumentNullException.ThrowIfNull(logger);
 
 			this.rdrOptionsMonitor = rdrOptionsMonitor;
+			this.logger = logger;
 		}
 
 		public bool Add(Feed feed)
@@ -34,6 +39,8 @@ namespace RdrLib
 			if (!feeds.Contains(feed))
 			{
 				feeds.Add(feed);
+
+				logger.LogDebug(FeedAdded, "feed added ({FeedLink})", feed.Link.AbsoluteUri);
 
 				return true;
 			}
@@ -62,14 +69,18 @@ namespace RdrLib
 		{
 			ArgumentNullException.ThrowIfNull(feed);
 
-			if (feeds.Contains(feed))
+			bool removed = feeds.Remove(feed);
+
+			if (removed)
 			{
-				return feeds.Remove(feed);
+				logger.LogDebug(FeedRemoved, "feed removed ({FeedLink})", feed.Link.AbsoluteUri);
 			}
 			else
 			{
-				return false;
+				logger.LogWarning(FeedRemovedFailed, "failed to remove feed ({FeedLink})", feed.Link.AbsoluteUri);
 			}
+
+			return removed;
 		}
 
 		public int Remove(IEnumerable<Feed> feeds)
@@ -94,6 +105,8 @@ namespace RdrLib
 			ArgumentNullException.ThrowIfNull(item);
 
 			item.Unread = false;
+
+			logger.LogTrace("marked item as read: '{FeedName}'->'{ItemName}'", item.FeedName, item.Name);
 		}
 
 		public void MarkAsRead(Feed feed)
@@ -115,11 +128,15 @@ namespace RdrLib
 					MarkAsRead(item);
 				}
 			}
+
+			logger.LogTrace("marked ALL as read");
 		}
 
 		public void ClearFeeds()
 		{
 			feeds.Clear();
+
+			logger.LogDebug("cleared ALL feeds");
 		}
 
 		public Task UpdateAsync(Feed feed)
@@ -153,6 +170,8 @@ namespace RdrLib
 
 		private async ValueTask UpdateFeedAsync(Feed feed, CancellationToken cancellationToken)
 		{
+			logger.LogDebug(FeedUpdateStarted, "updating {FeedName} ({FeedLink})", feed.Name, feed.Link.AbsoluteUri);
+
 			feed.Status = FeedStatus.Updating;
 
 			void configureRequest(HttpRequestMessage request)
@@ -180,6 +199,13 @@ namespace RdrLib
 					_ => FeedStatus.OtherInternetError,
 				};
 
+				logger.LogWarning(
+					FeedUpdateFailed,
+					"update failed: {StatusCode} for '{FeedName}' ({FeedLink})",
+					response.StatusCode,
+					feed.Name,
+					feed.Link.AbsoluteUri);
+
 				return;
 			}
 
@@ -196,6 +222,8 @@ namespace RdrLib
 			feed.AddMany(items);
 
 			feed.Status = FeedStatus.Ok;
+
+			logger.LogDebug(FeedUpdateSucceeded, "updated '{FeedName}' ({FeedLink})", feed.Name, feed.Link.AbsoluteUri);
 		}
 
 		public Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path)
@@ -213,11 +241,7 @@ namespace RdrLib
 		private static Task<FileResponse> DownloadEnclosureAsyncInternal(Enclosure enclosure, string path, IProgress<FileProgress>? progress, CancellationToken cancellationToken)
 		{
 			ArgumentNullException.ThrowIfNull(enclosure);
-
-			if (String.IsNullOrWhiteSpace(path))
-			{
-				throw new ArgumentNullException(nameof(path));
-			}
+			ArgumentNullException.ThrowIfNull(path);
 
 			return (progress is not null) switch
 			{
