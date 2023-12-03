@@ -12,6 +12,7 @@ using Microsoft.Extensions.Options;
 using Rdr.Common;
 using RdrLib;
 using RdrLib.Model;
+using static Rdr.EventIds.MainWindowViewModel;
 
 namespace Rdr.Gui
 {
@@ -288,31 +289,35 @@ namespace Rdr.Gui
 
 		private void GoToFeed(Feed feed)
 		{
-			if (feed.Link is Uri uri)
+			if (feed.Link is null)
 			{
-				if (!SystemLaunch.Uri(uri))
-				{
-					logger.LogError("feed link launch failed ({FeedName})", feed.Name);
-				}
+				logger.LogWarning(GoToFeedLinkNull, "feed link was null ({FeedName})", feed.Name);
+				
+				return;
 			}
-			else
+
+			if (!SystemLaunch.Uri(feed.Link))
 			{
-				logger.LogWarning("feed link was null ({FeedName})", feed.Name);
+				logger.LogError(GoToFeedFailed, "feed link launch failed ({FeedName})", feed.Name);
+				
+				return;
 			}
+
+			logger.LogDebug(EventIds.MainWindowViewModel.GoToFeed, "opened '{}' in browser", feed.Name);
 		}
 
 		private void GoToItem(Item item)
 		{
 			if (item.Link is null)
 			{
-				logger.LogWarning("item link was null ({FeedName}: {ItemName})", item.FeedName, item.Name);
+				logger.LogWarning(GoToItemLinkNull, "item link was null ({FeedName}: {ItemName})", item.FeedName, item.Name);
 
 				return;
 			}
 
 			if (!SystemLaunch.Uri(item.Link))
 			{
-				logger.LogWarning("failed to launch item URI: {ItemLink}", item.Link.AbsoluteUri);
+				logger.LogWarning(GoToItemFailed, "failed to launch item URI: {ItemLink}", item.Link.AbsoluteUri);
 
 				return;
 			}
@@ -324,6 +329,8 @@ namespace Rdr.Gui
 			{
 				viewedItems.Remove(item);
 			}
+
+			logger.LogDebug(EventIds.MainWindowViewModel.GoToItem, "open '{FeedName}'->'{ItemName}' in browser", item.FeedName, item.Name);
 		}
 
 		private void MarkAllAsRead()
@@ -344,20 +351,30 @@ namespace Rdr.Gui
 		{
 			string currentFeedsFilePath = rdrOptionsMonitor.CurrentValue.FeedsFilePath;
 
-			if (!SystemLaunch.Path(currentFeedsFilePath))
+			if (SystemLaunch.Path(currentFeedsFilePath))
 			{
-				logger.LogError("feeds file path does not exist ({FeedsFilePath}), or process launch failed", rdrOptionsMonitor.CurrentValue.FeedsFilePath);
+				logger.LogDebug(FeedsFileOpened, "opened feeds file ('{}')", currentFeedsFilePath);
+			}
+			else
+			{
+				logger.LogError(FeedsFileError, "feeds file path does not exist ({FeedsFilePath}), or process launch failed", rdrOptionsMonitor.CurrentValue.FeedsFilePath);
 			}
 		}
 
 		private async Task ReloadAsync()
 		{
-			string[] lines = await ReadLinesAsync(rdrOptionsMonitor.CurrentValue.FeedsFilePath).ConfigureAwait(true);
+			string currentFeedsFilePath = rdrOptionsMonitor.CurrentValue.FeedsFilePath;
+			
+			logger.LogDebug(ReloadFeedsFileStarted, "reloading feeds file ({FeedsFilePath})", currentFeedsFilePath);
+			
+			string[] lines = await ReadLinesAsync(currentFeedsFilePath).ConfigureAwait(true);
 
 			IReadOnlyCollection<Feed> feeds = CreateFeeds(lines);
 
 			if (feeds.Count == 0)
 			{
+				logger.LogWarning(FeedsFileEmpty, "feeds file contains no feeds ({FeedsFilePath})", currentFeedsFilePath);
+
 				rdrService.ClearFeeds();
 				
 				viewedItems.Clear();
@@ -384,6 +401,8 @@ namespace Rdr.Gui
 
 				await Dispatcher.Yield(DispatcherPriority.Background);
 			}
+
+			logger.LogDebug(ReloadFeedsFileFinished, "reload feeds file finished ({FeedsFilePath})", currentFeedsFilePath);
 
 			await RefreshAsync(toRefresh).ConfigureAwait(true);
 		}
@@ -427,7 +446,7 @@ namespace Rdr.Gui
 			string filename = DetermineFileName(enclosure);
 			string fullPath = Path.Combine(downloadDirectory, filename);
 
-			logger.LogDebug("will attempt to download '{Uri}' to '{LocalFilePath}'", enclosure.Link, fullPath);
+			logger.LogTrace(DownloadLocalFilePath, "will attempt to download '{Uri}' to '{LocalFilePath}'", enclosure.Link, fullPath);
 
 			Progress<FileProgress> progress = new Progress<FileProgress>((FileProgress e) =>
 			{
@@ -437,25 +456,28 @@ namespace Rdr.Gui
 
 				enclosure.Message = message;
 
-				logger.LogTrace("progress of '{Uri}' to '{LocalFilePath}': {Message}", enclosure.Link.AbsoluteUri, fullPath, message);
+				logger.LogTrace(DownloadProgress, "progress of '{Uri}' to '{LocalFilePath}': {Message}", enclosure.Link.AbsoluteUri, fullPath, message);
 			});
 
 			enclosure.IsDownloading = true;
 			activeDownloads++;
 
+			logger.LogDebug(DownloadStarted, "started downloading '{Link}' to '{LocalFilePath}'", enclosure.Link, fullPath);
+
 			FileResponse response = await rdrService.DownloadEnclosureAsync(enclosure, fullPath, progress).ConfigureAwait(true);
 
 			if (response.Reason == Reason.Success)
 			{
-				logger.LogInformation("successfully downloaded '{Uri}' to '{LocalFilePath}'", enclosure.Link.AbsoluteUri, fullPath);
+				logger.LogInformation(DownloadFinished, "downloaded '{Uri}' to '{LocalFilePath}'", enclosure.Link.AbsoluteUri, fullPath);
 			}
 			else
 			{
 				logger.LogError(
-					"enclosure download was {Reason} for '{Uri}' ({StatusCode})",
+					DownloadFailed,
+					"download failed: {Reason} - {StatusCode} for '{Uri}'",
 					response.Reason,
-					enclosure.Link,
-					response.StatusCode);
+					response.StatusCode,
+					enclosure.Link);
 			}
 
 			enclosure.IsDownloading = false;
