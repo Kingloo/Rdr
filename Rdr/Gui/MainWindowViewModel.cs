@@ -199,7 +199,14 @@ namespace Rdr.Gui
 
 		private DispatcherTimer? updateTimer = null;
 		private Feed? selectedFeed = null;
-		private static readonly string defaultDownloadDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+		
+		private static readonly string defaultFeedsFilePath = Path.Combine(
+			Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+			"RdrFeeds.txt");
+		
+		private static readonly string defaultDownloadDirectory = Path.Combine(
+			Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+			"Downloads");
 
 		public MainWindowViewModel(
 			IRdrService rdrService,
@@ -349,7 +356,7 @@ namespace Rdr.Gui
 
 		private void OpenFeedsFile()
 		{
-			string currentFeedsFilePath = rdrOptionsMonitor.CurrentValue.FeedsFilePath;
+			string currentFeedsFilePath = DetermineFeedsFileFullPath(rdrOptionsMonitor.CurrentValue);
 
 			if (SystemLaunch.Path(currentFeedsFilePath))
 			{
@@ -357,13 +364,13 @@ namespace Rdr.Gui
 			}
 			else
 			{
-				logger.LogError(FeedsFileError, "feeds file path does not exist ({FeedsFilePath}), or process launch failed", rdrOptionsMonitor.CurrentValue.FeedsFilePath);
+				logger.LogError(FeedsFileError, "feeds file path does not exist ({FeedsFilePath}), or process launch failed", currentFeedsFilePath);
 			}
 		}
 
 		private async Task ReloadAsync()
 		{
-			string currentFeedsFilePath = rdrOptionsMonitor.CurrentValue.FeedsFilePath;
+			string currentFeedsFilePath = DetermineFeedsFileFullPath(rdrOptionsMonitor.CurrentValue);
 			
 			logger.LogDebug(ReloadFeedsFileStarted, "reloading feeds file ({FeedsFilePath})", currentFeedsFilePath);
 			
@@ -415,7 +422,7 @@ namespace Rdr.Gui
 			}
 			catch (FileNotFoundException ex)
 			{
-				logger.LogError(ex, "feeds file does not exist: '{FeedFilePath}'", rdrOptionsMonitor.CurrentValue.FeedsFilePath);
+				logger.LogError(ex, "feeds file does not exist: '{FeedFilePath}'", path);
 
 				return Array.Empty<string>();
 			}
@@ -593,6 +600,19 @@ namespace Rdr.Gui
 			string time = DateTimeOffset.Now.ToString("dd/MM/yyyy HH:mm:ss", CultureInfo.CurrentCulture);
 
 			StatusMessage = string.Format(CultureInfo.CurrentCulture, "last updated at {0}", time);
+		}
+
+		private static string DetermineFeedsFileFullPath(RdrOptions rdrOptions)
+		{
+			return rdrOptions.FeedsFilePath switch
+			{
+				string { Length: > 0} value => Path.IsPathRooted(value)
+					? File.Exists(value)
+						? value
+						: defaultFeedsFilePath
+					: Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), value),
+				_ => defaultFeedsFilePath
+			};
 		}
 
 		public void Exit(Window window)
