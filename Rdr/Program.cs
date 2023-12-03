@@ -1,6 +1,5 @@
 using System;
 using System.Globalization;
-using Rdr.Common;
 using Rdr.Gui;
 
 namespace Rdr
@@ -18,7 +17,7 @@ namespace Rdr
 			{
 				string message = String.Format(CultureInfo.CurrentCulture, "Rdr exited with code {0}", exitCode);
 
-				LogStatic.Message(message);
+				Console.Error.WriteLine(message);
 			}
 
 			return exitCode;
