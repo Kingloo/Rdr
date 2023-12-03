@@ -8,6 +8,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using FileLogger;
 using RdrLib;
+using static Rdr.EventIds.App;
 
 namespace Rdr.Gui
 {
@@ -97,7 +98,7 @@ namespace Rdr.Gui
 
 		private void Application_Startup(object sender, StartupEventArgs e)
 		{
-			logger.LogDebug("startup started");
+			logger.LogDebug(StartupStarted, "startup started");
 
 			host.Start();
 
@@ -119,20 +120,20 @@ namespace Rdr.Gui
 
 			MainWindow.Show();
 
-			logger.LogInformation("started");
+			logger.LogInformation(StartupFinished, "started");
 		}
 
 		private void Application_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
 		{
 			if (e.Exception is Exception ex)
 			{
-				logger.LogError(ex, "unhandled exception ({ExceptionType})", ex.GetType().FullName);
+				logger.LogError(UnhandledException, ex, "unhandled exception ({ExceptionType})", ex.GetType().FullName);
 			}
 			else
 			{
 				const string nullExceptionMessage = "dispatcher unhandled exception: inner exception was null";
 
-				logger.LogCritical(nullExceptionMessage);
+				logger.LogCritical(UnhandledExceptionEmpty, nullExceptionMessage);
 
 				Console.Error.WriteLine(nullExceptionMessage);
 			}
@@ -142,11 +143,11 @@ namespace Rdr.Gui
 		{
 			if (e.ApplicationExitCode == 0)
 			{
-				logger.LogInformation("exited");
+				logger.LogInformation(Exited, "exited");
 			}
 			else
 			{
-				logger.LogWarning("exited (exit code {ExitCode})", e.ApplicationExitCode);
+				logger.LogWarning(ExitedNotZero, "exited (exit code {ExitCode})", e.ApplicationExitCode);
 			}
 
 			IFileLoggerSink sink = host.Services.GetRequiredService<IFileLoggerSink>();
