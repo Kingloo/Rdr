@@ -394,38 +394,38 @@ namespace RdrLib
 		}
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path)
+		public static Task<FileResponse> DownloadFileAsync(Uri uri, string path)
 			=> DownloadFileAsyncInternal(uri, path, null, null, CancellationToken.None);
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path, CancellationToken cancellationToken)
+		public static Task<FileResponse> DownloadFileAsync(Uri uri, string path, CancellationToken cancellationToken)
 			=> DownloadFileAsyncInternal(uri, path, null, null, cancellationToken);
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path, Action<HttpRequestMessage> configureRequest)
+		public static Task<FileResponse> DownloadFileAsync(Uri uri, string path, Action<HttpRequestMessage> configureRequest)
 			=> DownloadFileAsyncInternal(uri, path, configureRequest, null, CancellationToken.None);
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path, Action<HttpRequestMessage> configureRequest, CancellationToken cancellationToken)
+		public static Task<FileResponse> DownloadFileAsync(Uri uri, string path, Action<HttpRequestMessage> configureRequest, CancellationToken cancellationToken)
 			=> DownloadFileAsyncInternal(uri, path, configureRequest, null, cancellationToken);
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path, IProgress<FileProgress> progress)
+		public static Task<FileResponse> DownloadFileAsync(Uri uri, string path, IProgress<FileProgress> progress)
 			=> DownloadFileAsyncInternal(uri, path, null, progress, CancellationToken.None);
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path, IProgress<FileProgress> progress, CancellationToken cancellationToken)
+		public static Task<FileResponse> DownloadFileAsync(Uri uri, string path, IProgress<FileProgress> progress, CancellationToken cancellationToken)
 			=> DownloadFileAsyncInternal(uri, path, null, progress, cancellationToken);
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path, Action<HttpRequestMessage> configureRequest, IProgress<FileProgress> progress)
+		public static Task<FileResponse> DownloadFileAsync(Uri uri, string path, Action<HttpRequestMessage> configureRequest, IProgress<FileProgress> progress)
 			=> DownloadFileAsyncInternal(uri, path, configureRequest, progress, CancellationToken.None);
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static ValueTask<FileResponse> DownloadFileAsync(Uri uri, string path, Action<HttpRequestMessage> configureRequest, IProgress<FileProgress> progress, CancellationToken cancellationToken)
+		public static Task<FileResponse> DownloadFileAsync(Uri uri, string path, Action<HttpRequestMessage> configureRequest, IProgress<FileProgress> progress, CancellationToken cancellationToken)
 			=> DownloadFileAsyncInternal(uri, path, configureRequest, progress, cancellationToken);
 
-		private static async ValueTask<FileResponse> DownloadFileAsyncInternal(
+		private static async Task<FileResponse> DownloadFileAsyncInternal(
 			Uri uri,
 			string path,
 			Action<HttpRequestMessage>? configureRequest,
