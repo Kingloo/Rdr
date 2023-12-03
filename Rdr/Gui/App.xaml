@@ -5,7 +5,8 @@
              xmlns:converters="clr-namespace:Rdr.Gui.Converters"
              Startup="Application_Startup"
              ShutdownMode="OnMainWindowClose"
-             DispatcherUnhandledException="Application_DispatcherUnhandledException">
+             DispatcherUnhandledException="Application_DispatcherUnhandledException"
+			 Exit="Application_Exit">
 	<Application.Resources>
 
 		<converters:BooleanNegationConverter x:Key="booleanNegationConverter" />

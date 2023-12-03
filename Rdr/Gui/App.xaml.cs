@@ -137,5 +137,25 @@ namespace Rdr.Gui
 				Console.Error.WriteLine(nullExceptionMessage);
 			}
 		}
+
+		private void Application_Exit(object sender, ExitEventArgs e)
+		{
+			if (e.ApplicationExitCode == 0)
+			{
+				logger.LogInformation("exited");
+			}
+			else
+			{
+				logger.LogWarning("exited (exit code {ExitCode})", e.ApplicationExitCode);
+			}
+
+			IFileLoggerSink sink = host.Services.GetRequiredService<IFileLoggerSink>();
+
+			sink.StopSink();
+
+			host.StopAsync().GetAwaiter().GetResult();
+
+			host.Dispose();
+		}
 	}
 }
