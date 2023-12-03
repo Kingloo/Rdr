@@ -5,12 +5,29 @@
    "version": "0.2.0",
    "configurations": [
         {
-            "name": ".NET Core Launch (WPF)",
+            "name": "Rdr (dev)",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/Rdr/bin/Debug/net8.0-windows/Rdr.dll",
             "args": [],
+			"env": {
+				"ENVIRONMENT": "Development"
+			},
+            "cwd": "${workspaceFolder}/Rdr",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Rdr (prod)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/Rdr/bin/Debug/net8.0-windows/Rdr.dll",
+            "args": [],
+			"env": {
+				"ENVIRONMENT": "Production"
+			},
             "cwd": "${workspaceFolder}/Rdr",
             "console": "internalConsole",
             "stopAtEntry": false
