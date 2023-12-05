@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
@@ -13,10 +14,11 @@ using Rdr.Common;
 using RdrLib;
 using RdrLib.Model;
 using static Rdr.EventIds.MainWindowViewModel;
+using static Rdr.Gui.MainWindowViewModelLoggerMessages;
 
 namespace Rdr.Gui
 {
-	public class MainWindowViewModel : BindableBase, IMainWindowViewModel
+	public partial class MainWindowViewModel : BindableBase, IMainWindowViewModel
 	{
 		private DelegateCommandAsync? refreshAllCommand = null;
 		public DelegateCommandAsync RefreshAllCommand
@@ -298,33 +300,33 @@ namespace Rdr.Gui
 		{
 			if (feed.Link is null)
 			{
-				logger.LogWarning(GoToFeedLinkNull, "feed link was null ({FeedName})", feed.Name);
+				LogGoToFeedLinkNull(logger, feed.Name);
 				
 				return;
 			}
 
 			if (!SystemLaunch.Uri(feed.Link))
 			{
-				logger.LogError(GoToFeedFailed, "feed link launch failed ({FeedName})", feed.Name);
+				LogGoToFeedFailed(logger, feed.Name);
 				
 				return;
 			}
 
-			logger.LogDebug(EventIds.MainWindowViewModel.GoToFeed, "opened '{}' in browser", feed.Name);
+			LogGoToFeed(logger, feed.Name);
 		}
 
 		private void GoToItem(Item item)
 		{
 			if (item.Link is null)
 			{
-				logger.LogWarning(GoToItemLinkNull, "item link was null ({FeedName}: {ItemName})", item.FeedName, item.Name);
+				LogGoToItemLinkNull(logger, item.FeedName, item.Name);
 
 				return;
 			}
 
 			if (!SystemLaunch.Uri(item.Link))
 			{
-				logger.LogWarning(GoToItemFailed, "failed to launch item URI: {ItemLink}", item.Link.AbsoluteUri);
+				LogGoToItemFailed(logger, item.Link.AbsoluteUri);
 
 				return;
 			}
@@ -337,7 +339,7 @@ namespace Rdr.Gui
 				viewedItems.Remove(item);
 			}
 
-			logger.LogDebug(EventIds.MainWindowViewModel.GoToItem, "open '{FeedName}'->'{ItemName}' in browser", item.FeedName, item.Name);
+			LogGoToItem(logger, item.Name);
 		}
 
 		private void MarkAllAsRead()
@@ -360,11 +362,11 @@ namespace Rdr.Gui
 
 			if (SystemLaunch.Path(currentFeedsFilePath))
 			{
-				logger.LogDebug(FeedsFileOpened, "opened feeds file ('{}')", currentFeedsFilePath);
+				LogFeedsFileOpened(logger, currentFeedsFilePath);
 			}
 			else
 			{
-				logger.LogError(FeedsFileError, "feeds file path does not exist ({FeedsFilePath}), or process launch failed", currentFeedsFilePath);
+				LogFeedsFileError(logger, currentFeedsFilePath);
 			}
 		}
 
@@ -372,7 +374,7 @@ namespace Rdr.Gui
 		{
 			string currentFeedsFilePath = DetermineFeedsFileFullPath(rdrOptionsMonitor.CurrentValue);
 			
-			logger.LogDebug(ReloadFeedsFileStarted, "reloading feeds file ({FeedsFilePath})", currentFeedsFilePath);
+			LogReloadFeedsFileStarted(logger, currentFeedsFilePath);
 			
 			string[] lines = await ReadLinesAsync(currentFeedsFilePath).ConfigureAwait(true);
 
@@ -380,7 +382,7 @@ namespace Rdr.Gui
 
 			if (feeds.Count == 0)
 			{
-				logger.LogWarning(FeedsFileEmpty, "feeds file contains no feeds ({FeedsFilePath})", currentFeedsFilePath);
+				LogFeedsFileEmpty(logger, currentFeedsFilePath);
 
 				rdrService.ClearFeeds();
 				
@@ -409,7 +411,7 @@ namespace Rdr.Gui
 				await Dispatcher.Yield(DispatcherPriority.Background);
 			}
 
-			logger.LogDebug(ReloadFeedsFileFinished, "reload feeds file finished ({FeedsFilePath})", currentFeedsFilePath);
+			LogReloadFeedsFileFinished(logger, currentFeedsFilePath);
 
 			await RefreshAsync(toRefresh).ConfigureAwait(true);
 		}
@@ -422,7 +424,7 @@ namespace Rdr.Gui
 			}
 			catch (FileNotFoundException ex)
 			{
-				logger.LogError(ex, "feeds file does not exist: '{FeedFilePath}'", path);
+				LogFeedsFileDoesNotExist(logger, ex.FileName ?? "empty", path);
 
 				return Array.Empty<string>();
 			}
@@ -453,7 +455,7 @@ namespace Rdr.Gui
 			string filename = DetermineFileName(enclosure);
 			string fullPath = Path.Combine(downloadDirectory, filename);
 
-			logger.LogTrace(DownloadLocalFilePath, "will attempt to download '{Uri}' to '{LocalFilePath}'", enclosure.Link, fullPath);
+			LogDownloadLocalFilePath(logger, enclosure.Link.AbsoluteUri, fullPath);
 
 			Progress<FileProgress> progress = new Progress<FileProgress>((FileProgress e) =>
 			{
@@ -463,28 +465,23 @@ namespace Rdr.Gui
 
 				enclosure.Message = message;
 
-				logger.LogTrace(DownloadProgress, "progress of '{Uri}' to '{LocalFilePath}': {Message}", enclosure.Link.AbsoluteUri, fullPath, message);
+				LogDownloadProgress(logger, enclosure.Link.AbsoluteUri, fullPath, message);
 			});
 
 			enclosure.IsDownloading = true;
 			activeDownloads++;
 
-			logger.LogDebug(DownloadStarted, "started downloading '{Link}' to '{LocalFilePath}'", enclosure.Link, fullPath);
+			LogDownloadStarted(logger, enclosure.Link.AbsoluteUri, fullPath);
 
 			FileResponse response = await rdrService.DownloadEnclosureAsync(enclosure, fullPath, progress).ConfigureAwait(true);
 
 			if (response.Reason == Reason.Success)
 			{
-				logger.LogInformation(DownloadFinished, "downloaded '{Uri}' to '{LocalFilePath}'", enclosure.Link.AbsoluteUri, fullPath);
+				LogDownloadFinished(logger, enclosure.Link.AbsoluteUri, fullPath);
 			}
 			else
 			{
-				logger.LogError(
-					DownloadFailed,
-					"download failed: {Reason} - {StatusCode} for '{Uri}'",
-					response.Reason,
-					response.StatusCode,
-					enclosure.Link);
+				LogDownloadFailed(logger, response.Reason, response.StatusCode, enclosure.Link.AbsoluteUri);
 			}
 
 			enclosure.IsDownloading = false;
@@ -619,9 +616,68 @@ namespace Rdr.Gui
 		{
 			ArgumentNullException.ThrowIfNull(window);
 
+			LogWindowExit(logger, window.Name);
+
 			Web.DisposeHttpClient();
 
 			window.Close();
 		}
+	}
+
+	internal static partial class MainWindowViewModelLoggerMessages
+	{
+		[LoggerMessage(GoToFeedLinkNullId, LogLevel.Warning, "feed link was null ({FeedName})")]
+		internal static partial void LogGoToFeedLinkNull(ILogger<MainWindowViewModel> logger, string feedName);
+		
+		[LoggerMessage(GoToFeedFailedId, LogLevel.Warning, "feed link launch failed ({FeedName})")]
+		internal static partial void LogGoToFeedFailed(ILogger<MainWindowViewModel> logger, string feedName);
+
+		[LoggerMessage(GoToFeedId, LogLevel.Debug, "opened in browser ('{FeedName}')")]
+		internal static partial void LogGoToFeed(ILogger<MainWindowViewModel> logger, string feedName);
+
+		[LoggerMessage(GoToItemLinkNullId, LogLevel.Warning, "item link was null ({FeedName}: {ItemName})")]
+		internal static partial void LogGoToItemLinkNull(ILogger<MainWindowViewModel> logger, string feedName, string itemName);
+
+		[LoggerMessage(GoToItemFailedId, LogLevel.Warning, "failed to launch item URI: {Link}")]
+		internal static partial void LogGoToItemFailed(ILogger<MainWindowViewModel> logger, string link);
+
+		[LoggerMessage(GoToItemId, LogLevel.Debug, "opened in browser ('{ItemName}')")]
+		internal static partial void LogGoToItem(ILogger<MainWindowViewModel> logger, string itemName);
+
+		[LoggerMessage(FeedsFileOpenedId, LogLevel.Debug, "opened feeds file ('{Path}')")]
+		internal static partial void LogFeedsFileOpened(ILogger<MainWindowViewModel> logger, string path);
+
+		[LoggerMessage(FeedsFileErrorId, LogLevel.Error, "feeds file path does not exist ({Path}), or process launch failed")]
+		internal static partial void LogFeedsFileError(ILogger<MainWindowViewModel> logger, string path);
+
+		[LoggerMessage(ReloadFeedsFileStartedId, LogLevel.Debug, "started reloading feeds file ({Path})")]
+		internal static partial void LogReloadFeedsFileStarted(ILogger<MainWindowViewModel> logger, string path);
+
+		[LoggerMessage(FeedsFileEmptyId, LogLevel.Warning, "feeds file contains no feeds ({Path})")]
+		internal static partial void LogFeedsFileEmpty(ILogger<MainWindowViewModel> logger, string path);
+
+		[LoggerMessage(ReloadFeedsFileFinishedId, LogLevel.Debug, "reload feeds file finished ({Path})")]
+		internal static partial void LogReloadFeedsFileFinished(ILogger<MainWindowViewModel> logger, string path);
+
+		[LoggerMessage(FeedsFileDoesNotExistId, LogLevel.Error, "feeds file does not exist: missing '{MissingPath}', attempted '{AttemptedPath}'")]
+		internal static partial void LogFeedsFileDoesNotExist(ILogger<MainWindowViewModel> logger, string missingPath, string attemptedPath);
+
+		[LoggerMessage(DownloadLocalFilePathId, LogLevel.Trace, "will attempt to download '{Link}' to '{LocalFilePath}'")]
+		internal static partial void LogDownloadLocalFilePath(ILogger<MainWindowViewModel> logger, string link, string localFilePath);
+
+		[LoggerMessage(DownloadProgressId, LogLevel.Trace, "progress of '{Link}' to '{LocalPath}': {Message}")]
+		internal static partial void LogDownloadProgress(ILogger<MainWindowViewModel> logger, string link, string localPath, string message);
+
+		[LoggerMessage(DownloadStartedId, LogLevel.Debug, "started downloading '{Link}' to '{LocalPath}'")]
+		internal static partial void LogDownloadStarted(ILogger<MainWindowViewModel> logger, string link, string localPath);
+
+		[LoggerMessage(DownloadFinishedId, LogLevel.Information, "downloaded '{Link}' to '{LocalPath}'")]
+		internal static partial void LogDownloadFinished(ILogger<MainWindowViewModel> logger, string link, string localPath);
+
+		[LoggerMessage(DownloadFailedId, LogLevel.Error, "download failed: {Reason} - {StatusCode} for '{Link}'")]
+		internal static partial void LogDownloadFailed(ILogger<MainWindowViewModel> logger, Reason reason, HttpStatusCode? statusCode, string link);
+
+		[LoggerMessage(WindowExitId, LogLevel.Debug, "window exit ('{WindowName}')")]
+		internal static partial void LogWindowExit(ILogger<MainWindowViewModel> logger, string windowName);
 	}
 }
