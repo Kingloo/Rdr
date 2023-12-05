@@ -20,8 +20,8 @@ namespace RdrLib.EventIds
 		internal static readonly EventId FeedAdded = new EventId(FeedAddedId, nameof(FeedAdded));
 		internal static readonly EventId FeedRemoved = new EventId(FeedRemovedId, nameof(FeedRemoved));
 		internal static readonly EventId FeedRemovedFailed = new EventId(FeedRemovedFailedId, nameof(FeedRemovedFailed));
-		internal static readonly EventId MarkAsRead = new EventId(MarkAsReadId, nameof(FeedRemovedFailed));
-		internal static readonly EventId MarkAllAsRead = new EventId(MarkAllAsReadId, nameof(FeedRemovedFailed));
-		internal static readonly EventId ClearFeeds = new EventId(ClearFeedsId, nameof(FeedRemovedFailed));
+		internal static readonly EventId MarkAsRead = new EventId(MarkAsReadId, nameof(MarkAsRead));
+		internal static readonly EventId MarkAllAsRead = new EventId(MarkAllAsReadId, nameof(MarkAllAsRead));
+		internal static readonly EventId ClearFeeds = new EventId(ClearFeedsId, nameof(ClearFeeds));
 	}
 }
