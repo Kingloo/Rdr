@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using FileLogger;
 using RdrLib;
 using static Rdr.EventIds.App;
+using static Rdr.Gui.AppLoggerMessages;
 
 namespace Rdr.Gui
 {
@@ -98,7 +99,7 @@ namespace Rdr.Gui
 
 		private void Application_Startup(object sender, StartupEventArgs e)
 		{
-			logger.LogDebug(StartupStarted, "startup started");
+			LogStartupStarted(logger);
 
 			host.Start();
 
@@ -120,22 +121,20 @@ namespace Rdr.Gui
 
 			MainWindow.Show();
 
-			logger.LogInformation(StartupFinished, "started");
+			LogStartupFinished(logger);
 		}
 
 		private void Application_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
 		{
 			if (e.Exception is Exception ex)
 			{
-				logger.LogError(UnhandledException, ex, "unhandled exception ({ExceptionType})", ex.GetType().FullName);
+				LogDispatcherUnhandledException(logger, ex.GetType()?.FullName ?? "unknown type");
 			}
 			else
 			{
-				const string nullExceptionMessage = "dispatcher unhandled exception: inner exception was null";
+				LogDispatcherUnhandledExceptionEmpty(logger);
 
-				logger.LogCritical(UnhandledExceptionEmpty, nullExceptionMessage);
-
-				Console.Error.WriteLine(nullExceptionMessage);
+				Console.Error.WriteLine("dispatcher unhandled inner exception was null");
 			}
 		}
 
@@ -143,11 +142,11 @@ namespace Rdr.Gui
 		{
 			if (e.ApplicationExitCode == 0)
 			{
-				logger.LogInformation(Exited, "exited");
+				LogExited(logger);
 			}
 			else
 			{
-				logger.LogWarning(ExitedNotZero, "exited (exit code {ExitCode})", e.ApplicationExitCode);
+				LogExitedNotZero(logger, e.ApplicationExitCode);
 			}
 
 			IFileLoggerSink sink = host.Services.GetRequiredService<IFileLoggerSink>();
@@ -158,5 +157,26 @@ namespace Rdr.Gui
 
 			host.Dispose();
 		}
+	}
+
+	internal static partial class AppLoggerMessages
+	{
+		[LoggerMessage(StartupStartedId, LogLevel.Debug, "startup started")]
+		internal static partial void LogStartupStarted(ILogger<App> logger);
+		
+		[LoggerMessage(StartupFinishedId, LogLevel.Information, "started")]
+		internal static partial void LogStartupFinished(ILogger<App> logger);
+
+		[LoggerMessage(DispatcherUnhandledExceptionId, LogLevel.Error, "dispatcher unhandled exception {UnhandledExceptionFullName}")]
+		internal static partial void LogDispatcherUnhandledException(ILogger<App> logger, string unhandledExceptionFullName);
+
+		[LoggerMessage(DispatcherUnhandledExceptionEmptyId, LogLevel.Critical, "dispatcher unhandled exception: inner exception was null")]
+		internal static partial void LogDispatcherUnhandledExceptionEmpty(ILogger<App> logger);
+
+		[LoggerMessage(ExitedId, LogLevel.Information, "exited")]
+		internal static partial void LogExited(ILogger<App> logger);
+
+		[LoggerMessage(ExitedNotZeroId, LogLevel.Error, "exited (exit code {ExitCode})")]
+		internal static partial void LogExitedNotZero(ILogger<App> logger, int exitCode);
 	}
 }
