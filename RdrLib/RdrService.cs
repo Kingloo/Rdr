@@ -12,10 +12,11 @@ using RdrLib.Exceptions;
 using RdrLib.Helpers;
 using RdrLib.Model;
 using static RdrLib.EventIds.RdrService;
+using static RdrLib.RdrServiceLoggerMessages;
 
 namespace RdrLib
 {
-	public class RdrService : IRdrService
+	public partial class RdrService : IRdrService
 	{
 		private readonly ObservableCollection<Feed> feeds = new ObservableCollection<Feed>();
 		public IReadOnlyCollection<Feed> Feeds { get => feeds; }
@@ -40,7 +41,7 @@ namespace RdrLib
 			{
 				feeds.Add(feed);
 
-				logger.LogDebug(FeedAdded, "feed added ({FeedLink})", feed.Link.AbsoluteUri);
+				LogFeedAdded(logger, feed.Link.AbsoluteUri);
 
 				return true;
 			}
@@ -73,11 +74,11 @@ namespace RdrLib
 
 			if (removed)
 			{
-				logger.LogDebug(FeedRemoved, "feed removed ({FeedLink})", feed.Link.AbsoluteUri);
+				LogFeedRemoved(logger, feed.Link.AbsoluteUri);
 			}
 			else
 			{
-				logger.LogWarning(FeedRemovedFailed, "failed to remove feed ({FeedLink})", feed.Link.AbsoluteUri);
+				LogFeedRemovedFailed(logger, feed.Link.AbsoluteUri);
 			}
 
 			return removed;
@@ -106,7 +107,7 @@ namespace RdrLib
 
 			item.Unread = false;
 
-			logger.LogTrace("marked item as read: '{FeedName}'->'{ItemName}'", item.FeedName, item.Name);
+			LogMarkAsRead(logger, item.FeedName, item.Name);
 		}
 
 		public void MarkAsRead(Feed feed)
@@ -129,14 +130,14 @@ namespace RdrLib
 				}
 			}
 
-			logger.LogTrace("marked ALL as read");
+			LogMarkAllAsRead(logger);
 		}
 
 		public void ClearFeeds()
 		{
 			feeds.Clear();
 
-			logger.LogDebug("cleared ALL feeds");
+			LogClearFeeds(logger);
 		}
 
 		public Task UpdateAsync(Feed feed)
@@ -170,7 +171,7 @@ namespace RdrLib
 
 		private async ValueTask UpdateFeedAsync(Feed feed, CancellationToken cancellationToken)
 		{
-			logger.LogDebug(FeedUpdateStarted, "updating {FeedName} ({FeedLink})", feed.Name, feed.Link.AbsoluteUri);
+			LogFeedUpdateStarted(logger, feed.Name, feed.Link.AbsoluteUri);
 
 			feed.Status = FeedStatus.Updating;
 
@@ -199,12 +200,29 @@ namespace RdrLib
 					_ => FeedStatus.OtherInternetError,
 				};
 
-				logger.LogWarning(
-					FeedUpdateFailed,
-					"update failed: {StatusCode} for '{FeedName}' ({FeedLink})",
-					response.StatusCode,
-					feed.Name,
-					feed.Link.AbsoluteUri);
+				LogFeedUpdateFailed(logger, GetError(response), GetNameForLogMessage(feed));
+
+				static string GetError(StringResponse response)
+				{
+					if (response.StatusCode is HttpStatusCode statusCode)
+					{
+						return $"{(int)statusCode} {statusCode}";
+					}
+
+					if (response.Exception is Exception ex)
+					{
+						return $" {ex.GetType().FullName}";
+					}
+
+					return response.Reason.ToString();
+				}
+
+				static string GetNameForLogMessage(Feed feed)
+				{
+					return String.Equals(feed.Name, feed.Link.AbsoluteUri, StringComparison.OrdinalIgnoreCase)
+						? feed.Link.AbsoluteUri
+						: feed.Name;
+				}
 
 				return;
 			}
@@ -223,7 +241,7 @@ namespace RdrLib
 
 			feed.Status = FeedStatus.Ok;
 
-			logger.LogDebug(FeedUpdateSucceeded, "updated '{FeedName}' ({FeedLink})", feed.Name, feed.Link.AbsoluteUri);
+			LogFeedUpdateSucceeded(logger, feed.Name, feed.Link.AbsoluteUri);
 		}
 
 		public Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path)
@@ -249,5 +267,37 @@ namespace RdrLib
 				false => Web.DownloadFileAsync(enclosure.Link, path, cancellationToken)
 			};
 		}
+	}
+
+	internal static partial class RdrServiceLoggerMessages
+	{
+		// https://andrewlock.net/exploring-dotnet-6-part-8-improving-logging-performance-with-source-generators/
+
+		[LoggerMessage(FeedAddedId, LogLevel.Debug, "feed added '{Link}'")]
+		internal static partial void LogFeedAdded(ILogger<RdrService> logger, string link);
+		
+		[LoggerMessage(FeedRemovedId, LogLevel.Debug, "feed removed '{Link}'")]
+		internal static partial void LogFeedRemoved(ILogger<RdrService> logger, string link);
+		
+		[LoggerMessage(FeedRemovedFailedId, LogLevel.Debug, "failed to remove feed '{Link}'")]
+		internal static partial void LogFeedRemovedFailed(ILogger<RdrService> logger, string link);
+
+		[LoggerMessage(FeedUpdateStartedId, LogLevel.Debug, "updating {FeedName} ({FeedLink})")]
+		internal static partial void LogFeedUpdateStarted(ILogger<RdrService> logger, string feedName, string feedLink);
+
+		[LoggerMessage(FeedUpdateFailedId, LogLevel.Warning, "update failed: {Error} '{Name}'")]
+		internal static partial void LogFeedUpdateFailed(ILogger<RdrService> logger, string error, string name);
+
+		[LoggerMessage(FeedUpdateSucceededId, LogLevel.Debug, "updated '{FeedName}' ({FeedLink})")]
+		internal static partial void LogFeedUpdateSucceeded(ILogger<RdrService> logger, string feedName, string feedLink);
+
+		[LoggerMessage(MarkAsReadId, LogLevel.Trace, "marked item as read: '{FeedName}'->'{ItemName}'")]
+		internal static partial void LogMarkAsRead(ILogger<RdrService> logger, string feedName, string itemName);
+
+		[LoggerMessage(MarkAllAsReadId, LogLevel.Debug, "marked ALL as read")]
+		internal static partial void LogMarkAllAsRead(ILogger<RdrService> logger);
+
+		[LoggerMessage(ClearFeedsId, LogLevel.Debug, "cleared ALL feeds")]
+		internal static partial void LogClearFeeds(ILogger<RdrService> logger);
 	}
 }
