@@ -275,10 +275,10 @@ namespace RdrLib
 
 		[LoggerMessage(FeedAddedId, LogLevel.Debug, "feed added '{Link}'")]
 		internal static partial void LogFeedAdded(ILogger<RdrService> logger, string link);
-		
+
 		[LoggerMessage(FeedRemovedId, LogLevel.Debug, "feed removed '{Link}'")]
 		internal static partial void LogFeedRemoved(ILogger<RdrService> logger, string link);
-		
+
 		[LoggerMessage(FeedRemovedFailedId, LogLevel.Debug, "failed to remove feed '{Link}'")]
 		internal static partial void LogFeedRemovedFailed(ILogger<RdrService> logger, string link);
 

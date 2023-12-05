@@ -10,14 +10,14 @@ namespace RdrLib
 		public static readonly TimeSpan DefaultUpdateInterval = TimeSpan.FromMinutes(15d);
 
 		public string CustomUserAgent { get; init; } = DefaultUserAgent;
-		
+
 		[Required]
 		public string FeedsFilePath { get; init; } = string.Empty;
 
 		public string DownloadDirectory { get; init; } = string.Empty;
-		
+
 		public int UpdateConcurrency { get; init; } = DefaultUpdateConcurrency;
-		
+
 		public TimeSpan UpdateInterval { get; init; } = DefaultUpdateInterval;
 
 		public RdrOptions() { }

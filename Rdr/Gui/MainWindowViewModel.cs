@@ -195,17 +195,17 @@ namespace Rdr.Gui
 
 		private readonly IRdrService rdrService;
 		public IRdrService RdrService { get => rdrService; }
-		
+
 		private readonly IOptionsMonitor<RdrOptions> rdrOptionsMonitor;
 		private readonly ILogger<MainWindowViewModel> logger;
 
 		private DispatcherTimer? updateTimer = null;
 		private Feed? selectedFeed = null;
-		
+
 		private static readonly string defaultFeedsFilePath = Path.Combine(
 			Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
 			"RdrFeeds.txt");
-		
+
 		private static readonly string defaultDownloadDirectory = Path.Combine(
 			Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
 			"Downloads");
@@ -301,14 +301,14 @@ namespace Rdr.Gui
 			if (feed.Link is null)
 			{
 				LogGoToFeedLinkNull(logger, feed.Name);
-				
+
 				return;
 			}
 
 			if (!SystemLaunch.Uri(feed.Link))
 			{
 				LogGoToFeedFailed(logger, feed.Name);
-				
+
 				return;
 			}
 
@@ -373,9 +373,9 @@ namespace Rdr.Gui
 		private async Task ReloadAsync()
 		{
 			string currentFeedsFilePath = DetermineFeedsFileFullPath(rdrOptionsMonitor.CurrentValue);
-			
+
 			LogReloadFeedsFileStarted(logger, currentFeedsFilePath);
-			
+
 			string[] lines = await ReadLinesAsync(currentFeedsFilePath).ConfigureAwait(true);
 
 			IReadOnlyCollection<Feed> feeds = CreateFeeds(lines);
@@ -385,7 +385,7 @@ namespace Rdr.Gui
 				LogFeedsFileEmpty(logger, currentFeedsFilePath);
 
 				rdrService.ClearFeeds();
-				
+
 				viewedItems.Clear();
 
 				return;
@@ -603,7 +603,7 @@ namespace Rdr.Gui
 		{
 			return rdrOptions.FeedsFilePath switch
 			{
-				string { Length: > 0} value => Path.IsPathRooted(value)
+				string { Length: > 0 } value => Path.IsPathRooted(value)
 					? File.Exists(value)
 						? value
 						: defaultFeedsFilePath
@@ -628,7 +628,7 @@ namespace Rdr.Gui
 	{
 		[LoggerMessage(GoToFeedLinkNullId, LogLevel.Warning, "feed link was null ({FeedName})")]
 		internal static partial void LogGoToFeedLinkNull(ILogger<MainWindowViewModel> logger, string feedName);
-		
+
 		[LoggerMessage(GoToFeedFailedId, LogLevel.Warning, "feed link launch failed ({FeedName})")]
 		internal static partial void LogGoToFeedFailed(ILogger<MainWindowViewModel> logger, string feedName);
 

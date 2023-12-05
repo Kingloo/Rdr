@@ -111,7 +111,7 @@ namespace Rdr.Gui
 
 			using (host.Services.CreateScope())
 			{
-				MainWindow = host.Services.GetRequiredService<MainWindow>();	
+				MainWindow = host.Services.GetRequiredService<MainWindow>();
 			}
 
 			appLifetime.ApplicationStopping.Register(() =>
@@ -163,7 +163,7 @@ namespace Rdr.Gui
 	{
 		[LoggerMessage(StartupStartedId, LogLevel.Debug, "startup started")]
 		internal static partial void LogStartupStarted(ILogger<App> logger);
-		
+
 		[LoggerMessage(StartupFinishedId, LogLevel.Information, "started")]
 		internal static partial void LogStartupFinished(ILogger<App> logger);
 
