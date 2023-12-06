@@ -202,6 +202,8 @@ namespace RdrLib
 
 				LogFeedUpdateFailed(logger, GetError(response), GetNameForLogMessage(feed));
 
+				return;
+
 				static string GetError(StringResponse response)
 				{
 					if (response.StatusCode is HttpStatusCode statusCode)
@@ -209,9 +211,12 @@ namespace RdrLib
 						return $"{(int)statusCode} {statusCode}";
 					}
 
-					if (response.Exception is Exception ex)
+					if (response.Exception is OperationCanceledException operationCanceledException)
 					{
-						return $" {ex.GetType().FullName}";
+						if (operationCanceledException.InnerException is Exception innerException)
+						{
+							return innerException.GetType().Name;
+						}
 					}
 
 					return response.Reason.ToString();
@@ -223,8 +228,6 @@ namespace RdrLib
 						? feed.Link.AbsoluteUri
 						: feed.Name;
 				}
-
-				return;
 			}
 
 			if (!XmlHelpers.TryParse(response.Text, out XDocument? document))
@@ -285,7 +288,7 @@ namespace RdrLib
 		[LoggerMessage(FeedUpdateStartedId, LogLevel.Debug, "updating {FeedName} ({FeedLink})")]
 		internal static partial void LogFeedUpdateStarted(ILogger<RdrService> logger, string feedName, string feedLink);
 
-		[LoggerMessage(FeedUpdateFailedId, LogLevel.Warning, "update failed: {Error} '{Name}'")]
+		[LoggerMessage(FeedUpdateFailedId, LogLevel.Warning, "update failed: {Error} for '{Name}'")]
 		internal static partial void LogFeedUpdateFailed(ILogger<RdrService> logger, string error, string name);
 
 		[LoggerMessage(FeedUpdateSucceededId, LogLevel.Debug, "updated '{FeedName}' ({FeedLink})")]
