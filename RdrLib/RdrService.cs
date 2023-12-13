@@ -208,14 +208,14 @@ namespace RdrLib
 				{
 					if (response.StatusCode is HttpStatusCode statusCode)
 					{
-						return $"{(int)statusCode} {statusCode}";
+						return $"{response.Reason} ({(int)statusCode} {statusCode})";
 					}
 
 					if (response.Exception is OperationCanceledException operationCanceledException)
 					{
 						if (operationCanceledException.InnerException is Exception innerException)
 						{
-							return innerException.GetType().Name;
+							return $"{response.Reason} ({innerException.GetType().Name})";
 						}
 					}
 
