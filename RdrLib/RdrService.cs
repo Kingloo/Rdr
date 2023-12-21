@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Net;
 using System.Net.Http;
+using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -12,6 +14,7 @@ using RdrLib.Exceptions;
 using RdrLib.Helpers;
 using RdrLib.Model;
 using static RdrLib.EventIds.RdrService;
+using static RdrLib.Helpers.HttpStatusCodeHelpers;
 using static RdrLib.RdrServiceLoggerMessages;
 
 namespace RdrLib
@@ -203,31 +206,6 @@ namespace RdrLib
 				LogFeedUpdateFailed(logger, GetError(response), GetNameForLogMessage(feed));
 
 				return;
-
-				static string GetError(StringResponse response)
-				{
-					if (response.StatusCode is HttpStatusCode statusCode)
-					{
-						return $"{response.Reason} ({(int)statusCode} {statusCode})";
-					}
-
-					if (response.Exception is OperationCanceledException operationCanceledException)
-					{
-						if (operationCanceledException.InnerException is Exception innerException)
-						{
-							return $"{response.Reason} ({innerException.GetType().Name})";
-						}
-					}
-
-					return response.Reason.ToString();
-				}
-
-				static string GetNameForLogMessage(Feed feed)
-				{
-					return String.Equals(feed.Name, feed.Link.AbsoluteUri, StringComparison.OrdinalIgnoreCase)
-						? feed.Link.AbsoluteUri
-						: feed.Name;
-				}
 			}
 
 			if (!XmlHelpers.TryParse(response.Text, out XDocument? document))
@@ -247,15 +225,67 @@ namespace RdrLib
 			LogFeedUpdateSucceeded(logger, feed.Name, feed.Link.AbsoluteUri);
 		}
 
+		private static string GetError(StringResponse response)
+		{
+			StringBuilder sb = new StringBuilder();
+
+			sb.Append(response.Reason.ToString());
+
+			if (response.StatusCode is HttpStatusCode statusCode)
+			{
+				sb.Append(" - ");
+				sb.Append(FormatStatusCode(statusCode));
+			}
+
+			if (response.Exception is Exception ex)
+			{
+				Exception toLog = ex switch
+				{
+					OperationCanceledException operationCanceledException => operationCanceledException.InnerException ?? ex,
+					HttpRequestException httpRequestException => httpRequestException.InnerException ?? httpRequestException,
+					_ => ex
+				};
+
+				string? message = toLog switch
+				{
+					HttpRequestException httpRequestException => httpRequestException.HttpRequestError == HttpRequestError.Unknown
+						? null
+						: httpRequestException.HttpRequestError.ToString(),
+					HttpIOException httpIOException => $"{nameof(HttpIOException)} ({httpIOException.HttpRequestError})",
+					SocketException socketException => $"{nameof(SocketException)} ({socketException.SocketErrorCode})",
+					_ => ex.GetType().FullName ?? ex.GetType().Name
+				};
+
+				if (!String.IsNullOrEmpty(message))
+				{
+					sb.Append(" - ");
+					sb.Append(message);
+				}
+			}
+
+			return sb.ToString();
+		}
+
+		private static string GetNameForLogMessage(Feed feed)
+		{
+			return String.Equals(feed.Name, feed.Link.AbsoluteUri, StringComparison.OrdinalIgnoreCase)
+				? feed.Link.AbsoluteUri
+				: feed.Name;
+		}
+
+		[System.Diagnostics.DebuggerStepThrough]
 		public Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path)
 			=> DownloadEnclosureAsyncInternal(enclosure, path, null, CancellationToken.None);
 
+		[System.Diagnostics.DebuggerStepThrough]
 		public Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress> progress)
 			=> DownloadEnclosureAsyncInternal(enclosure, path, progress, CancellationToken.None);
 
+		[System.Diagnostics.DebuggerStepThrough]
 		public Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, CancellationToken cancellationToken)
 			=> DownloadEnclosureAsyncInternal(enclosure, path, null, cancellationToken);
 
+		[System.Diagnostics.DebuggerStepThrough]
 		public Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress> progress, CancellationToken cancellationToken)
 			=> DownloadEnclosureAsyncInternal(enclosure, path, progress, cancellationToken);
 

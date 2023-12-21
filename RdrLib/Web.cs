@@ -5,7 +5,6 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Security;
-using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -18,12 +17,9 @@ namespace RdrLib
 	{
 		None,
 		Success,
-		WebError,
-		SocketError,
-		Timeout,
+		Failed,
 		FileExists,
 		Canceled,
-		CompressionError,
 		Unknown
 	}
 
@@ -31,7 +27,6 @@ namespace RdrLib
 	{
 		Reason Reason { get; }
 		HttpStatusCode? StatusCode { get; init; }
-		SocketError SocketError { get; init; }
 		Exception? Exception { get; init; }
 	}
 
@@ -42,7 +37,6 @@ namespace RdrLib
 		public Reason Reason { get; } = Reason.None;
 		public HttpStatusCode? StatusCode { get; init; } = null;
 		public Exception? Exception { get; init; } = null;
-		public SocketError SocketError { get; init; } = SocketError.Success;
 		public string Text { get; init; } = string.Empty;
 
 		public StringResponse(Uri uri, Reason reason)
@@ -74,8 +68,7 @@ namespace RdrLib
 		public Reason Reason { get; } = Reason.None;
 		public HttpStatusCode? StatusCode { get; init; } = null;
 		public Exception? Exception { get; init; } = null;
-		public SocketError SocketError { get; init; } = SocketError.Success;
-		public ReadOnlyMemory<byte> Data { get; init; } = new ReadOnlyMemory<byte>();
+		public ReadOnlyMemory<byte> Data { get; init; } = ReadOnlyMemory<byte>.Empty;
 
 		public DataResponse(Uri uri, Reason reason)
 		{
@@ -107,7 +100,6 @@ namespace RdrLib
 		public Reason Reason { get; } = Reason.None;
 		public HttpStatusCode? StatusCode { get; init; } = null;
 		public Exception? Exception { get; init; } = null;
-		public SocketError SocketError { get; init; } = SocketError.Success;
 
 		public FileResponse(Uri uri, string path, Reason reason)
 		{
@@ -116,6 +108,7 @@ namespace RdrLib
 
 			this.uri = uri;
 			this.path = path;
+
 			Reason = reason;
 		}
 
@@ -184,10 +177,11 @@ namespace RdrLib
 
 		private static string GetPercentFormatString(CultureInfo cultureInfo)
 		{
-			string separator = cultureInfo.NumberFormat.PercentDecimalSeparator;
-			string symbol = cultureInfo.NumberFormat.PercentSymbol;
-
-			return string.Format(cultureInfo, "0{0}00 {1}", separator, symbol);
+			return string.Format(
+				cultureInfo,
+				"0{0}00 {1}",
+				cultureInfo.NumberFormat.PercentDecimalSeparator,
+				cultureInfo.NumberFormat.PercentSymbol);
 		}
 	}
 
@@ -253,6 +247,7 @@ namespace RdrLib
 			configureRequest?.Invoke(request);
 
 			HttpResponseMessage? response = null;
+			StringResponse? stringResponse = null;
 
 			try
 			{
@@ -262,40 +257,33 @@ namespace RdrLib
 
 				string text = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
-				return new StringResponse(uri, Reason.Success)
+				stringResponse = new StringResponse(uri, Reason.Success)
 				{
 					StatusCode = response.StatusCode,
 					Text = text
 				};
 			}
-			catch (HttpRequestException httpException) when (httpException.InnerException is SocketException socketException)
-			{
-				return new StringResponse(uri, Reason.SocketError)
-				{
-					StatusCode = response?.StatusCode ?? null,
-					Exception = httpException,
-					SocketError = socketException.SocketErrorCode
-				};
-			}
 			catch (HttpRequestException ex)
 			{
-				return new StringResponse(uri, Reason.WebError)
+				stringResponse = new StringResponse(uri, Reason.Failed)
 				{
 					StatusCode = response?.StatusCode ?? null,
 					Exception = ex
 				};
 			}
-			catch (TaskCanceledException ex)
+			catch (HttpIOException ex)
 			{
-				return new StringResponse(uri, Reason.Timeout)
+				stringResponse = new StringResponse(uri, Reason.Failed)
 				{
+					StatusCode = response?.StatusCode ?? null,
 					Exception = ex
 				};
 			}
 			catch (OperationCanceledException ex)
 			{
-				return new StringResponse(uri, Reason.WebError)
+				stringResponse = new StringResponse(uri, Reason.Canceled)
 				{
+					StatusCode = response?.StatusCode ?? null,
 					Exception = ex
 				};
 			}
@@ -304,6 +292,8 @@ namespace RdrLib
 				request?.Dispose();
 				response?.Dispose();
 			}
+
+			return stringResponse;
 		}
 
 		[System.Diagnostics.DebuggerStepThrough]
@@ -332,6 +322,7 @@ namespace RdrLib
 			configureRequest?.Invoke(request);
 
 			HttpResponseMessage? response = null;
+			DataResponse? dataResponse = null;
 
 			try
 			{
@@ -341,48 +332,33 @@ namespace RdrLib
 
 				ReadOnlyMemory<byte> data = await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
 
-				return new DataResponse(uri, Reason.Success)
+				dataResponse = new DataResponse(uri, Reason.Success)
 				{
 					StatusCode = response.StatusCode,
 					Data = data
 				};
 			}
-			catch (HttpRequestException httpException) when (httpException.InnerException is SocketException socketException)
-			{
-				return new DataResponse(uri, Reason.SocketError)
-				{
-					StatusCode = response?.StatusCode ?? null,
-					Exception = httpException,
-					SocketError = socketException.SocketErrorCode
-				};
-			}
 			catch (HttpRequestException ex)
 			{
-				return new DataResponse(uri, Reason.WebError)
+				dataResponse = new DataResponse(uri, Reason.Failed)
 				{
 					StatusCode = response?.StatusCode ?? null,
 					Exception = ex
 				};
 			}
-			catch (InvalidDataException ex)
+			catch (HttpIOException ex)
 			{
-				return new DataResponse(uri, Reason.CompressionError)
+				dataResponse = new DataResponse(uri, Reason.Failed)
 				{
 					StatusCode = response?.StatusCode ?? null,
-					Exception = ex
-				};
-			}
-			catch (TaskCanceledException ex)
-			{
-				return new DataResponse(uri, Reason.Timeout)
-				{
 					Exception = ex
 				};
 			}
 			catch (OperationCanceledException ex)
 			{
-				return new DataResponse(uri, Reason.WebError)
+				dataResponse = new DataResponse(uri, Reason.Canceled)
 				{
+					StatusCode = response?.StatusCode ?? null,
 					Exception = ex
 				};
 			}
@@ -391,6 +367,8 @@ namespace RdrLib
 				request?.Dispose();
 				response?.Dispose();
 			}
+
+			return dataResponse;
 		}
 
 		[System.Diagnostics.DebuggerStepThrough]
@@ -442,8 +420,6 @@ namespace RdrLib
 
 			string inProgressPath = GetExtension(path, "inprogress");
 
-			FileResponse? fileResponse = null;
-
 			HttpRequestMessage request = new HttpRequestMessage()
 			{
 				RequestUri = uri
@@ -452,6 +428,7 @@ namespace RdrLib
 			configureRequest?.Invoke(request);
 
 			HttpResponseMessage? response = null;
+			FileResponse? fileResponse = null;
 
 			int receiveBufferSize = 1024 * 1024; // 1024 * 1024 = 1 MiB
 			int saveBufferSize = 4096 * 16;
@@ -503,18 +480,17 @@ namespace RdrLib
 					StatusCode = response.StatusCode
 				};
 			}
-			catch (HttpRequestException httpException) when (httpException.InnerException is SocketException socketException)
-			{
-				fileResponse = new FileResponse(uri, path, Reason.SocketError)
-				{
-					StatusCode = response?.StatusCode ?? null,
-					Exception = httpException,
-					SocketError = socketException.SocketErrorCode
-				};
-			}
 			catch (HttpRequestException ex)
 			{
-				fileResponse = new FileResponse(uri, path, Reason.WebError)
+				fileResponse = new FileResponse(uri, path, Reason.Failed)
+				{
+					StatusCode = response?.StatusCode ?? null,
+					Exception = ex
+				};
+			}
+			catch (HttpIOException ex)
+			{
+				fileResponse = new FileResponse(uri, path, Reason.Failed)
 				{
 					StatusCode = response?.StatusCode ?? null,
 					Exception = ex
@@ -526,20 +502,15 @@ namespace RdrLib
 				// it might be thrown by other things as well
 				fileResponse = new FileResponse(uri, path, Reason.FileExists)
 				{
-					Exception = ex
-				};
-			}
-			catch (TaskCanceledException ex)
-			{
-				fileResponse = new FileResponse(uri, path, Reason.Canceled)
-				{
+					StatusCode = response?.StatusCode ?? null,
 					Exception = ex
 				};
 			}
 			catch (OperationCanceledException ex)
 			{
-				fileResponse = new FileResponse(uri, path, Reason.WebError)
+				fileResponse = new FileResponse(uri, path, Reason.Canceled)
 				{
+					StatusCode = response?.StatusCode ?? null,
 					Exception = ex
 				};
 			}
@@ -562,7 +533,6 @@ namespace RdrLib
 			string finalPath = fileResponse.Reason switch
 			{
 				Reason.Success => path,
-				Reason.WebError => GetExtension(path, "error"),
 				Reason.Canceled => GetExtension(path, "canceled"),
 				_ => GetExtension(path, "failed")
 			};
