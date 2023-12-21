@@ -16,22 +16,22 @@ namespace RdrLib.Helpers
 		{
 			return IsWithin(statusCode, 100, 200);
 		}
-		
+
 		public static bool IsSuccess(HttpStatusCode? statusCode)
 		{
 			return IsWithin(statusCode, 200, 300);
 		}
-		
+
 		public static bool IsRedirection(HttpStatusCode? statusCode)
 		{
 			return IsWithin(statusCode, 300, 400);
 		}
-		
+
 		public static bool IsClientError(HttpStatusCode? statusCode)
 		{
 			return IsWithin(statusCode, 400, 500);
 		}
-		
+
 		public static bool IsServerError(HttpStatusCode? statusCode)
 		{
 			return IsWithin(statusCode, 500, 600);
