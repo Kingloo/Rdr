@@ -253,6 +253,7 @@ namespace RdrLib
 						: httpRequestException.HttpRequestError.ToString(),
 					HttpIOException httpIOException => $"{nameof(HttpIOException)} ({httpIOException.HttpRequestError})",
 					SocketException socketException => $"{nameof(SocketException)} ({socketException.SocketErrorCode})",
+					TaskCanceledException taskCanceledException => null,
 					_ => ex.GetType().FullName ?? ex.GetType().Name
 				};
 
