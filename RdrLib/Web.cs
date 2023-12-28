@@ -1,12 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Http;
-using System.Net.Security;
-using System.Security.Authentication;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -189,56 +185,27 @@ namespace RdrLib
 	public static class Web
 #pragma warning restore CA1724
 	{
-		private static readonly SocketsHttpHandler handler = new SocketsHttpHandler
-		{
-			AllowAutoRedirect = true,
-			AutomaticDecompression = DecompressionMethods.All,
-			ConnectTimeout = TimeSpan.FromSeconds(10d),
-			MaxAutomaticRedirections = 5,
-			SslOptions = new SslClientAuthenticationOptions
-			{
-				AllowRenegotiation = false,
-				ApplicationProtocols = new List<SslApplicationProtocol>
-				{
-					SslApplicationProtocol.Http11,
-					SslApplicationProtocol.Http2
-				},
-				CertificateRevocationCheckMode = X509RevocationMode.Online,
-#pragma warning disable CA5398
-				EnabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13,
-#pragma warning restore CA5398
-				EncryptionPolicy = EncryptionPolicy.RequireEncryption
-			}
-		};
-
-		private static readonly HttpClient client = new HttpClient(handler, disposeHandler: true)
-		{
-			Timeout = TimeSpan.FromSeconds(10d)
-		};
-
-		public static void DisposeHttpClient()
-		{
-			client.Dispose();
-		}
+		[System.Diagnostics.DebuggerStepThrough]
+		public static ValueTask<StringResponse> DownloadStringAsync(HttpClient client, Uri uri)
+			=> DownloadStringAsyncInternal(client, uri, null, CancellationToken.None);
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static ValueTask<StringResponse> DownloadStringAsync(Uri uri)
-			=> DownloadStringAsyncInternal(uri, null, CancellationToken.None);
+		public static ValueTask<StringResponse> DownloadStringAsync(HttpClient client, Uri uri, CancellationToken cancellationToken)
+			=> DownloadStringAsyncInternal(client, uri, null, cancellationToken);
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static ValueTask<StringResponse> DownloadStringAsync(Uri uri, CancellationToken cancellationToken)
-			=> DownloadStringAsyncInternal(uri, null, cancellationToken);
+		public static ValueTask<StringResponse> DownloadStringAsync(HttpClient client, Uri uri, Action<HttpRequestMessage> configureRequest)
+			=> DownloadStringAsyncInternal(client, uri, configureRequest, CancellationToken.None);
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static ValueTask<StringResponse> DownloadStringAsync(Uri uri, Action<HttpRequestMessage> configureRequest)
-			=> DownloadStringAsyncInternal(uri, configureRequest, CancellationToken.None);
+		public static ValueTask<StringResponse> DownloadStringAsync(HttpClient client, Uri uri, Action<HttpRequestMessage> configureRequest, CancellationToken cancellationToken)
+			=> DownloadStringAsyncInternal(client, uri, configureRequest, cancellationToken);
 
-		[System.Diagnostics.DebuggerStepThrough]
-		public static ValueTask<StringResponse> DownloadStringAsync(Uri uri, Action<HttpRequestMessage> configureRequest, CancellationToken cancellationToken)
-			=> DownloadStringAsyncInternal(uri, configureRequest, cancellationToken);
-
-		private static async ValueTask<StringResponse> DownloadStringAsyncInternal(Uri uri, Action<HttpRequestMessage>? configureRequest, CancellationToken cancellationToken)
+		private static async ValueTask<StringResponse> DownloadStringAsyncInternal(HttpClient client, Uri uri, Action<HttpRequestMessage>? configureRequest, CancellationToken cancellationToken)
 		{
+			ArgumentNullException.ThrowIfNull(client);
+			ArgumentNullException.ThrowIfNull(uri);
+
 			HttpRequestMessage request = new HttpRequestMessage()
 			{
 				RequestUri = uri
@@ -297,23 +264,26 @@ namespace RdrLib
 		}
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static ValueTask<DataResponse> DownloadDataAsync(Uri uri)
-			=> DownloadDataAsyncInternal(uri, null, CancellationToken.None);
+		public static ValueTask<DataResponse> DownloadDataAsync(HttpClient client, Uri uri)
+			=> DownloadDataAsyncInternal(client, uri, null, CancellationToken.None);
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static ValueTask<DataResponse> DownloadDataAsync(Uri uri, CancellationToken cancellationToken)
-			=> DownloadDataAsyncInternal(uri, null, cancellationToken);
+		public static ValueTask<DataResponse> DownloadDataAsync(HttpClient client, Uri uri, CancellationToken cancellationToken)
+			=> DownloadDataAsyncInternal(client, uri, null, cancellationToken);
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static ValueTask<DataResponse> DownloadDataAsync(Uri uri, Action<HttpRequestMessage> configureRequest)
-			=> DownloadDataAsyncInternal(uri, configureRequest, CancellationToken.None);
+		public static ValueTask<DataResponse> DownloadDataAsync(HttpClient client, Uri uri, Action<HttpRequestMessage> configureRequest)
+			=> DownloadDataAsyncInternal(client, uri, configureRequest, CancellationToken.None);
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static ValueTask<DataResponse> DownloadDataAsync(Uri uri, Action<HttpRequestMessage> configureRequest, CancellationToken cancellationToken)
-			=> DownloadDataAsyncInternal(uri, configureRequest, cancellationToken);
+		public static ValueTask<DataResponse> DownloadDataAsync(HttpClient client, Uri uri, Action<HttpRequestMessage> configureRequest, CancellationToken cancellationToken)
+			=> DownloadDataAsyncInternal(client, uri, configureRequest, cancellationToken);
 
-		private static async ValueTask<DataResponse> DownloadDataAsyncInternal(Uri uri, Action<HttpRequestMessage>? configureRequest, CancellationToken cancellationToken)
+		private static async ValueTask<DataResponse> DownloadDataAsyncInternal(HttpClient client, Uri uri, Action<HttpRequestMessage>? configureRequest, CancellationToken cancellationToken)
 		{
+			ArgumentNullException.ThrowIfNull(client);
+			ArgumentNullException.ThrowIfNull(uri);
+
 			HttpRequestMessage request = new HttpRequestMessage()
 			{
 				RequestUri = uri
@@ -372,44 +342,46 @@ namespace RdrLib
 		}
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static Task<FileResponse> DownloadFileAsync(Uri uri, string path)
-			=> DownloadFileAsyncInternal(uri, path, null, null, CancellationToken.None);
+		public static Task<FileResponse> DownloadFileAsync(HttpClient client, Uri uri, string path)
+			=> DownloadFileAsyncInternal(client, uri, path, null, null, CancellationToken.None);
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static Task<FileResponse> DownloadFileAsync(Uri uri, string path, CancellationToken cancellationToken)
-			=> DownloadFileAsyncInternal(uri, path, null, null, cancellationToken);
+		public static Task<FileResponse> DownloadFileAsync(HttpClient client, Uri uri, string path, CancellationToken cancellationToken)
+			=> DownloadFileAsyncInternal(client, uri, path, null, null, cancellationToken);
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static Task<FileResponse> DownloadFileAsync(Uri uri, string path, Action<HttpRequestMessage> configureRequest)
-			=> DownloadFileAsyncInternal(uri, path, configureRequest, null, CancellationToken.None);
+		public static Task<FileResponse> DownloadFileAsync(HttpClient client, Uri uri, string path, Action<HttpRequestMessage> configureRequest)
+			=> DownloadFileAsyncInternal(client, uri, path, configureRequest, null, CancellationToken.None);
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static Task<FileResponse> DownloadFileAsync(Uri uri, string path, Action<HttpRequestMessage> configureRequest, CancellationToken cancellationToken)
-			=> DownloadFileAsyncInternal(uri, path, configureRequest, null, cancellationToken);
+		public static Task<FileResponse> DownloadFileAsync(HttpClient client, Uri uri, string path, Action<HttpRequestMessage> configureRequest, CancellationToken cancellationToken)
+			=> DownloadFileAsyncInternal(client, uri, path, configureRequest, null, cancellationToken);
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static Task<FileResponse> DownloadFileAsync(Uri uri, string path, IProgress<FileProgress> progress)
-			=> DownloadFileAsyncInternal(uri, path, null, progress, CancellationToken.None);
+		public static Task<FileResponse> DownloadFileAsync(HttpClient client, Uri uri, string path, IProgress<FileProgress> progress)
+			=> DownloadFileAsyncInternal(client, uri, path, null, progress, CancellationToken.None);
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static Task<FileResponse> DownloadFileAsync(Uri uri, string path, IProgress<FileProgress> progress, CancellationToken cancellationToken)
-			=> DownloadFileAsyncInternal(uri, path, null, progress, cancellationToken);
+		public static Task<FileResponse> DownloadFileAsync(HttpClient client, Uri uri, string path, IProgress<FileProgress> progress, CancellationToken cancellationToken)
+			=> DownloadFileAsyncInternal(client, uri, path, null, progress, cancellationToken);
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static Task<FileResponse> DownloadFileAsync(Uri uri, string path, Action<HttpRequestMessage> configureRequest, IProgress<FileProgress> progress)
-			=> DownloadFileAsyncInternal(uri, path, configureRequest, progress, CancellationToken.None);
+		public static Task<FileResponse> DownloadFileAsync(HttpClient client, Uri uri, string path, Action<HttpRequestMessage> configureRequest, IProgress<FileProgress> progress)
+			=> DownloadFileAsyncInternal(client, uri, path, configureRequest, progress, CancellationToken.None);
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public static Task<FileResponse> DownloadFileAsync(Uri uri, string path, Action<HttpRequestMessage> configureRequest, IProgress<FileProgress> progress, CancellationToken cancellationToken)
-			=> DownloadFileAsyncInternal(uri, path, configureRequest, progress, cancellationToken);
+		public static Task<FileResponse> DownloadFileAsync(HttpClient client, Uri uri, string path, Action<HttpRequestMessage> configureRequest, IProgress<FileProgress> progress, CancellationToken cancellationToken)
+			=> DownloadFileAsyncInternal(client, uri, path, configureRequest, progress, cancellationToken);
 
 		private static async Task<FileResponse> DownloadFileAsyncInternal(
+			HttpClient client,
 			Uri uri,
 			string path,
 			Action<HttpRequestMessage>? configureRequest,
 			IProgress<FileProgress>? progress,
 			CancellationToken cancellationToken)
 		{
+			ArgumentNullException.ThrowIfNull(client);
 			ArgumentNullException.ThrowIfNull(uri);
 			ArgumentNullException.ThrowIfNull(path);
 
