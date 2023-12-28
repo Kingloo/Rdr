@@ -24,14 +24,20 @@ namespace RdrLib
 		private readonly ObservableCollection<Feed> feeds = new ObservableCollection<Feed>();
 		public IReadOnlyCollection<Feed> Feeds { get => feeds; }
 
+		private readonly IHttpClientFactory httpClientFactory;
 		private readonly IOptionsMonitor<RdrOptions> rdrOptionsMonitor;
 		private readonly ILogger<RdrService> logger;
 
-		public RdrService(IOptionsMonitor<RdrOptions> rdrOptionsMonitor, ILogger<RdrService> logger)
+		public RdrService(
+			IHttpClientFactory httpClientFactory,
+			IOptionsMonitor<RdrOptions> rdrOptionsMonitor,
+			ILogger<RdrService> logger)
 		{
+			ArgumentNullException.ThrowIfNull(httpClientFactory);
 			ArgumentNullException.ThrowIfNull(rdrOptionsMonitor);
 			ArgumentNullException.ThrowIfNull(logger);
 
+			this.httpClientFactory = httpClientFactory;
 			this.rdrOptionsMonitor = rdrOptionsMonitor;
 			this.logger = logger;
 		}
@@ -191,7 +197,12 @@ namespace RdrLib
 				}
 			}
 
-			StringResponse response = await Web.DownloadStringAsync(feed.Link, configureRequest, cancellationToken).ConfigureAwait(false);
+			StringResponse response;
+
+			using (HttpClient client = httpClientFactory.CreateClient())
+			{
+				response = await Web.DownloadStringAsync(client, feed.Link, configureRequest, cancellationToken).ConfigureAwait(false);
+			}
 
 			if (response.Reason != Reason.Success)
 			{
@@ -241,7 +252,6 @@ namespace RdrLib
 			{
 				Exception toLog = ex switch
 				{
-					OperationCanceledException operationCanceledException => operationCanceledException.InnerException ?? ex,
 					HttpRequestException httpRequestException => httpRequestException.InnerException ?? httpRequestException,
 					_ => ex
 				};
@@ -253,7 +263,7 @@ namespace RdrLib
 						: httpRequestException.HttpRequestError.ToString(),
 					HttpIOException httpIOException => $"{nameof(HttpIOException)} ({httpIOException.HttpRequestError})",
 					SocketException socketException => $"{nameof(SocketException)} ({socketException.SocketErrorCode})",
-					TaskCanceledException taskCanceledException => null,
+					OperationCanceledException operationCanceledException => null,
 					_ => ex.GetType().FullName ?? ex.GetType().Name
 				};
 
@@ -290,16 +300,18 @@ namespace RdrLib
 		public Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress> progress, CancellationToken cancellationToken)
 			=> DownloadEnclosureAsyncInternal(enclosure, path, progress, cancellationToken);
 
-		private static Task<FileResponse> DownloadEnclosureAsyncInternal(Enclosure enclosure, string path, IProgress<FileProgress>? progress, CancellationToken cancellationToken)
+		private async Task<FileResponse> DownloadEnclosureAsyncInternal(Enclosure enclosure, string path, IProgress<FileProgress>? progress, CancellationToken cancellationToken)
 		{
 			ArgumentNullException.ThrowIfNull(enclosure);
 			ArgumentNullException.ThrowIfNull(path);
 
-			return (progress is not null) switch
-			{
-				true => Web.DownloadFileAsync(enclosure.Link, path, progress, cancellationToken),
-				false => Web.DownloadFileAsync(enclosure.Link, path, cancellationToken)
-			};
+			using HttpClient client = httpClientFactory.CreateClient();
+
+			Task<FileResponse> downloadEnclosureTask = progress is not null
+				? Web.DownloadFileAsync(client, enclosure.Link, path, progress, cancellationToken)
+				: Web.DownloadFileAsync(client, enclosure.Link, path, cancellationToken);
+
+			return await downloadEnclosureTask.ConfigureAwait(false);
 		}
 	}
 
