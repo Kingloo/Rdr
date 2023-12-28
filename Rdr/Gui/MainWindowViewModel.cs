@@ -618,8 +618,6 @@ namespace Rdr.Gui
 
 			LogWindowExit(logger, window.Name);
 
-			Web.DisposeHttpClient();
-
 			window.Close();
 		}
 	}
