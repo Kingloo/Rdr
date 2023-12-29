@@ -1,5 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net.Http;
+using System.Net.Security;
+using System.Security.Authentication;
 using System.Windows;
 using System.Windows.Threading;
 using Microsoft.Extensions.Configuration;
@@ -92,9 +96,44 @@ namespace Rdr.Gui
 
 			services.Configure<RdrOptions>(context.Configuration.GetRequiredSection("RdrOptions"));
 
+			AddAndConfigureHttpClient(services);
+
 			services.AddTransient<IRdrService, RdrService>();
 			services.AddTransient<IMainWindowViewModel, MainWindowViewModel>();
 			services.AddTransient<MainWindow>();
+		}
+
+		private static void AddAndConfigureHttpClient(IServiceCollection services)
+		{
+			services.AddHttpClient<RdrService>()
+				.ConfigureHttpClient(static (HttpClient client) =>
+				{
+					client.Timeout = TimeSpan.FromSeconds(30d);
+				})
+				.ConfigurePrimaryHttpMessageHandler(static () =>
+				{
+					return new SocketsHttpHandler
+					{
+						AllowAutoRedirect = true,
+						AutomaticDecompression = System.Net.DecompressionMethods.All,
+						ConnectTimeout = TimeSpan.FromSeconds(10d),
+						MaxAutomaticRedirections = 5,
+						SslOptions = new SslClientAuthenticationOptions
+						{
+							AllowRenegotiation = false,
+							ApplicationProtocols = new List<SslApplicationProtocol>
+							{
+								SslApplicationProtocol.Http11,
+								SslApplicationProtocol.Http2
+							},
+							CertificateRevocationCheckMode = System.Security.Cryptography.X509Certificates.X509RevocationMode.Online,
+#pragma warning disable CA5398 // these two choices are never wrong
+							EnabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13,
+#pragma warning restore CA5398
+							EncryptionPolicy = EncryptionPolicy.RequireEncryption
+						}
+					};
+				});
 		}
 
 		private void Application_Startup(object sender, StartupEventArgs e)
