@@ -331,7 +331,7 @@ namespace RdrLib
 		[LoggerMessage(FeedUpdateStartedId, LogLevel.Debug, "updating {FeedName} ({FeedLink})")]
 		internal static partial void LogFeedUpdateStarted(ILogger<RdrService> logger, string feedName, string feedLink);
 
-		[LoggerMessage(FeedUpdateFailedId, LogLevel.Warning, "update failed: {Error} for '{Name}'")]
+		[LoggerMessage(FeedUpdateFailedId, LogLevel.Warning, "{Error} for '{Name}'")]
 		internal static partial void LogFeedUpdateFailed(ILogger<RdrService> logger, string error, string name);
 
 		[LoggerMessage(FeedUpdateSucceededId, LogLevel.Debug, "updated '{FeedName}' ({FeedLink})")]
