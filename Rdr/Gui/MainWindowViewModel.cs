@@ -471,17 +471,17 @@ namespace Rdr.Gui
 			enclosure.IsDownloading = true;
 			activeDownloads++;
 
-			LogDownloadStarted(logger, enclosure.Link.AbsoluteUri, fullPath);
+			LogDownloadStarted(logger, enclosure.FeedName, enclosure.Link.AbsoluteUri, fullPath);
 
 			FileResponse response = await rdrService.DownloadEnclosureAsync(enclosure, fullPath, progress).ConfigureAwait(true);
 
 			if (response.Reason == Reason.Success)
 			{
-				LogDownloadFinished(logger, enclosure.Link.AbsoluteUri, fullPath);
+				LogDownloadFinished(logger, enclosure.FeedName, enclosure.Link.AbsoluteUri, fullPath);
 			}
 			else
 			{
-				LogDownloadFailed(logger, response.Reason, response.StatusCode, enclosure.Link.AbsoluteUri);
+				LogDownloadFailed(logger, response.Reason, response.StatusCode, enclosure.FeedName, enclosure.Link.AbsoluteUri);
 			}
 
 			enclosure.IsDownloading = false;
@@ -666,14 +666,14 @@ namespace Rdr.Gui
 		[LoggerMessage(DownloadProgressId, LogLevel.Trace, "progress of '{Link}' to '{LocalPath}': {Message}")]
 		internal static partial void LogDownloadProgress(ILogger<MainWindowViewModel> logger, string link, string localPath, string message);
 
-		[LoggerMessage(DownloadStartedId, LogLevel.Debug, "started downloading '{Link}' to '{LocalPath}'")]
-		internal static partial void LogDownloadStarted(ILogger<MainWindowViewModel> logger, string link, string localPath);
+		[LoggerMessage(DownloadStartedId, LogLevel.Debug, "started downloading for '{FeedName}' from '{Link}' to '{LocalPath}'")]
+		internal static partial void LogDownloadStarted(ILogger<MainWindowViewModel> logger, string feedName, string link, string localPath);
 
-		[LoggerMessage(DownloadFinishedId, LogLevel.Information, "downloaded '{Link}' to '{LocalPath}'")]
-		internal static partial void LogDownloadFinished(ILogger<MainWindowViewModel> logger, string link, string localPath);
+		[LoggerMessage(DownloadFinishedId, LogLevel.Information, "downloaded for '{FeedName}' from '{Link}' to '{LocalPath}'")]
+		internal static partial void LogDownloadFinished(ILogger<MainWindowViewModel> logger, string feedName, string link, string localPath);
 
-		[LoggerMessage(DownloadFailedId, LogLevel.Error, "download failed: {Reason} - {StatusCode} for '{Link}'")]
-		internal static partial void LogDownloadFailed(ILogger<MainWindowViewModel> logger, Reason reason, HttpStatusCode? statusCode, string link);
+		[LoggerMessage(DownloadFailedId, LogLevel.Error, "download failed: {Reason} - {StatusCode} for '{FeedName}' from '{Link}'")]
+		internal static partial void LogDownloadFailed(ILogger<MainWindowViewModel> logger, Reason reason, HttpStatusCode? statusCode, string feedName, string link);
 
 		[LoggerMessage(WindowExitId, LogLevel.Debug, "window exit ('{WindowName}')")]
 		internal static partial void LogWindowExit(ILogger<MainWindowViewModel> logger, string windowName);

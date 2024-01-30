@@ -12,7 +12,7 @@ namespace RdrLib.Helpers
 		{
 			if (GetLink(element) is Uri uri)
 			{
-				Int64 size = GetSize(element);
+				Int64? size = GetSize(element);
 
 				return new Enclosure(uri, size);
 			}
@@ -22,7 +22,7 @@ namespace RdrLib.Helpers
 			}
 		}
 
-		internal static Uri? GetLink(XElement element)
+		private static Uri? GetLink(XElement element)
 		{
 			IEnumerable<XAttribute> linkAttributes = element
 				.Attributes()
@@ -39,7 +39,7 @@ namespace RdrLib.Helpers
 			return null;
 		}
 
-		internal static Int64 GetSize(XElement element)
+		private static Int64? GetSize(XElement element)
 		{
 			IEnumerable<XAttribute> lengthAttributes = element
 				.Attributes()
@@ -53,7 +53,7 @@ namespace RdrLib.Helpers
 				}
 			}
 
-			return -1;
+			return null;
 		}
 	}
 }

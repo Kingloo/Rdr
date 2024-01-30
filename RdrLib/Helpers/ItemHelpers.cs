@@ -27,6 +27,11 @@ namespace RdrLib.Helpers
 				DateTimeOffset published = GetPublished(element);
 				Enclosure? enclosure = GetEnclosure(element);
 
+				if (enclosure is not null)
+				{
+					enclosure.FeedName = feedTitle;
+				}
+
 				Item item = new Item(feedTitle)
 				{
 					UniqueId = uniqueId,
