@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Net;
 
 namespace RdrLib.Helpers
@@ -9,7 +10,13 @@ namespace RdrLib.Helpers
 		{
 			ArgumentNullException.ThrowIfNull(statusCode);
 
-			return $"{(int)statusCode} {statusCode}";
+			return Int32.TryParse(statusCode.ToString(), out int statusCodeNumericValue)
+				? statusCodeNumericValue.ToString(CultureInfo.InvariantCulture)
+				: $"{(int)statusCode} {statusCode}";
+
+			// not all HttpStatusCode enum variants have a 'words' equivalent
+			// e.g. 522 doesn't have a wordy name, only a number
+			// so return just "522" instead of "522 522"
 		}
 
 		public static bool IsInformational(HttpStatusCode? statusCode)
