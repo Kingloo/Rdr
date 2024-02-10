@@ -16,6 +16,7 @@ namespace Rdr.Gui
 		public DelegateCommand OpenFeedsFileCommand { get; }
 		public DelegateCommandAsync ReloadCommand { get; }
 		public DelegateCommandAsync SeeUnreadCommand { get; }
+		public DelegateCommandAsync<SeeRecentAmount> SeeRecentCommand { get; }
 		public DelegateCommandAsync SeeAllCommand { get; }
 		public DelegateCommandAsync<Feed?> ViewFeedItemsCommand { get; }
 		public DelegateCommandAsync<Enclosure> DownloadEnclosureCommand { get; }

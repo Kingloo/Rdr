@@ -108,6 +108,17 @@ namespace Rdr.Gui
 			}
 		}
 
+		private DelegateCommandAsync<SeeRecentAmount>? seeRecentCommand = null;
+		public DelegateCommandAsync<SeeRecentAmount> SeeRecentCommand
+		{
+			get
+			{
+				seeRecentCommand ??= new DelegateCommandAsync<SeeRecentAmount>(SeeRecentAsync, CanExecuteAsync);
+
+				return seeRecentCommand;
+			}
+		}
+
 		private DelegateCommandAsync? seeAllCommand = null;
 		public DelegateCommandAsync SeeAllCommand
 		{
@@ -161,16 +172,17 @@ namespace Rdr.Gui
 			{
 				SetProperty(ref activity, value, nameof(Activity));
 
-				RaiseCanExecuteChangedOnAsyncCommands();
+				RaiseCanExecuteChangedForAsyncCommands();
 			}
 		}
 
-		private void RaiseCanExecuteChangedOnAsyncCommands()
+		private void RaiseCanExecuteChangedForAsyncCommands()
 		{
 			RefreshAllCommand.RaiseCanExecuteChanged();
 			RefreshCommand.RaiseCanExecuteChanged();
 			ReloadCommand.RaiseCanExecuteChanged();
 			SeeUnreadCommand.RaiseCanExecuteChanged();
+			SeeRecentCommand.RaiseCanExecuteChanged();
 			SeeAllCommand.RaiseCanExecuteChanged();
 			ViewFeedItemsCommand.RaiseCanExecuteChanged();
 		}
@@ -544,18 +556,20 @@ namespace Rdr.Gui
 			return MoveUnreadItemsAsync(clearFirst: true);
 		}
 
-		private Task SeeAllAsync()
+		private Task SeeRecentAsync(SeeRecentAmount seeRecentAmount) => SeeSomeAsync(seeRecentAmount.Amount);
+
+		private Task SeeAllAsync() => SeeSomeAsync(Int32.MaxValue);
+
+		private Task SeeSomeAsync(int count)
 		{
 			selectedFeed = null;
-
-			viewedItems.Clear();
 
 			var allItems = from feed in rdrService.Feeds
 						   from item in feed.Items
 						   orderby item.Published descending
 						   select item;
 
-			return MoveItemsAsync(allItems, clearFirst: true);
+			return MoveItemsAsync(allItems.Take(count), clearFirst: true);
 		}
 
 		private Task MoveUnreadItemsAsync(bool clearFirst)
@@ -573,6 +587,8 @@ namespace Rdr.Gui
 
 		private async Task MoveItemsAsync(IEnumerable<Item> items, bool clearFirst)
 		{
+			Activity = true;
+
 			if (clearFirst)
 			{
 				viewedItems.Clear();
@@ -590,6 +606,8 @@ namespace Rdr.Gui
 
 				await Dispatcher.Yield(DispatcherPriority.Background);
 			}
+
+			Activity = false;
 		}
 
 		private void ShowLastUpdatedMessage()

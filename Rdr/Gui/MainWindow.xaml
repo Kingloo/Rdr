@@ -2,6 +2,7 @@
         xml:lang="en-GB"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
         xmlns:gui="clr-namespace:Rdr.Gui"
         xmlns:converters="clr-namespace:Rdr.Gui.Converters"
@@ -243,8 +244,9 @@
 
 			<Grid Grid.Column="0">
 				<Grid.RowDefinitions>
-					<RowDefinition Height="50" />
-					<RowDefinition Height="50" />
+					<RowDefinition Height="45" />
+					<RowDefinition Height="45" />
+					<RowDefinition Height="45" />
 					<RowDefinition Height="*" />
 				</Grid.RowDefinitions>
 
@@ -253,10 +255,23 @@
                         Command="{Binding Path=SeeUnreadCommand}" />
 
 				<Button Grid.Row="1"
+						Content="Recent"
+						Command="{Binding Path=SeeRecentCommand}">
+					<Button.CommandParameter>
+						<gui:SeeRecentAmount>
+							<gui:SeeRecentAmount.Amount>
+								<sys:Int32>100</sys:Int32>
+							</gui:SeeRecentAmount.Amount>
+						</gui:SeeRecentAmount>
+					</Button.CommandParameter>
+				</Button>
+
+				<Button Grid.Row="2"
                         Content="All"
                         Command="{Binding Path=SeeAllCommand}" />
 
-				<ItemsControl Grid.Row="2"
+				<ItemsControl Grid.Row="3"
+							  Margin="0,10,0,0"
                               ItemsSource="{Binding Source={StaticResource sortedFeeds}}">
 					<ItemsControl.ItemsPanel>
 						<ItemsPanelTemplate>
@@ -267,7 +282,7 @@
 			</Grid>
 
 			<ItemsControl Grid.Column="1"
-                          ItemsSource="{Binding Source={StaticResource sortedItems}}" >
+						  ItemsSource="{Binding Source={StaticResource sortedItems}}" >
 				<ItemsControl.ItemsPanel>
 					<ItemsPanelTemplate>
 						<VirtualizingStackPanel Margin="10,0,10,0" />
