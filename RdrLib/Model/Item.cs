@@ -267,7 +267,7 @@ namespace RdrLib.Model
 			sb.AppendLine(Link?.AbsoluteUri ?? "no link");
 			sb.AppendLine(Name);
 			sb.AppendLine(Published.ToString(CultureInfo.CurrentCulture));
-			sb.AppendLine(Unread.ToString());
+			sb.AppendLine(Unread ? "unread" : "read");
 			sb.AppendLine(Enclosure?.ToString() ?? "no enclosure");
 
 			return sb.ToString();
