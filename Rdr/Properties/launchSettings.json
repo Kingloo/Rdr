@@ -1,0 +1,16 @@
+{
+  "profiles": {
+    "Rdr (prod)": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ENVIRONMENT": "Production"
+      }
+    },
+    "Rdr (dev)": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ENVIRONMENT": "Development"
+      }
+    }
+  }
+}
