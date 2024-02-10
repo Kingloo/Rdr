@@ -1,4 +1,6 @@
 using System;
+using System.Globalization;
+using System.Text;
 
 namespace RdrLib.Model
 {
@@ -28,6 +30,17 @@ namespace RdrLib.Model
 
 			Link = uri;
 			Size = size;
+		}
+
+		public override string ToString()
+		{
+			StringBuilder sb = new StringBuilder();
+
+			sb.AppendLine(FeedName);
+			sb.AppendLine(Link?.AbsoluteUri ?? "no link");
+			sb.AppendLine(CultureInfo.CurrentCulture, $"size: {Size}");
+
+			return sb.ToString();
 		}
 	}
 }
