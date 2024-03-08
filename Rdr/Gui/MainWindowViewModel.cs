@@ -124,7 +124,7 @@ namespace Rdr.Gui
 		{
 			get
 			{
-				seeRecentCommand ??= new DelegateCommandAsync<int>(SeeRecentAsync, CanExecuteAsync);
+				seeRecentCommand ??= new DelegateCommandAsync<int>(SeeRecentAsync, (_) => !Activity);
 
 				return seeRecentCommand;
 			}
@@ -173,11 +173,6 @@ namespace Rdr.Gui
 				Enclosure enclosure => !enclosure.IsDownloading,
 				_ => !Activity
 			};
-		}
-
-		private bool CanExecuteAsync(int _)
-		{
-			return !Activity;
 		}
 
 		private bool activity = false;
