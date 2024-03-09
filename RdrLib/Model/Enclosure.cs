@@ -28,6 +28,11 @@ namespace RdrLib.Model
 		{
 			ArgumentNullException.ThrowIfNull(uri);
 
+			if (size.HasValue)
+			{
+				ArgumentOutOfRangeException.ThrowIfNegative<Int64>(size.Value);
+			}
+
 			Link = uri;
 			Size = size;
 		}
