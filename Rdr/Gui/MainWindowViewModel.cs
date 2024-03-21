@@ -108,12 +108,23 @@ namespace Rdr.Gui
 			}
 		}
 
-		private DelegateCommandAsync<SeeRecentAmount>? seeRecentCommand = null;
-		public DelegateCommandAsync<SeeRecentAmount> SeeRecentCommand
+		// private DelegateCommandAsync<SeeRecentAmount>? seeRecentCommand = null;
+		// public DelegateCommandAsync<SeeRecentAmount> SeeRecentCommand
+		// {
+		// 	get
+		// 	{
+		// 		seeRecentCommand ??= new DelegateCommandAsync<SeeRecentAmount>(SeeRecentAsync, CanExecuteAsync);
+
+		// 		return seeRecentCommand;
+		// 	}
+		// }
+
+		private DelegateCommandAsync<int>? seeRecentCommand = null;
+		public DelegateCommandAsync<int> SeeRecentCommand
 		{
 			get
 			{
-				seeRecentCommand ??= new DelegateCommandAsync<SeeRecentAmount>(SeeRecentAsync, CanExecuteAsync);
+				seeRecentCommand ??= new DelegateCommandAsync<int>(SeeRecentAsync, (_) => !Activity);
 
 				return seeRecentCommand;
 			}
@@ -556,7 +567,8 @@ namespace Rdr.Gui
 			return MoveUnreadItemsAsync(clearFirst: true);
 		}
 
-		private Task SeeRecentAsync(SeeRecentAmount seeRecentAmount) => SeeSomeAsync(seeRecentAmount.Amount);
+		// private Task SeeRecentAsync(SeeRecentAmount seeRecentAmount) => SeeSomeAsync(seeRecentAmount.Amount);
+		private Task SeeRecentAsync(int recentAmount) => SeeSomeAsync(recentAmount);
 
 		private Task SeeAllAsync() => SeeSomeAsync(Int32.MaxValue);
 

@@ -49,10 +49,10 @@ namespace Rdr.Common
 			=> _canExecute(parameter);
 	}
 
-	public class DelegateCommand<T> : Command where T : class?
+	public class DelegateCommand<T> : Command
 	{
 		private readonly Action<T> _execute;
-		private readonly Predicate<T?> _canExecute;
+		private readonly Predicate<T> _canExecute;
 
 		public DelegateCommand(Action<T> execute)
 		{
@@ -62,7 +62,7 @@ namespace Rdr.Common
 			_canExecute = (_) => true;
 		}
 
-		public DelegateCommand(Action<T> execute, Predicate<T?> canExecute)
+		public DelegateCommand(Action<T> execute, Predicate<T> canExecute)
 		{
 			ArgumentNullException.ThrowIfNull(execute);
 			ArgumentNullException.ThrowIfNull(canExecute);
@@ -80,11 +80,7 @@ namespace Rdr.Common
 
 		public override bool CanExecute(object? parameter)
 		{
-			return (parameter is null) switch
-			{
-				true => _canExecute(null),
-				false => _canExecute((T)parameter)
-			};
+			return parameter is null || _canExecute((T)parameter);
 		}
 	}
 
@@ -132,7 +128,7 @@ namespace Rdr.Common
 			=> !_isExecuting && _canExecute(parameter);
 	}
 
-	public class DelegateCommandAsync<T> : Command where T : class?
+	public class DelegateCommandAsync<T> : Command
 	{
 		private readonly Func<T, Task> _executeAsync;
 		private readonly Predicate<T?> _canExecute;
@@ -175,15 +171,7 @@ namespace Rdr.Common
 
 		public override bool CanExecute(object? parameter)
 		{
-			return _isExecuting switch
-			{
-				true => false,
-				false => (parameter is null) switch
-				{
-					true => _canExecute(null),
-					false => _canExecute((T)parameter)
-				}
-			};
+			return !_isExecuting && (parameter is null || _canExecute((T)parameter));
 		}
 	}
 }

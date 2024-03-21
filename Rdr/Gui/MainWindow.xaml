@@ -254,7 +254,7 @@
                         Content="Unread"
                         Command="{Binding Path=SeeUnreadCommand}" />
 
-				<Button Grid.Row="1"
+				<!-- <Button Grid.Row="1"
 						Content="Recent"
 						Command="{Binding Path=SeeRecentCommand}">
 					<Button.CommandParameter>
@@ -263,6 +263,14 @@
 								<sys:Int32>100</sys:Int32>
 							</gui:SeeRecentAmount.Amount>
 						</gui:SeeRecentAmount>
+					</Button.CommandParameter>
+				</Button> -->
+
+				<Button Grid.Row="1"
+						Content="Recent"
+						Command="{Binding Path=SeeRecentCommand}">
+					<Button.CommandParameter>
+						<sys:Int32>100</sys:Int32>
 					</Button.CommandParameter>
 				</Button>
 
