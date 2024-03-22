@@ -204,6 +204,15 @@ namespace RdrLib
 				response = await Web.DownloadStringAsync(client, feed.Link, configureRequest, cancellationToken).ConfigureAwait(false);
 			}
 
+			if (response.Reason == Reason.ETagMatch)
+			{
+				feed.Status = FeedStatus.Ok;
+
+				LogETagMatch(logger, feed.Name, feed.Link.AbsoluteUri);
+
+				return;
+			}
+
 			if (response.Reason != Reason.Success)
 			{
 				feed.Status = response.StatusCode switch
@@ -336,6 +345,9 @@ namespace RdrLib
 
 		[LoggerMessage(FeedUpdateSucceededId, LogLevel.Debug, "updated '{FeedName}' ({FeedLink})")]
 		internal static partial void LogFeedUpdateSucceeded(ILogger<RdrService> logger, string feedName, string feedLink);
+		
+		[LoggerMessage(ETagMatchId, LogLevel.Trace, "etag match for '{FeedName}' ('{FeedLink}')")]
+		internal static partial void LogETagMatch(ILogger<RdrService> logger, string feedName, string feedLink);
 
 		[LoggerMessage(MarkAsReadId, LogLevel.Trace, "marked item as read: '{FeedName}'->'{ItemName}'")]
 		internal static partial void LogMarkAsRead(ILogger<RdrService> logger, string feedName, string itemName);

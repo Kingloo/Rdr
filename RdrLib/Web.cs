@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Net;
@@ -6,6 +8,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using RdrLib.Exceptions;
 
 namespace RdrLib
 {
@@ -13,6 +16,7 @@ namespace RdrLib
 	{
 		None,
 		Success,
+		ETagMatch,
 		Failed,
 		FileExists,
 		Canceled,
@@ -222,6 +226,24 @@ namespace RdrLib
 
 				response.EnsureSuccessStatusCode();
 
+				if (DoesResponseHaveETag(response, out ETag? currentEtag))
+				{
+					if (ETagCache.ETags.TryGetValue(uri, out ETag? _))
+					{
+						if (ETagCache.ETags.TryUpdate(uri, currentEtag, currentEtag) == false)
+						{
+							return new StringResponse(uri, Reason.ETagMatch);
+						}
+					}
+					else
+					{
+						if (!ETagCache.ETags.TryAdd(uri, currentEtag))
+						{
+							throw new ETagException($"failed to add ETag '{currentEtag.Value}'");
+						}
+					}
+				}
+
 				string text = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
 				stringResponse = new StringResponse(uri, Reason.Success)
@@ -261,6 +283,23 @@ namespace RdrLib
 			}
 
 			return stringResponse;
+		}
+
+		private static bool DoesResponseHaveETag(HttpResponseMessage response, [NotNullWhen(true)] out ETag? eTag)
+		{
+			if (response.Headers?.ETag?.Tag is string eTagValue)
+			{
+				if (!String.IsNullOrEmpty(eTagValue))
+				{
+					eTag = new ETag(eTagValue);
+
+					return true;
+				}
+			}
+			
+			eTag = null;
+
+			return false;
 		}
 
 		[System.Diagnostics.DebuggerStepThrough]
@@ -537,5 +576,12 @@ namespace RdrLib
 
 			return $"{path}{Guid.NewGuid()}";
 		}
+	}
+
+	internal sealed record ETag(string Value);
+
+	internal static class ETagCache
+	{
+		internal static readonly ConcurrentDictionary<Uri, ETag> ETags = new ConcurrentDictionary<Uri, ETag>();
 	}
 }
