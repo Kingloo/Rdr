@@ -228,11 +228,15 @@ namespace RdrLib
 
 				if (DoesResponseHaveETag(response, out ETag? currentEtag))
 				{
-					if (ETagCache.ETags.TryGetValue(uri, out ETag? _))
+					if (ETagCache.ETags.TryGetValue(uri, out ETag? retrievedETag))
 					{
-						if (ETagCache.ETags.TryUpdate(uri, currentEtag, currentEtag) == false)
+						if (retrievedETag == currentEtag)
 						{
 							return new StringResponse(uri, Reason.ETagMatch);
+						}
+						else
+						{
+							ETagCache.ETags.TryUpdate(uri, currentEtag, retrievedETag);
 						}
 					}
 					else
