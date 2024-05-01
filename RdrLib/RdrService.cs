@@ -186,6 +186,8 @@ namespace RdrLib
 
 			void configureRequest(HttpRequestMessage request)
 			{
+				request.Version = HttpVersion.Version20;
+
 				string userAgentHeaderValue = rdrOptionsMonitor.CurrentValue.CustomUserAgent;
 
 				if (!request.Headers.UserAgent.TryParseAdd(userAgentHeaderValue))
