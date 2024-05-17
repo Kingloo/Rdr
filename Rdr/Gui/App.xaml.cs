@@ -105,7 +105,7 @@ namespace Rdr.Gui
 
 		private static void AddAndConfigureHttpClient(IServiceCollection services)
 		{
-			services.AddHttpClient<RdrService>()
+			services.AddHttpClient("RdrService")
 				.ConfigureHttpClient(static (HttpClient client) =>
 				{
 					client.Timeout = TimeSpan.FromSeconds(30d);
@@ -133,7 +133,8 @@ namespace Rdr.Gui
 							EncryptionPolicy = EncryptionPolicy.RequireEncryption
 						}
 					};
-				});
+				})
+				.AddStandardResilienceHandler();
 		}
 
 		private void Application_Startup(object sender, StartupEventArgs e)

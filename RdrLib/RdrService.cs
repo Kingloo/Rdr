@@ -201,7 +201,7 @@ namespace RdrLib
 
 			StringResponse response;
 
-			using (HttpClient client = httpClientFactory.CreateClient())
+			using (HttpClient client = httpClientFactory.CreateClient("RdrService"))
 			{
 				response = await Web.DownloadStringAsync(client, feed.Link, configureRequest, cancellationToken).ConfigureAwait(false);
 			}
