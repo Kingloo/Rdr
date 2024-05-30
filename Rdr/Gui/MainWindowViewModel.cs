@@ -699,7 +699,7 @@ namespace Rdr.Gui
 		[LoggerMessage(DownloadStartedId, LogLevel.Debug, "started downloading for '{FeedName}' from '{Link}' to '{LocalPath}'")]
 		internal static partial void LogDownloadStarted(ILogger<MainWindowViewModel> logger, string feedName, string link, string localPath);
 
-		[LoggerMessage(DownloadFinishedId, LogLevel.Information, "downloaded for '{FeedName}' from '{Link}' to '{LocalPath}'")]
+		[LoggerMessage(DownloadFinishedId, LogLevel.Information, "downloaded '{FeedName}' from '{Link}' to '{LocalPath}'")]
 		internal static partial void LogDownloadFinished(ILogger<MainWindowViewModel> logger, string feedName, string link, string localPath);
 
 		[LoggerMessage(DownloadFailedId, LogLevel.Error, "download failed: {Reason} - {StatusCode} for '{FeedName}' from '{Link}'")]
