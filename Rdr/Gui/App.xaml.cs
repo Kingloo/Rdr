@@ -9,6 +9,7 @@ using System.Windows.Threading;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Logging;
 using FileLogger;
 using RdrLib;
@@ -134,7 +135,15 @@ namespace Rdr.Gui
 						}
 					};
 				})
-				.AddStandardResilienceHandler();
+				.AddStandardResilienceHandler(static (HttpStandardResilienceOptions httpStandardResilienceOptions) =>
+				{
+					httpStandardResilienceOptions.Retry = new HttpRetryStrategyOptions
+					{
+						BackoffType = Polly.DelayBackoffType.Constant,
+						Delay = TimeSpan.FromSeconds(30d),
+						MaxRetryAttempts = 5
+					};
+				});
 		}
 
 		private void Application_Startup(object sender, StartupEventArgs e)
@@ -168,7 +177,13 @@ namespace Rdr.Gui
 		{
 			if (e.Exception is Exception ex)
 			{
-				LogDispatcherUnhandledException(logger, ex.GetType()?.FullName ?? "unknown type");
+				string exceptionType = ex.GetType()?.FullName ?? "unknown exception type";
+				
+				string innerExceptionType = ex.InnerException is Exception innerEx
+					? innerEx.GetType()?.FullName ?? "unknown inner exception type"
+					: "none";
+				
+				LogDispatcherUnhandledException(logger, exceptionType, innerExceptionType);
 			}
 			else
 			{
@@ -207,8 +222,8 @@ namespace Rdr.Gui
 		[LoggerMessage(StartupFinishedId, LogLevel.Information, "started")]
 		internal static partial void LogStartupFinished(ILogger<App> logger);
 
-		[LoggerMessage(DispatcherUnhandledExceptionId, LogLevel.Error, "dispatcher unhandled exception {UnhandledExceptionFullName}")]
-		internal static partial void LogDispatcherUnhandledException(ILogger<App> logger, string unhandledExceptionFullName);
+		[LoggerMessage(DispatcherUnhandledExceptionId, LogLevel.Error, "dispatcher unhandled exception {ExceptionType} ({InnerExceptionType})")]
+		internal static partial void LogDispatcherUnhandledException(ILogger<App> logger, string ExceptionType, string innerExceptionType);
 
 		[LoggerMessage(DispatcherUnhandledExceptionEmptyId, LogLevel.Critical, "dispatcher unhandled exception: inner exception was null")]
 		internal static partial void LogDispatcherUnhandledExceptionEmpty(ILogger<App> logger);
