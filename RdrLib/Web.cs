@@ -280,6 +280,14 @@ namespace RdrLib
 					Exception = ex
 				};
 			}
+			catch (Exception ex) when (ex.InnerException is OperationCanceledException innerException)
+			{
+				stringResponse = new StringResponse(uri, Reason.Canceled)
+				{
+					StatusCode = response?.StatusCode ?? null,
+					Exception = innerException
+				};
+			}
 			finally
 			{
 				request?.Dispose();
