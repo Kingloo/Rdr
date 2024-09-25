@@ -280,8 +280,20 @@ namespace Rdr.Gui
 			RefreshAllCommand.Execute();
 		}
 
-		private Task RefreshAllAsync()
-			=> RefreshAsync(rdrService.Feeds);
+		private async Task RefreshAllAsync()
+		{
+			var youtubeFeeds = rdrService.Feeds.Where(feed => feed.Link.DnsSafeHost == "youtube.com");
+			var allOtherFeeds = rdrService.Feeds.Where(feed => feed.Link.DnsSafeHost != "youtube.com");
+
+			await RefreshAsync(allOtherFeeds);
+			
+			foreach (var someYouTubeFeeds in youtubeFeeds.Chunk(5))
+			{
+				await RefreshAsync(someYouTubeFeeds);
+
+				await Task.Delay(TimeSpan.FromSeconds(2));
+			}
+		}
 
 		private async Task RefreshAsync(IEnumerable<Feed> feeds)
 		{
