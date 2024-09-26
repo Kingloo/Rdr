@@ -10,9 +10,9 @@ namespace RdrLib
 
 		private static readonly BatchOptions defaultBatchOptions = new BatchOptions
 		{
-			BatchWhenLargerThan = 7,
-			ChunkSize = 7,
-			Interval = TimeSpan.FromSeconds(1)
+			BatchWhenLargerThan = 5,
+			ChunkSize = 5,
+			Interval = TimeSpan.FromMilliseconds(500d)
 		};
 
 		public static BatchOptions Default { get => defaultBatchOptions; }
