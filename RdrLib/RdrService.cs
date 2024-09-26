@@ -311,7 +311,7 @@ namespace RdrLib
 				.ToList();
 
 			var everythingElse = groups
-				.Where(group => group.Count() < batchWhenLargerThan)
+				.Where(group => group.Count() <= batchWhenLargerThan)
 				.SelectMany(static group => group)
 				.ToList();
 
