@@ -282,7 +282,7 @@ namespace Rdr.Gui
 
 		private Task RefreshAllAsync()
 			=> RefreshAsync(rdrService.Feeds);
-
+		
 		private async Task RefreshAsync(IEnumerable<Feed> feeds)
 		{
 			Activity = true;

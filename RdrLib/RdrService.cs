@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
@@ -163,19 +165,71 @@ namespace RdrLib
 		}
 
 		public Task UpdateAsync(IEnumerable<Feed> feeds)
-			=> UpdateAsync(feeds, CancellationToken.None);
+			=> UpdateAsyncInternal(feeds, BatchOptions.Default, CancellationToken.None);
+		
+		public Task UpdateAsync(IEnumerable<Feed> feeds, BatchOptions batchOptions)
+			=> UpdateAsyncInternal(feeds, batchOptions, CancellationToken.None);
+		
+		public Task UpdateAsync(IEnumerable<Feed> feeds, CancellationToken cancellationToken)
+			=> UpdateAsyncInternal(feeds, BatchOptions.Default, cancellationToken);
 
-		public async Task UpdateAsync(IEnumerable<Feed> feeds, CancellationToken cancellationToken)
+		public Task UpdateAsync(IEnumerable<Feed> feeds, BatchOptions batchOptions, CancellationToken cancellationToken)
+			=> UpdateAsyncInternal(feeds, batchOptions, cancellationToken);
+
+		private async Task UpdateAsyncInternal(IEnumerable<Feed> feeds, BatchOptions batchOptions, CancellationToken cancellationToken)
 		{
 			ArgumentNullException.ThrowIfNull(feeds);
+			ArgumentNullException.ThrowIfNull(batchOptions);
 
-			ParallelOptions parallelOptions = new ParallelOptions
+			ParallelOptions everythingElseParallelOptions = new ParallelOptions
 			{
 				CancellationToken = cancellationToken,
 				MaxDegreeOfParallelism = rdrOptionsMonitor.CurrentValue.UpdateConcurrency
 			};
 
-			await Parallel.ForEachAsync(feeds, parallelOptions, UpdateFeedAsync).ConfigureAwait(true);
+			(List<List<Feed>> largeGroups, List<Feed> everythingElse) = GetFeedGroups(feeds, batchOptions.BatchWhenLargerThan);
+
+			List<Task> tasks = new List<Task>();
+
+			foreach (List<Feed> largeGroup in largeGroups)
+			{
+				Task task = Task.Run(
+					async () => await UpdateBatchedFeedAsync(largeGroup, batchOptions, cancellationToken).ConfigureAwait(true),
+					cancellationToken);
+
+				tasks.Add(task);
+			}
+
+			Task everythingElseTask = Task.Run(
+				async () => await Parallel.ForEachAsync(everythingElse, everythingElseParallelOptions, UpdateFeedAsync).ConfigureAwait(true),
+				cancellationToken);
+
+			tasks.Add(everythingElseTask);
+
+			await Task.WhenAll(tasks).ConfigureAwait(true);
+		}
+
+		private async Task UpdateBatchedFeedAsync(List<Feed> largeGroup, BatchOptions batchOptions, CancellationToken cancellationToken)
+		{
+			int countTaken = 0;
+
+			ParallelOptions batchedParallelOptions = new ParallelOptions
+			{
+				MaxDegreeOfParallelism = rdrOptionsMonitor.CurrentValue.UpdateConcurrency,
+				CancellationToken = cancellationToken
+			};
+
+			foreach (var chunk in largeGroup.Chunk(batchOptions.ChunkSize))
+			{
+				countTaken += chunk.Length;
+
+				await Parallel.ForEachAsync(chunk, batchedParallelOptions, UpdateFeedAsync).ConfigureAwait(true);
+
+				if (countTaken < largeGroup.Count)
+				{
+					await Task.Delay(batchOptions.Interval, cancellationToken).ConfigureAwait(true);
+				}
+			}
 		}
 
 		private async ValueTask UpdateFeedAsync(Feed feed, CancellationToken cancellationToken)
@@ -245,6 +299,23 @@ namespace RdrLib
 			feed.Status = FeedStatus.Ok;
 
 			LogFeedUpdateSucceeded(logger, feed.Name, feed.Link.AbsoluteUri);
+		}
+
+		private static (List<List<Feed>>, List<Feed>) GetFeedGroups(IEnumerable<Feed> allFeeds, int batchWhenLargerThan)
+		{
+			List<IGrouping<string, Feed>> groups = allFeeds.GroupBy(static feed => feed.Link.DnsSafeHost).ToList();
+
+			var largeGroups = groups
+				.Where(group => group.Count() > batchWhenLargerThan)
+				.Select(static group => new List<Feed>(group))
+				.ToList();
+
+			var everythingElse = groups
+				.Where(group => group.Count() < batchWhenLargerThan)
+				.SelectMany(static group => group)
+				.ToList();
+
+			return (largeGroups, everythingElse);
 		}
 
 		private static string GetError(StringResponse response)
