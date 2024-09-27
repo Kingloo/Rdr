@@ -218,7 +218,7 @@ namespace RdrLib
 				CancellationToken = cancellationToken
 			};
 
-			foreach (var chunk in largeGroup.Chunk(batchOptions.ChunkSize))
+			foreach (Feed[] chunk in largeGroup.Chunk(batchOptions.ChunkSize))
 			{
 				countTaken += chunk.Length;
 
@@ -304,12 +304,12 @@ namespace RdrLib
 		{
 			List<IGrouping<string, Feed>> groups = allFeeds.GroupBy(static feed => feed.Link.DnsSafeHost).ToList();
 
-			var largeGroups = groups
+			List<List<Feed>> largeGroups = groups
 				.Where(group => group.Count() > batchWhenLargerThan)
 				.Select(static group => new List<Feed>(group))
 				.ToList();
 
-			var everythingElse = groups
+			List<Feed> everythingElse = groups
 				.Where(group => group.Count() <= batchWhenLargerThan)
 				.SelectMany(static group => group)
 				.ToList();
