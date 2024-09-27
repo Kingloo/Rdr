@@ -165,10 +165,10 @@ namespace RdrLib
 
 		public Task UpdateAsync(IEnumerable<Feed> feeds)
 			=> UpdateAsyncInternal(feeds, BatchOptions.Default, CancellationToken.None);
-		
+
 		public Task UpdateAsync(IEnumerable<Feed> feeds, BatchOptions batchOptions)
 			=> UpdateAsyncInternal(feeds, batchOptions, CancellationToken.None);
-		
+
 		public Task UpdateAsync(IEnumerable<Feed> feeds, CancellationToken cancellationToken)
 			=> UpdateAsyncInternal(feeds, BatchOptions.Default, cancellationToken);
 
@@ -417,7 +417,7 @@ namespace RdrLib
 
 		[LoggerMessage(FeedUpdateSucceededId, LogLevel.Debug, "updated '{FeedName}' ({FeedLink})")]
 		internal static partial void LogFeedUpdateSucceeded(ILogger<RdrService> logger, string feedName, string feedLink);
-		
+
 		[LoggerMessage(ETagMatchId, LogLevel.Trace, "etag match for '{FeedName}' ('{FeedLink}')")]
 		internal static partial void LogETagMatch(ILogger<RdrService> logger, string feedName, string feedLink);
 

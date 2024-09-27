@@ -178,11 +178,11 @@ namespace Rdr.Gui
 			if (e.Exception is Exception ex)
 			{
 				string exceptionType = ex.GetType()?.FullName ?? "unknown exception type";
-				
+
 				string innerExceptionType = ex.InnerException is Exception innerEx
 					? innerEx.GetType()?.FullName ?? "unknown inner exception type"
 					: "none";
-				
+
 				LogDispatcherUnhandledException(logger, exceptionType, innerExceptionType);
 			}
 			else

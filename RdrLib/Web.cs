@@ -308,7 +308,7 @@ namespace RdrLib
 					return true;
 				}
 			}
-			
+
 			eTag = null;
 
 			return false;
