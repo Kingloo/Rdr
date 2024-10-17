@@ -163,7 +163,7 @@ namespace Rdr.Gui
 				MainWindow = host.Services.GetRequiredService<MainWindow>();
 			}
 
-			appLifetime.ApplicationStopping.Register(() =>
+			appLifetime.ApplicationStopped.Register(() =>
 			{
 				MainWindow?.Close();
 			}, useSynchronizationContext: true);
