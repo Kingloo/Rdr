@@ -35,9 +35,10 @@ namespace Rdr.EventIds
 		internal const int FeedsFileDoesNotExistId = 233;
 		internal const int DownloadStartedId = 240;
 		internal const int DownloadFinishedId = 241;
-		internal const int DownloadFailedId = 242;
-		internal const int DownloadLocalFilePathId = 243;
-		internal const int DownloadProgressId = 244;
+		internal const int DownloadFinishedDifferentPathId = 242;
+		internal const int DownloadFailedId = 243;
+		internal const int DownloadLocalFilePathId = 244;
+		internal const int DownloadProgressId = 245;
 		internal const int WindowExitId = 250;
 
 		internal static readonly EventId FeedsFileOpened = new EventId(FeedsFileOpenedId, nameof(FeedsFileOpened));

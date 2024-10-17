@@ -95,11 +95,11 @@ namespace RdrLib
 	public class FileResponse : IResponse
 	{
 		private readonly Uri uri;
-		private readonly string path;
 
 		public Reason Reason { get; } = Reason.None;
 		public HttpStatusCode? StatusCode { get; init; } = null;
 		public Exception? Exception { get; init; } = null;
+		public string? Path { get; set; } = string.Empty;
 
 		public FileResponse(Uri uri, string path, Reason reason)
 		{
@@ -107,8 +107,7 @@ namespace RdrLib
 			ArgumentNullException.ThrowIfNull(path);
 
 			this.uri = uri;
-			this.path = path;
-
+			Path = path;
 			Reason = reason;
 		}
 
@@ -118,7 +117,7 @@ namespace RdrLib
 
 			sb.AppendLine(base.ToString());
 			sb.AppendLine(CultureInfo.CurrentCulture, $"uri: {uri.AbsoluteUri}");
-			sb.AppendLine(CultureInfo.CurrentCulture, $"path: {path}");
+			sb.AppendLine(CultureInfo.CurrentCulture, $"path: {Path}");
 			sb.AppendLine(StatusCode.HasValue ? StatusCode.Value.ToString() : "no status code");
 			sb.AppendLine(CultureInfo.CurrentCulture, $"reason: {Reason}");
 
@@ -560,9 +559,49 @@ namespace RdrLib
 				_ => GetExtension(path, "failed")
 			};
 
-			File.Move(inProgressPath, finalPath);
+			if (!DidWeMoveFileToOriginalDestination(inProgressPath, finalPath, 10, out string? actualPathMovedTo))
+			{
+				fileResponse.Path = actualPathMovedTo;
+			}
 
 			return fileResponse;
+		}
+
+		private static bool DidWeMoveFileToOriginalDestination(string sourcePath, string destinationPath, uint maxFailedAttempts, [NotNullWhen(true)] out string? actualPathMovedTo)
+		{
+			bool shouldContinue = true;
+			uint failedAttempts = 0;
+
+			string originalDestinationPath = destinationPath;
+
+			while (shouldContinue)
+			{
+				try
+				{
+					File.Move(sourcePath, destinationPath);
+
+					actualPathMovedTo = destinationPath;
+
+					return String.Equals(originalDestinationPath, destinationPath, StringComparison.OrdinalIgnoreCase);
+				}
+				catch (IOException)
+				{
+					failedAttempts++;
+
+					destinationPath = $"{destinationPath}.{failedAttempts}";
+				}
+				finally
+				{
+					if (failedAttempts >= maxFailedAttempts)
+					{
+						shouldContinue = false;
+					}
+				}
+			}
+
+			actualPathMovedTo = null;
+
+			return false;
 		}
 
 		private static string GetExtension(string path, string extension)

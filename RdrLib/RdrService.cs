@@ -175,7 +175,7 @@ namespace RdrLib
 		public Task UpdateAsync(IEnumerable<Feed> feeds, BatchOptions batchOptions, CancellationToken cancellationToken)
 			=> UpdateAsyncInternal(feeds, batchOptions, cancellationToken);
 
-		private async Task UpdateAsyncInternal(IEnumerable<Feed> feeds, BatchOptions batchOptions, CancellationToken cancellationToken)
+		private Task UpdateAsyncInternal(IEnumerable<Feed> feeds, BatchOptions batchOptions, CancellationToken cancellationToken)
 		{
 			ArgumentNullException.ThrowIfNull(feeds);
 			ArgumentNullException.ThrowIfNull(batchOptions);
@@ -205,7 +205,7 @@ namespace RdrLib
 
 			tasks.Add(everythingElseTask);
 
-			await Task.WhenAll(tasks).ConfigureAwait(true);
+			return Task.WhenAll(tasks);
 		}
 
 		private async Task UpdateBatchedFeedAsync(List<Feed> largeGroup, BatchOptions batchOptions, CancellationToken cancellationToken)

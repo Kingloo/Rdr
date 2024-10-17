@@ -500,7 +500,14 @@ namespace Rdr.Gui
 
 			if (response.Reason == Reason.Success)
 			{
-				LogDownloadFinished(logger, enclosure.FeedName, enclosure.Link.AbsoluteUri, fullPath);
+				if (String.Equals(fullPath, response.Path, StringComparison.OrdinalIgnoreCase))
+				{
+					LogDownloadFinished(logger, enclosure.FeedName, enclosure.Link.AbsoluteUri, response.Path ?? "null");
+				}
+				else
+				{
+					LogDownloadFinishedDifferentPath(logger, enclosure.FeedName, enclosure.Link.AbsoluteUri, response.Path ?? "null");
+				}
 			}
 			else
 			{
@@ -701,6 +708,9 @@ namespace Rdr.Gui
 
 		[LoggerMessage(DownloadFinishedId, LogLevel.Information, "downloaded '{FeedName}' from '{Link}' to '{LocalPath}'")]
 		internal static partial void LogDownloadFinished(ILogger<MainWindowViewModel> logger, string feedName, string link, string localPath);
+
+		[LoggerMessage(DownloadFinishedDifferentPathId, LogLevel.Warning, "downloaded '{FeedName}' from '{Link}' to '{DifferentLocalPath}'")]
+		internal static partial void LogDownloadFinishedDifferentPath(ILogger<MainWindowViewModel> logger, string feedName, string link, string differentlocalPath);
 
 		[LoggerMessage(DownloadFailedId, LogLevel.Error, "download failed: {Reason} - {StatusCode} for '{FeedName}' from '{Link}'")]
 		internal static partial void LogDownloadFailed(ILogger<MainWindowViewModel> logger, Reason reason, HttpStatusCode? statusCode, string feedName, string link);
