@@ -272,7 +272,7 @@ namespace RdrLib
 			{
 				feed.Status = FeedStatus.Timeout;
 
-				LogTimeout(logger, feed.Name, feed.Link.AbsolutePath);
+				LogTimeout(logger, feed.Name, feed.Link.AbsoluteUri);
 				
 				return;
 			}
