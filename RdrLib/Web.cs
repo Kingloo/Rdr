@@ -19,6 +19,7 @@ namespace RdrLib
 		ETagMatch,
 		Failed,
 		FileExists,
+		Timeout,
 		Canceled,
 		Unknown
 	}
@@ -269,6 +270,14 @@ namespace RdrLib
 				{
 					StatusCode = response?.StatusCode ?? null,
 					Exception = ex
+				};
+			}
+			catch (TaskCanceledException tce) when (tce.InnerException is TimeoutException te)
+			{
+				stringResponse = new StringResponse(uri, Reason.Timeout)
+				{
+					StatusCode = response?.StatusCode ?? null,
+					Exception = te
 				};
 			}
 			catch (OperationCanceledException ex)

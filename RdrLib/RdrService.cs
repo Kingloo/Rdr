@@ -268,6 +268,15 @@ namespace RdrLib
 				return;
 			}
 
+			if (response.Reason == Reason.Timeout)
+			{
+				feed.Status = FeedStatus.Timeout;
+
+				LogTimeout(logger, feed.Name, feed.Link.AbsolutePath);
+				
+				return;
+			}
+
 			if (response.Reason != Reason.Success)
 			{
 				feed.Status = response.StatusCode switch
@@ -420,6 +429,9 @@ namespace RdrLib
 
 		[LoggerMessage(ETagMatchId, LogLevel.Trace, "etag match for '{FeedName}' ('{FeedLink}')")]
 		internal static partial void LogETagMatch(ILogger<RdrService> logger, string feedName, string feedLink);
+		
+		[LoggerMessage(TimeoutId, LogLevel.Warning, "timeout for '{FeedName}' ('{FeedLink}')")]
+		internal static partial void LogTimeout(ILogger<RdrService> logger, string feedName, string feedLink);
 
 		[LoggerMessage(MarkAsReadId, LogLevel.Trace, "marked item as read: '{FeedName}'->'{ItemName}'")]
 		internal static partial void LogMarkAsRead(ILogger<RdrService> logger, string feedName, string itemName);

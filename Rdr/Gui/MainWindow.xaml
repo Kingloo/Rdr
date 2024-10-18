@@ -55,6 +55,7 @@
                                                      Forbidden="Red"
                                                      ParseFailed="LightPink"
                                                      MovedCannotFollow="Red"
+													 Timeout="Yellow"
                                                      OtherInternetError="LightBlue"
                                                      Broken="Blue" />
 			</DataTemplate.Resources>

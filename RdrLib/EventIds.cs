@@ -14,6 +14,7 @@ namespace RdrLib.EventIds
 		internal const int MarkAsReadId = 107;
 		internal const int MarkAllAsReadId = 108;
 		internal const int ClearFeedsId = 109;
+		internal const int TimeoutId = 110;
 
 		internal static readonly EventId FeedUpdateStarted = new EventId(FeedUpdateStartedId, nameof(FeedUpdateStarted));
 		internal static readonly EventId FeedUpdateSucceeded = new EventId(FeedUpdateSucceededId, nameof(FeedUpdateSucceeded));
@@ -25,5 +26,6 @@ namespace RdrLib.EventIds
 		internal static readonly EventId MarkAsRead = new EventId(MarkAsReadId, nameof(MarkAsRead));
 		internal static readonly EventId MarkAllAsRead = new EventId(MarkAllAsReadId, nameof(MarkAllAsRead));
 		internal static readonly EventId ClearFeeds = new EventId(ClearFeedsId, nameof(ClearFeeds));
+		internal static readonly EventId Timeout = new EventId(TimeoutId, nameof(Timeout));
 	}
 }
