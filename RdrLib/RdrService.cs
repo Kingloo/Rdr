@@ -273,7 +273,7 @@ namespace RdrLib
 				feed.Status = FeedStatus.Timeout;
 
 				LogTimeout(logger, feed.Name, feed.Link.AbsoluteUri);
-				
+
 				return;
 			}
 
@@ -429,7 +429,7 @@ namespace RdrLib
 
 		[LoggerMessage(ETagMatchId, LogLevel.Trace, "etag match for '{FeedName}' ('{FeedLink}')")]
 		internal static partial void LogETagMatch(ILogger<RdrService> logger, string feedName, string feedLink);
-		
+
 		[LoggerMessage(TimeoutId, LogLevel.Warning, "timeout for '{FeedName}' ('{FeedLink}')")]
 		internal static partial void LogTimeout(ILogger<RdrService> logger, string feedName, string feedLink);
 
