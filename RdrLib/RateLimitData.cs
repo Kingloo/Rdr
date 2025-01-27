@@ -3,7 +3,7 @@ using System.Net;
 
 namespace RdrLib
 {
-	internal class RateLimitData
+	internal sealed class RateLimitData
 	{
 		internal HttpStatusCode StatusCode { get; init; }
 		internal DateTimeOffset Timestamp { get; init; }

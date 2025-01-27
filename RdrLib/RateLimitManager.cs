@@ -4,7 +4,7 @@ using System.Net;
 
 namespace RdrLib
 {
-	internal class RateLimitManager
+	internal sealed class RateLimitManager
 	{
 		private readonly Dictionary<Uri, RateLimitData> statusCodes = new Dictionary<Uri, RateLimitData>();
 

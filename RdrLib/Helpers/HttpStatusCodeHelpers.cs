@@ -8,7 +8,10 @@ namespace RdrLib.Helpers
 	{
 		public static string FormatStatusCode(HttpStatusCode? statusCode)
 		{
-			ArgumentNullException.ThrowIfNull(statusCode);
+			if (statusCode is null)
+			{
+				return "null";
+			}
 
 			return Int32.TryParse(statusCode.ToString(), out int statusCodeNumericValue)
 				? statusCodeNumericValue.ToString(CultureInfo.InvariantCulture)

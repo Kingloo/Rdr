@@ -401,7 +401,7 @@ namespace Rdr.Gui
 
 			string[] lines = await ReadLinesAsync(currentFeedsFilePath).ConfigureAwait(true);
 
-			IReadOnlyCollection<Feed> feeds = CreateFeeds(lines);
+			ReadOnlyCollection<Feed> feeds = CreateFeeds(lines);
 
 			if (feeds.Count == 0)
 			{
