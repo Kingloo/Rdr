@@ -20,6 +20,7 @@ namespace RdrLib
 		Failed,
 		FileExists,
 		Timeout,
+		RateLimited,
 		Canceled,
 		Unknown
 	}
@@ -254,6 +255,14 @@ namespace RdrLib
 				{
 					StatusCode = response.StatusCode,
 					Text = text
+				};
+			}
+			catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests)
+			{
+				stringResponse = new StringResponse(uri, Reason.RateLimited)
+				{
+					StatusCode = response?.StatusCode ?? null,
+					Exception = ex
 				};
 			}
 			catch (HttpRequestException ex)

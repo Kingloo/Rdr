@@ -240,11 +240,11 @@ namespace RdrLib
 
 			feed.Status = FeedStatus.Updating;
 
-			if (!rateLimitManager.ShouldPerformRequest(feed.Link, HttpStatusCode.TooManyRequests, TimeSpan.FromHours(1d)))
+			if (!rateLimitManager.ShouldPerformRequest(feed.Link, rdrOptionsMonitor.CurrentValue.Http429BackOffInterval))
 			{
 				feed.Status = FeedStatus.Ok;
 
-				Debug.WriteLine($"update attempted at '{DateTimeOffset.Now}' was ratelimited '{feed.Link.AbsoluteUri}'");
+				Debug.WriteLine($"update at '{DateTimeOffset.Now}' was skipped because of a prior rate limit (HTTP 429) '{feed.Link.AbsoluteUri}'");
 
 				return;
 			}
@@ -298,6 +298,7 @@ namespace RdrLib
 					HttpStatusCode.Forbidden => FeedStatus.Forbidden,
 					HttpStatusCode.Moved => FeedStatus.MovedCannotFollow,
 					HttpStatusCode.NotFound => FeedStatus.DoesNotExist,
+					HttpStatusCode.TooManyRequests => FeedStatus.RateLimited,
 					_ => FeedStatus.OtherInternetError,
 				};
 

@@ -10,6 +10,7 @@ namespace RdrLib
 		ParseFailed,
 		MovedCannotFollow,
 		Timeout,
+		RateLimited,
 		OtherInternetError,
 		Broken
 	}

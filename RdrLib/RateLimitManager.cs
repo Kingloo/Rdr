@@ -10,13 +10,22 @@ namespace RdrLib
 
 		internal RateLimitManager() { }
 
-		internal bool ShouldPerformRequest(Uri uri, HttpStatusCode statusCode, TimeSpan interval)
+		internal bool ShouldPerformRequest(Uri uri, TimeSpan interval)
 		{
 			ArgumentNullException.ThrowIfNull(uri);
 
-			return statusCodes.TryGetValue(uri, out RateLimitData? rateLimitData)
-				? rateLimitData.StatusCode == statusCode && DateTimeOffset.Now - rateLimitData.Timestamp > interval
-				: true;
+			if (statusCodes.TryGetValue(uri, out RateLimitData? rateLimitData))
+			{
+				return rateLimitData.StatusCode switch
+				{
+					HttpStatusCode.TooManyRequests => DateTimeOffset.Now - rateLimitData.Timestamp > interval,
+					_ => true
+				};
+			}
+			else
+			{
+				return true;
+			}
 		}
 
 		internal void AddResponse(Uri uri, IResponse response)
