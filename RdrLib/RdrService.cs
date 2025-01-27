@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -22,6 +23,8 @@ namespace RdrLib
 {
 	public partial class RdrService : IRdrService
 	{
+		private readonly RateLimitManager rateLimitManager = new RateLimitManager();
+
 		private readonly ObservableCollection<Feed> feeds = new ObservableCollection<Feed>();
 		public IReadOnlyCollection<Feed> Feeds { get => feeds; }
 
@@ -237,6 +240,15 @@ namespace RdrLib
 
 			feed.Status = FeedStatus.Updating;
 
+			if (!rateLimitManager.ShouldPerformRequest(feed.Link, HttpStatusCode.TooManyRequests, TimeSpan.FromHours(1d)))
+			{
+				feed.Status = FeedStatus.Ok;
+
+				Debug.WriteLine($"update attempted at '{DateTimeOffset.Now}' was ratelimited '{feed.Link.AbsoluteUri}'");
+
+				return;
+			}
+
 			void configureRequest(HttpRequestMessage request)
 			{
 				request.Version = HttpVersion.Version20;
@@ -258,6 +270,8 @@ namespace RdrLib
 			{
 				response = await Web.DownloadStringAsync(client, feed.Link, configureRequest, cancellationToken).ConfigureAwait(false);
 			}
+
+			rateLimitManager.AddResponse(feed.Link, response);
 
 			if (response.Reason == Reason.ETagMatch)
 			{
