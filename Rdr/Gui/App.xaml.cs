@@ -9,7 +9,6 @@ using System.Windows.Threading;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Logging;
 using FileLogger;
 using RdrLib;
@@ -109,7 +108,7 @@ namespace Rdr.Gui
 			services.AddHttpClient("RdrService")
 				.ConfigureHttpClient(static (HttpClient client) =>
 				{
-					client.Timeout = TimeSpan.FromSeconds(30d);
+					client.Timeout = TimeSpan.FromSeconds(10d);
 				})
 				.ConfigurePrimaryHttpMessageHandler(static () =>
 				{
@@ -133,15 +132,6 @@ namespace Rdr.Gui
 #pragma warning restore CA5398
 							EncryptionPolicy = EncryptionPolicy.RequireEncryption
 						}
-					};
-				})
-				.AddStandardResilienceHandler(static (HttpStandardResilienceOptions httpStandardResilienceOptions) =>
-				{
-					httpStandardResilienceOptions.Retry = new HttpRetryStrategyOptions
-					{
-						BackoffType = Polly.DelayBackoffType.Constant,
-						Delay = TimeSpan.FromSeconds(30d),
-						MaxRetryAttempts = 5
 					};
 				});
 		}
