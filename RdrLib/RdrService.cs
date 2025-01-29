@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -240,11 +239,9 @@ namespace RdrLib
 
 			feed.Status = FeedStatus.Updating;
 
-			if (!rateLimitManager.ShouldPerformRequest(feed.Link, rdrOptionsMonitor.CurrentValue.Http429BackOffInterval))
+			if (!rateLimitManager.ShouldPerformRequest(feed.Link))
 			{
 				feed.Status = FeedStatus.Ok;
-
-				Debug.WriteLine($"update at '{DateTimeOffset.Now}' was skipped because of a prior rate limit (HTTP 429) '{feed.Link.AbsoluteUri}'");
 
 				return;
 			}
@@ -271,7 +268,12 @@ namespace RdrLib
 				response = await Web.DownloadStringAsync(client, feed.Link, configureRequest, cancellationToken).ConfigureAwait(false);
 			}
 
-			rateLimitManager.AddResponse(feed.Link, response);
+			rateLimitManager.AddResponse(
+				feed.Link,
+				response,
+				rdrOptionsMonitor.CurrentValue.Http429BackOffInterval,
+				RateLimitIncreaseStrategy.AddHour,
+				RateLimitLiftedStrategy.Maintain);
 
 			if (response.Reason == Reason.ETagMatch)
 			{
