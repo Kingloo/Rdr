@@ -15,7 +15,7 @@ namespace RdrLib
 			{
 				throw new ArgumentException("timestamp cannot be older than Now", nameof(timestamp));
 			}
-			
+
 			StatusCode = statusCode;
 			Timestamp = timestamp;
 		}

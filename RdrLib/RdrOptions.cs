@@ -20,7 +20,7 @@ namespace RdrLib
 		public int UpdateConcurrency { get; init; } = DefaultUpdateConcurrency;
 
 		public TimeSpan UpdateInterval { get; init; } = DefaultUpdateInterval;
-		
+
 		public TimeSpan Http429BackOffInterval { get; init; } = DefaultHttp429BackOffInterval;
 
 		public RdrOptions() { }

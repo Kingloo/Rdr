@@ -38,12 +38,12 @@ namespace RdrLib
 		{
 			ArgumentNullException.ThrowIfNull(uri);
 			ArgumentNullException.ThrowIfNull(response);
-			
+
 			if (startingBackoffInterval < TimeSpan.Zero)
 			{
 				throw new ArgumentException("backoff interval cannot be less than zero", nameof(startingBackoffInterval));
 			}
-			
+
 			RateLimitData newRateLimitData = new RateLimitData(
 				statusCode: response.StatusCode ?? HttpStatusCode.Unused,
 				timestamp: DateTimeOffset.Now
@@ -51,7 +51,7 @@ namespace RdrLib
 			{
 				Backoff = startingBackoffInterval
 			};
-			
+
 			if (statusCodes.TryGetValue(uri, out RateLimitData? previousRateLimitData))
 			{
 				newRateLimitData.Backoff = response.StatusCode switch
@@ -70,7 +70,7 @@ namespace RdrLib
 			else
 			{
 				newRateLimitData.Backoff = startingBackoffInterval;
-				
+
 				statusCodes.Add(uri, newRateLimitData);
 			}
 		}
