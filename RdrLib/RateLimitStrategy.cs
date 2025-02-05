@@ -1,15 +1,18 @@
 namespace RdrLib
 {
-	internal enum RateLimitLiftedStrategy
+	public enum RateLimitLiftedStrategy
 	{
 		Reset,
-		Maintain
+		Maintain,
+		None
 	}
 
-	internal enum RateLimitIncreaseStrategy
+	public enum RateLimitIncreaseStrategy
 	{
 		None,
+#pragma warning disable CA1720 // doesn't like that Double is a type name
 		Double,
+#pragma warning restore CA1720
 		AddHour,
 		AddDay,
 		Unknown

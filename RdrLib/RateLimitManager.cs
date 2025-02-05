@@ -28,7 +28,6 @@ namespace RdrLib
 			}
 		}
 
-		// internal void AddResponse(Uri uri, IResponse response, TimeSpan startingBackoffInterval)
 		internal void AddResponse(
 			Uri uri,
 			IResponse response,

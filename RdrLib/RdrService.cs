@@ -182,10 +182,12 @@ namespace RdrLib
 			ArgumentNullException.ThrowIfNull(feeds);
 			ArgumentNullException.ThrowIfNull(batchOptions);
 
+			RdrOptions currentRdrOptions = rdrOptionsMonitor.CurrentValue;
+
 			ParallelOptions everythingElseParallelOptions = new ParallelOptions
 			{
 				CancellationToken = cancellationToken,
-				MaxDegreeOfParallelism = rdrOptionsMonitor.CurrentValue.UpdateConcurrency
+				MaxDegreeOfParallelism = currentRdrOptions.UpdateConcurrency
 			};
 
 			(List<List<Feed>> largeGroups, List<Feed> everythingElse) = GetFeedGroups(feeds, batchOptions.BatchWhenLargerThan);
@@ -195,7 +197,7 @@ namespace RdrLib
 			foreach (List<Feed> largeGroup in largeGroups)
 			{
 				Task task = Task.Run(
-					async () => await UpdateBatchedFeedAsync(largeGroup, batchOptions, cancellationToken).ConfigureAwait(true),
+					async () => await UpdateBatchedFeedAsync(largeGroup, currentRdrOptions, batchOptions, cancellationToken).ConfigureAwait(true),
 					cancellationToken);
 
 				tasks.Add(task);
@@ -210,13 +212,13 @@ namespace RdrLib
 			return Task.WhenAll(tasks);
 		}
 
-		private async Task UpdateBatchedFeedAsync(List<Feed> largeGroup, BatchOptions batchOptions, CancellationToken cancellationToken)
+		private async Task UpdateBatchedFeedAsync(List<Feed> largeGroup, RdrOptions rdrOptions, BatchOptions batchOptions, CancellationToken cancellationToken)
 		{
 			int countTaken = 0;
 
 			ParallelOptions batchedParallelOptions = new ParallelOptions
 			{
-				MaxDegreeOfParallelism = rdrOptionsMonitor.CurrentValue.UpdateConcurrency,
+				MaxDegreeOfParallelism = rdrOptions.UpdateConcurrency,
 				CancellationToken = cancellationToken
 			};
 
@@ -246,11 +248,13 @@ namespace RdrLib
 				return;
 			}
 
+			RdrOptions currentRdrOptions = rdrOptionsMonitor.CurrentValue;
+
 			void configureRequest(HttpRequestMessage request)
 			{
 				request.Version = HttpVersion.Version20;
 
-				string userAgentHeaderValue = rdrOptionsMonitor.CurrentValue.CustomUserAgent;
+				string userAgentHeaderValue = currentRdrOptions.CustomUserAgent;
 
 				if (!request.Headers.UserAgent.TryParseAdd(userAgentHeaderValue))
 				{
@@ -271,9 +275,9 @@ namespace RdrLib
 			rateLimitManager.AddResponse(
 				feed.Link,
 				response,
-				rdrOptionsMonitor.CurrentValue.Http429BackOffInterval,
-				RateLimitIncreaseStrategy.AddHour,
-				RateLimitLiftedStrategy.Maintain);
+				currentRdrOptions.Http429BackOffInterval,
+				currentRdrOptions.RateLimitIncreaseStrategy,
+				currentRdrOptions.RateLimitLiftedStrategy);
 
 			if (response.Reason == Reason.ETagMatch)
 			{

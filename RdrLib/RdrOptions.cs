@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace RdrLib
 {
@@ -22,6 +23,12 @@ namespace RdrLib
 		public TimeSpan UpdateInterval { get; init; } = DefaultUpdateInterval;
 
 		public TimeSpan Http429BackOffInterval { get; init; } = DefaultHttp429BackOffInterval;
+
+		[JsonConverter(typeof(JsonStringEnumConverter))]
+		public RateLimitIncreaseStrategy RateLimitIncreaseStrategy { get; init; } = RateLimitIncreaseStrategy.None;
+
+		[JsonConverter(typeof(JsonStringEnumConverter))]
+		public RateLimitLiftedStrategy RateLimitLiftedStrategy { get; init; } = RateLimitLiftedStrategy.None;
 
 		public RdrOptions() { }
 	}
