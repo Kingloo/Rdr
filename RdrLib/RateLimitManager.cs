@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using RdrLib.Exceptions;
 
 namespace RdrLib
 {
@@ -14,18 +15,27 @@ namespace RdrLib
 		{
 			ArgumentNullException.ThrowIfNull(uri);
 
-			if (statusCodes.TryGetValue(uri, out RateLimitData? rateLimitData))
-			{
-				return rateLimitData.StatusCode switch
-				{
-					HttpStatusCode.TooManyRequests => DateTimeOffset.Now - rateLimitData.Timestamp > rateLimitData.Backoff,
-					_ => true
-				};
-			}
-			else
+			if (!statusCodes.TryGetValue(uri, out RateLimitData? rateLimitData))
 			{
 				return true;
 			}
+
+			if (rateLimitData.StatusCode == HttpStatusCode.TooManyRequests)
+			{
+				return HasTimeoutExpired(rateLimitData);
+			}
+
+			if (rateLimitData.StatusCode == HttpStatusCode.OK)
+			{
+				return rateLimitData.RateLimitLiftedStrategy switch
+				{
+					RateLimitLiftedStrategy.Maintain => HasTimeoutExpired(rateLimitData),
+					RateLimitLiftedStrategy.Reset => true,
+					_ => throw new RateLimitException("invalid rate limit lift strategy")
+				};
+			}
+
+			return true;
 		}
 
 		internal void AddResponse(
@@ -48,7 +58,9 @@ namespace RdrLib
 				timestamp: DateTimeOffset.Now
 			)
 			{
-				Backoff = startingBackoffInterval
+				Backoff = startingBackoffInterval,
+				RateLimitIncreaseStrategy = rateLimitIncreaseStrategy,
+				RateLimitLiftedStrategy = rateLimitLiftedStrategy
 			};
 
 			if (statusCodes.TryGetValue(uri, out RateLimitData? previousRateLimitData))
@@ -58,8 +70,8 @@ namespace RdrLib
 					HttpStatusCode.TooManyRequests => GetNewBackoff(previousRateLimitData.Backoff, rateLimitIncreaseStrategy),
 					_ => rateLimitLiftedStrategy switch
 					{
-						RateLimitLiftedStrategy.Reset => startingBackoffInterval,
 						RateLimitLiftedStrategy.Maintain => previousRateLimitData.Backoff,
+						RateLimitLiftedStrategy.Reset => startingBackoffInterval,
 						_ => throw new ArgumentException("invalid lifted strategy", nameof(rateLimitIncreaseStrategy))
 					}
 				};
@@ -89,6 +101,11 @@ namespace RdrLib
 			return newBackoff > max
 				? max
 				: newBackoff;
+		}
+
+		private static bool HasTimeoutExpired(RateLimitData rateLimitData)
+		{
+			return DateTimeOffset.Now - rateLimitData.Timestamp > rateLimitData.Backoff;
 		}
 	}
 }

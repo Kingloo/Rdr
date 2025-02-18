@@ -8,6 +8,8 @@ namespace RdrLib
 		internal HttpStatusCode StatusCode { get; init; } = HttpStatusCode.Unused;
 		internal DateTimeOffset Timestamp { get; init; } = DateTimeOffset.MinValue;
 		internal TimeSpan Backoff { get; set; } = TimeSpan.Zero;
+		internal RateLimitIncreaseStrategy RateLimitIncreaseStrategy { get; set; } = RateLimitIncreaseStrategy.None;
+		internal RateLimitLiftedStrategy RateLimitLiftedStrategy { get; set; } = RateLimitLiftedStrategy.None;
 
 		internal RateLimitData(HttpStatusCode statusCode, DateTimeOffset timestamp)
 		{
@@ -18,6 +20,11 @@ namespace RdrLib
 
 			StatusCode = statusCode;
 			Timestamp = timestamp;
+		}
+
+		public override string ToString()
+		{
+			return $"{Timestamp} | {StatusCode},{Backoff},{RateLimitIncreaseStrategy},{RateLimitLiftedStrategy}";
 		}
 	}
 }
