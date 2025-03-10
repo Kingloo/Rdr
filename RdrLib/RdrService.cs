@@ -1,9 +1,13 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -11,7 +15,6 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using RdrLib.Exceptions;
 using RdrLib.Helpers;
 using RdrLib.Model;
 using static RdrLib.EventIds.RdrService;
@@ -22,7 +25,11 @@ namespace RdrLib
 {
 	public partial class RdrService : IRdrService
 	{
-		private readonly RateLimitManager rateLimitManager = new RateLimitManager();
+		private const string rateLimitRemainingFormat = @"hh\:mm\:ss";
+
+		private readonly ConcurrentDictionary<Uri, ETag2> etags = new ConcurrentDictionary<Uri, ETag2>();
+		private readonly ConcurrentDictionary<Uri, RetryHeaderWithTimestamp> updates = new ConcurrentDictionary<Uri, RetryHeaderWithTimestamp>();
+		private readonly ConcurrentDictionary<Uri, DateTimeOffset> lastModifiedHeaders = new ConcurrentDictionary<Uri, DateTimeOffset>();
 
 		private readonly ObservableCollection<Feed> feeds = new ObservableCollection<Feed>();
 		public IReadOnlyCollection<Feed> Feeds { get => feeds; }
@@ -239,81 +246,91 @@ namespace RdrLib
 		{
 			LogFeedUpdateStarted(logger, feed.Name, feed.Link.AbsoluteUri);
 
+			DateTimeOffset now = DateTimeOffset.Now;
+
 			feed.Status = FeedStatus.Updating;
 
-			if (!rateLimitManager.ShouldPerformRequest(feed.Link))
+			TimeSpan rateLimitTimeRemaining = IsFeedUnderRateLimit(feed, now);
+
+			if (rateLimitTimeRemaining > TimeSpan.Zero)
 			{
-				feed.Status = FeedStatus.Ok;
+				LogExistingRateLimit(logger, feed.Name, feed.Link.AbsoluteUri, rateLimitTimeRemaining.ToString(rateLimitRemainingFormat, CultureInfo.CurrentCulture));
+
+				feed.Status = FeedStatus.RateLimited;
 
 				return;
 			}
 
-			RdrOptions currentRdrOptions = rdrOptionsMonitor.CurrentValue;
-
-			void configureRequest(HttpRequestMessage request)
-			{
-				request.Version = HttpVersion.Version20;
-
-				string userAgentHeaderValue = currentRdrOptions.CustomUserAgent;
-
-				if (!request.Headers.UserAgent.TryParseAdd(userAgentHeaderValue))
-				{
-					throw new HeaderException
-					{
-						UnaddableHeader = userAgentHeaderValue
-					};
-				}
-			}
-
-			StringResponse response;
+			string responseText = string.Empty;
 
 			using (HttpClient client = httpClientFactory.CreateClient("RdrService"))
 			{
-				response = await Web.DownloadStringAsync(client, feed.Link, configureRequest, cancellationToken).ConfigureAwait(false);
-			}
-
-			rateLimitManager.AddResponse(
-				feed.Link,
-				response,
-				currentRdrOptions.Http429BackOffInterval,
-				currentRdrOptions.RateLimitIncreaseStrategy,
-				currentRdrOptions.RateLimitLiftedStrategy);
-
-			if (response.Reason == Reason.ETagMatch)
-			{
-				feed.Status = FeedStatus.Ok;
-
-				LogETagMatch(logger, feed.Name, feed.Link.AbsoluteUri);
-
-				return;
-			}
-
-			if (response.Reason == Reason.Timeout)
-			{
-				feed.Status = FeedStatus.Timeout;
-
-				LogTimeout(logger, feed.Name, feed.Link.AbsoluteUri);
-
-				return;
-			}
-
-			if (response.Reason != Reason.Success)
-			{
-				feed.Status = response.StatusCode switch
+				bool shouldProceedWithBody = false;
+				
+				try
 				{
-					HttpStatusCode.Forbidden => FeedStatus.Forbidden,
-					HttpStatusCode.Moved => FeedStatus.MovedCannotFollow,
-					HttpStatusCode.NotFound => FeedStatus.DoesNotExist,
-					HttpStatusCode.TooManyRequests => FeedStatus.RateLimited,
-					_ => FeedStatus.OtherInternetError,
-				};
+					using ResponseSet responseSet = await Web2.PerformHeaderRequest(client, feed.Link, cancellationToken).ConfigureAwait(false);
 
-				LogFeedUpdateFailed(logger, GetError(response), GetNameForLogMessage(feed));
+					HttpResponseMessage lastResponse = responseSet.Responses.Last().Response;
 
-				return;
+					bool areETagsDifferent = AreETagsDifferent(lastResponse, feed);
+					bool isLastModifiedHeaderDifferent = IsLastModifiedHeaderDifferent(lastResponse, feed);
+					bool responseContainsNoRateLimitHeader = ResponseContainsNoRateLimitHeader(lastResponse, feed, now);
+
+					shouldProceedWithBody = areETagsDifferent
+						&& isLastModifiedHeaderDifferent
+						&& responseContainsNoRateLimitHeader;
+
+					if (shouldProceedWithBody)
+					{
+						updates.AddOrUpdate(
+							feed.Link,
+							(Uri _) => new RetryHeaderWithTimestamp(now, null),
+							(Uri _, RetryHeaderWithTimestamp _) => new RetryHeaderWithTimestamp(now, null)
+						);
+						
+						responseText = await Web2.PerformBodyRequestToString(lastResponse, cancellationToken).ConfigureAwait(false);
+					}
+					else
+					{
+						feed.Status = FeedStatus.Ok;
+
+						return;
+					}
+				}
+				catch (OperationCanceledException ex) when (ex.InnerException is TimeoutException te)
+				{
+					TimeSpan timeoutRetry = TimeSpan.FromHours(1d);
+
+					LogTimeout(logger, feed.Name, feed.Link.AbsoluteUri, timeoutRetry.ToString(rateLimitRemainingFormat, CultureInfo.CurrentCulture));
+
+					RetryHeaderWithTimestamp timeoutRetryHeader = new RetryHeaderWithTimestamp(now, new RetryConditionHeaderValue(timeoutRetry));
+
+					updates.AddOrUpdate(
+						feed.Link,
+						(Uri _) => timeoutRetryHeader,
+						(Uri _, RetryHeaderWithTimestamp _) => timeoutRetryHeader
+					);
+
+					feed.Status = FeedStatus.Timeout;
+
+					return;
+				}
+				catch (HttpIOException)
+				{
+					feed.Status = FeedStatus.InternetError;
+
+					return;
+				}
+				catch (HttpRequestException)
+				{
+					feed.Status = FeedStatus.InternetError;
+
+					return;
+				}
 			}
 
-			if (!XmlHelpers.TryParse(response.Text, out XDocument? document))
+			if (!XmlHelpers.TryParse(responseText, out XDocument? document))
 			{
 				feed.Status = FeedStatus.ParseFailed;
 				return;
@@ -345,6 +362,90 @@ namespace RdrLib
 				.ToList();
 
 			return (largeGroups, everythingElse);
+		}
+
+		private TimeSpan IsFeedUnderRateLimit(Feed feed, DateTimeOffset thisUpdate)
+		{
+			if (updates.TryGetValue(feed.Link, out RetryHeaderWithTimestamp? headerWithTimestamp))
+			{
+				(DateTimeOffset previousUpdate, RetryConditionHeaderValue? retryHeader) = headerWithTimestamp;
+
+				if (retryHeader is RetryConditionHeaderValue retryHeaderValue)
+				{
+					return Web2.GetAmountOfTimeLeftOnRateLimit(retryHeader, thisUpdate, previousUpdate);
+				}
+			}
+
+			return TimeSpan.Zero;
+		}
+
+		private bool AreETagsDifferent(HttpResponseMessage response, Feed feed)
+		{
+			if (etags.TryGetValue(feed.Link, out ETag2? previousETag))
+			{
+				if (Web2.HasETagMatch(response, previousETag))
+				{
+					LogETagMatch(logger, feed.Name, feed.Link.AbsoluteUri);
+
+					feed.Status = FeedStatus.Ok;
+
+					return false;
+				}
+			}
+
+			if (response.Headers.ETag?.Tag is string currentETag)
+			{
+				etags.AddOrUpdate(feed.Link, (_) => new ETag2(currentETag), (_, _) => new ETag2(currentETag));
+			}
+
+			return true;
+		}
+
+		private bool IsLastModifiedHeaderDifferent(HttpResponseMessage response, Feed feed)
+		{
+			if (lastModifiedHeaders.TryGetValue(feed.Link, out DateTimeOffset previousLastModified))
+			{
+				if (response.Content.Headers.LastModified is DateTimeOffset newLastModified)
+				{
+					if (previousLastModified == newLastModified)
+					{
+						LogLastModifiedUnchanged(logger, feed.Name, feed.Link.AbsoluteUri, previousLastModified.ToString(CultureInfo.CurrentCulture));
+
+						feed.Status = FeedStatus.Ok;
+
+						return false;
+					}
+				}
+			}
+
+			if (response.Content.Headers.LastModified is DateTimeOffset lastModified)
+			{
+				lastModifiedHeaders.AddOrUpdate(feed.Link, (_) => lastModified, (_, _) => lastModified);
+			}
+
+			return true;
+		}
+
+		private bool ResponseContainsNoRateLimitHeader(HttpResponseMessage response, Feed feed, DateTimeOffset now)
+		{
+			if (response.Headers.RetryAfter is RetryConditionHeaderValue newRetryHeader)
+			{
+				updates.AddOrUpdate(
+					feed.Link,
+					(Uri _) => new RetryHeaderWithTimestamp(now, newRetryHeader),
+					(Uri _, RetryHeaderWithTimestamp _) => new RetryHeaderWithTimestamp(now, newRetryHeader)
+				);
+
+				TimeSpan timeLeft = Web2.GetAmountOfTimeLeftOnRateLimit(newRetryHeader, now);
+
+				LogNewRateLimit(logger, feed.Name, feed.Link.AbsoluteUri, timeLeft.ToString(rateLimitRemainingFormat, CultureInfo.CurrentCulture));
+
+				feed.Status = FeedStatus.RateLimited;
+
+				return false;
+			}
+
+			return true;
 		}
 
 		private static string GetError(StringResponse response)
@@ -396,31 +497,35 @@ namespace RdrLib
 		}
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path)
-			=> DownloadEnclosureAsyncInternal(enclosure, path, null, CancellationToken.None);
+		public Task<long> DownloadEnclosureAsync(Enclosure enclosure, FileInfo file)
+			=> DownloadEnclosureAsyncInternal(enclosure, file, null, CancellationToken.None);
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress> progress)
-			=> DownloadEnclosureAsyncInternal(enclosure, path, progress, CancellationToken.None);
+		public Task<long> DownloadEnclosureAsync(Enclosure enclosure, FileInfo file, IProgress<FileDownloadProgress> progress)
+			=> DownloadEnclosureAsyncInternal(enclosure, file, progress, CancellationToken.None);
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, CancellationToken cancellationToken)
-			=> DownloadEnclosureAsyncInternal(enclosure, path, null, cancellationToken);
+		public Task<long> DownloadEnclosureAsync(Enclosure enclosure, FileInfo file, CancellationToken cancellationToken)
+			=> DownloadEnclosureAsyncInternal(enclosure, file, null, cancellationToken);
 
 		[System.Diagnostics.DebuggerStepThrough]
-		public Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress> progress, CancellationToken cancellationToken)
-			=> DownloadEnclosureAsyncInternal(enclosure, path, progress, cancellationToken);
+		public Task<long> DownloadEnclosureAsync(Enclosure enclosure, FileInfo file, IProgress<FileDownloadProgress> progress, CancellationToken cancellationToken)
+			=> DownloadEnclosureAsyncInternal(enclosure, file, progress, cancellationToken);
 
-		private async Task<FileResponse> DownloadEnclosureAsyncInternal(Enclosure enclosure, string path, IProgress<FileProgress>? progress, CancellationToken cancellationToken)
+		private async Task<long> DownloadEnclosureAsyncInternal(Enclosure enclosure, FileInfo file, IProgress<FileDownloadProgress>? progress, CancellationToken cancellationToken)
 		{
 			ArgumentNullException.ThrowIfNull(enclosure);
-			ArgumentNullException.ThrowIfNull(path);
+			ArgumentNullException.ThrowIfNull(file);
 
 			using HttpClient client = httpClientFactory.CreateClient();
 
-			Task<FileResponse> downloadEnclosureTask = progress is not null
-				? Web.DownloadFileAsync(client, enclosure.Link, path, progress, cancellationToken)
-				: Web.DownloadFileAsync(client, enclosure.Link, path, cancellationToken);
+			using ResponseSet responseSet = await Web2.PerformHeaderRequest(client, enclosure.Link, cancellationToken).ConfigureAwait(false);
+
+			HttpResponseMessage lastResponse = responseSet.Responses.Last().Response;
+
+			Task<long> downloadEnclosureTask = progress is not null
+				? Web2.PerformBodyRequestToFile(lastResponse, file, progress, cancellationToken)
+				: Web2.PerformBodyRequestToFile(lastResponse, file, cancellationToken);
 
 			return await downloadEnclosureTask.ConfigureAwait(false);
 		}
@@ -448,11 +553,11 @@ namespace RdrLib
 		[LoggerMessage(FeedUpdateSucceededId, LogLevel.Debug, "updated '{FeedName}' ({FeedLink})")]
 		internal static partial void LogFeedUpdateSucceeded(ILogger<RdrService> logger, string feedName, string feedLink);
 
-		[LoggerMessage(ETagMatchId, LogLevel.Trace, "etag match for '{FeedName}' ('{FeedLink}')")]
+		[LoggerMessage(ETagMatchId, LogLevel.Debug, "etag match for '{FeedName}' ('{FeedLink}')")]
 		internal static partial void LogETagMatch(ILogger<RdrService> logger, string feedName, string feedLink);
 
-		[LoggerMessage(TimeoutId, LogLevel.Debug, "timeout for '{FeedName}' ('{FeedLink}')")]
-		internal static partial void LogTimeout(ILogger<RdrService> logger, string feedName, string feedLink);
+		[LoggerMessage(TimeoutId, LogLevel.Debug, "timeout for '{FeedName}' ('{FeedLink}') - will retry in {RetryTimeout}")]
+		internal static partial void LogTimeout(ILogger<RdrService> logger, string feedName, string feedLink, string retryTimeout);
 
 		[LoggerMessage(MarkAsReadId, LogLevel.Trace, "marked item as read: '{FeedName}'->'{ItemName}'")]
 		internal static partial void LogMarkAsRead(ILogger<RdrService> logger, string feedName, string itemName);
@@ -462,5 +567,14 @@ namespace RdrLib
 
 		[LoggerMessage(ClearFeedsId, LogLevel.Debug, "cleared ALL feeds")]
 		internal static partial void LogClearFeeds(ILogger<RdrService> logger);
+		
+		[LoggerMessage(NewRateLimitId, LogLevel.Warning, "new rate limit - '{FeedName}' ('{FeedLink}') - {TimeRemaining} remaining")]
+		internal static partial void LogNewRateLimit(ILogger<RdrService> logger, string feedName, string feedLink, string timeRemaining);
+		
+		[LoggerMessage(ExistingRateLimitId, LogLevel.Warning, "update skipped under existing rate limit - '{FeedName}' ('{FeedLink}') - {timeRemaining} remaining")]
+		internal static partial void LogExistingRateLimit(ILogger<RdrService> logger, string feedName, string feedLink, string timeRemaining);
+		
+		[LoggerMessage(LastModifiedUnchangedId, LogLevel.Debug, "LastModified unchanged - '{FeedName}' ('{FeedLink}') - {LastModified}")]
+		internal static partial void LogLastModifiedUnchanged(ILogger<RdrService> logger, string feedName, string feedLink, string lastModified);
 	}
 }

@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
@@ -12,6 +15,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Rdr.Common;
 using RdrLib;
+using RdrLib.Exceptions;
 using RdrLib.Model;
 using static Rdr.EventIds.MainWindowViewModel;
 using static Rdr.Gui.MainWindowViewModelLoggerMessages;
@@ -478,14 +482,21 @@ namespace Rdr.Gui
 			string filename = DetermineFileName(enclosure);
 			string fullPath = Path.Combine(downloadDirectory, filename);
 
+			FileInfo file = new FileInfo(fullPath);
+
+			if (file.Exists)
+			{
+				LogFileExists(logger, file.FullName);
+				
+				return;
+			}
+
 			LogDownloadLocalFilePath(logger, enclosure.Link.AbsoluteUri, fullPath);
 
-			Progress<FileProgress> progress = new Progress<FileProgress>((FileProgress e) =>
+			Progress<FileDownloadProgress> progress = new Progress<FileDownloadProgress>((FileDownloadProgress e) =>
 			{
-				string message = e.ContentLength.HasValue
-					? e.GetPercentFormatted(CultureInfo.CurrentCulture) ?? "error!"
-					: $"{e.TotalBytesWritten} bytes written";
-
+				string message = CreateEnclosureMessage(e);
+				
 				enclosure.Message = message;
 
 				LogDownloadProgress(logger, enclosure.Link.AbsoluteUri, fullPath, message);
@@ -496,28 +507,29 @@ namespace Rdr.Gui
 
 			LogDownloadStarted(logger, enclosure.FeedName, enclosure.Link.AbsoluteUri, fullPath);
 
-			FileResponse response = await rdrService.DownloadEnclosureAsync(enclosure, fullPath, progress).ConfigureAwait(true);
+			try
+			{
+				long bytesDownloaded = await rdrService.DownloadEnclosureAsync(enclosure, file, progress).ConfigureAwait(true);
 
-			if (response.Reason == Reason.Success)
-			{
-				if (String.Equals(fullPath, response.Path, StringComparison.OrdinalIgnoreCase))
-				{
-					LogDownloadFinished(logger, enclosure.FeedName, enclosure.Link.AbsoluteUri, response.Path ?? "null");
-				}
-				else
-				{
-					LogDownloadFinishedDifferentPath(logger, enclosure.FeedName, enclosure.Link.AbsoluteUri, response.Path ?? "null");
-				}
+				LogDownloadFinished(logger, enclosure.FeedName, enclosure.Link.AbsoluteUri, file.FullName);
+
+				enclosure.Message = "Download";
 			}
-			else
+			catch (HttpIOException ex)
 			{
-				LogDownloadFailed(logger, response.Reason, response.StatusCode, enclosure.FeedName, enclosure.Link.AbsoluteUri);
+				enclosure.Message = $"{ex.HttpRequestError}";
+			}
+			catch (HttpRequestException ex)
+			{
+				enclosure.Message = $"{ex.StatusCode}";
+			}
+			catch (IOException)
+			{
+				enclosure.Message = "i/o error";
 			}
 
 			enclosure.IsDownloading = false;
 			activeDownloads--;
-
-			enclosure.Message = (response.Reason == Reason.Success) ? "Download" : response.Reason.ToString();
 		}
 
 		private static string DetermineDownloadDirectory(RdrOptions rdrOptions)
@@ -540,6 +552,23 @@ namespace Rdr.Gui
 				string { Length: > 0 } value => value,
 				_ => $"rdr-unnamed-download-{DateTimeOffset.Now.Ticks}"
 			};
+		}
+
+		private static string CreateEnclosureMessage(FileDownloadProgress e)
+		{
+			CultureInfo cc = CultureInfo.CurrentCulture;
+
+			if (e.ContentLength.HasValue)
+			{
+				decimal ratio = Convert.ToDecimal(e.TotalBytesWritten) / Convert.ToDecimal(e.ContentLength.Value);
+				string format = string.Format(cc, "0{0}00 {1}", cc.NumberFormat.PercentDecimalSeparator, cc.NumberFormat.PercentSymbol);
+
+				return ratio.ToString(format, cc);
+			}
+			else
+			{
+				return $"{e.TotalBytesWritten} bytes written";
+			}
 		}
 
 		private async Task ViewFeedItemsAsync(Feed? feed)
@@ -714,6 +743,9 @@ namespace Rdr.Gui
 
 		[LoggerMessage(DownloadFailedId, LogLevel.Error, "download failed: {Reason} - {StatusCode} for '{FeedName}' from '{Link}'")]
 		internal static partial void LogDownloadFailed(ILogger<MainWindowViewModel> logger, Reason reason, HttpStatusCode? statusCode, string feedName, string link);
+		
+		[LoggerMessage(FileExistsId, LogLevel.Error, "file already exists - {FullPath}'")]
+		internal static partial void LogFileExists(ILogger<MainWindowViewModel> logger, string fullPath);
 
 		[LoggerMessage(WindowExitId, LogLevel.Debug, "window exit ('{WindowName}')")]
 		internal static partial void LogWindowExit(ILogger<MainWindowViewModel> logger, string windowName);

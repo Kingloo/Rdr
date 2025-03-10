@@ -18,7 +18,7 @@ namespace Rdr.Gui.Converters
 		public Brush MovedCannotFollow { get; set; } = Brushes.White;
 		public Brush Timeout { get; set; } = Brushes.White;
 		public Brush RateLimited { get; set; } = Brushes.White;
-		public Brush OtherInternetError { get; set; } = Brushes.White;
+		public Brush InternetError { get; set; } = Brushes.White;
 		public Brush Broken { get; set; } = Brushes.White;
 
 		public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
@@ -33,7 +33,7 @@ namespace Rdr.Gui.Converters
 				FeedStatus.Timeout => Timeout,
 				FeedStatus.RateLimited => RateLimited,
 				FeedStatus.MovedCannotFollow => MovedCannotFollow,
-				FeedStatus.OtherInternetError => OtherInternetError,
+				FeedStatus.InternetError => InternetError,
 				FeedStatus.Broken => Broken,
 				_ => None
 			};

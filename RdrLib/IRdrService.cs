@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using RdrLib.Model;
@@ -25,11 +26,13 @@ namespace RdrLib
 		Task UpdateAsync(Feed feed);
 		Task UpdateAsync(Feed feed, CancellationToken cancellationToken);
 		Task UpdateAsync(IEnumerable<Feed> feeds);
+		Task UpdateAsync(IEnumerable<Feed> feeds, BatchOptions batchOptions);
 		Task UpdateAsync(IEnumerable<Feed> feeds, CancellationToken cancellationToken);
+		Task UpdateAsync(IEnumerable<Feed> feeds, BatchOptions batchOptions, CancellationToken cancellationToken);
 
-		Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path);
-		Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress> progress);
-		Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, CancellationToken cancellationToken);
-		Task<FileResponse> DownloadEnclosureAsync(Enclosure enclosure, string path, IProgress<FileProgress> progress, CancellationToken cancellationToken);
+		Task<long> DownloadEnclosureAsync(Enclosure enclosure, FileInfo file);
+		Task<long> DownloadEnclosureAsync(Enclosure enclosure, FileInfo file, IProgress<FileDownloadProgress> progress);
+		Task<long> DownloadEnclosureAsync(Enclosure enclosure, FileInfo file, CancellationToken cancellationToken);
+		Task<long> DownloadEnclosureAsync(Enclosure enclosure, FileInfo file, IProgress<FileDownloadProgress> progress, CancellationToken cancellationToken);
 	}
 }

@@ -57,7 +57,7 @@
                                                      MovedCannotFollow="Red"
 													 Timeout="Yellow"
 													 RateLimited="Orange"
-                                                     OtherInternetError="LightBlue"
+                                                     InternetError="LightBlue"
                                                      Broken="Blue" />
 			</DataTemplate.Resources>
 

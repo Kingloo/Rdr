@@ -11,7 +11,7 @@ namespace RdrLib
 		MovedCannotFollow,
 		Timeout,
 		RateLimited,
-		OtherInternetError,
+		InternetError,
 		Broken
 	}
 }

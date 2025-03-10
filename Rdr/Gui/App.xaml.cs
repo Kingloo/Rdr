@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net;
 using System.Net.Http;
 using System.Net.Security;
 using System.Security.Authentication;
@@ -108,6 +109,8 @@ namespace Rdr.Gui
 			services.AddHttpClient("RdrService")
 				.ConfigureHttpClient(static (HttpClient client) =>
 				{
+					client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:134.0) Gecko/20100101 Firefox/135.0");
+					client.DefaultRequestVersion = HttpVersion.Version20;
 					client.Timeout = TimeSpan.FromSeconds(10d);
 				})
 				.ConfigurePrimaryHttpMessageHandler(static () =>
