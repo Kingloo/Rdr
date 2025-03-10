@@ -448,54 +448,6 @@ namespace RdrLib
 			return true;
 		}
 
-		private static string GetError(StringResponse response)
-		{
-			StringBuilder sb = new StringBuilder();
-
-			sb.Append(response.Reason.ToString());
-
-			if (response.StatusCode is HttpStatusCode statusCode)
-			{
-				sb.Append(" - ");
-				sb.Append(FormatStatusCode(statusCode));
-			}
-
-			if (response.Exception is Exception ex)
-			{
-				Exception toLog = ex switch
-				{
-					HttpRequestException httpRequestException => httpRequestException.InnerException ?? httpRequestException,
-					_ => ex
-				};
-
-				string? message = toLog switch
-				{
-					HttpRequestException httpRequestException => httpRequestException.HttpRequestError == HttpRequestError.Unknown
-						? null
-						: httpRequestException.HttpRequestError.ToString(),
-					HttpIOException httpIOException => $"{nameof(HttpIOException)} ({httpIOException.HttpRequestError})",
-					SocketException socketException => $"{nameof(SocketException)} ({socketException.SocketErrorCode})",
-					OperationCanceledException operationCanceledException => null,
-					_ => ex.GetType().FullName ?? ex.GetType().Name
-				};
-
-				if (!String.IsNullOrEmpty(message))
-				{
-					sb.Append(" - ");
-					sb.Append(message);
-				}
-			}
-
-			return sb.ToString();
-		}
-
-		private static string GetNameForLogMessage(Feed feed)
-		{
-			return String.Equals(feed.Name, feed.Link.AbsoluteUri, StringComparison.OrdinalIgnoreCase)
-				? feed.Link.AbsoluteUri
-				: feed.Name;
-		}
-
 		[System.Diagnostics.DebuggerStepThrough]
 		public Task<long> DownloadEnclosureAsync(Enclosure enclosure, FileInfo file)
 			=> DownloadEnclosureAsyncInternal(enclosure, file, null, CancellationToken.None);
@@ -571,7 +523,7 @@ namespace RdrLib
 		[LoggerMessage(NewRateLimitId, LogLevel.Warning, "new rate limit - '{FeedName}' ('{FeedLink}') - {TimeRemaining} remaining")]
 		internal static partial void LogNewRateLimit(ILogger<RdrService> logger, string feedName, string feedLink, string timeRemaining);
 		
-		[LoggerMessage(ExistingRateLimitId, LogLevel.Warning, "update skipped under existing rate limit - '{FeedName}' ('{FeedLink}') - {timeRemaining} remaining")]
+		[LoggerMessage(ExistingRateLimitId, LogLevel.Information, "update skipped under existing rate limit - '{FeedName}' ('{FeedLink}') - {timeRemaining} remaining")]
 		internal static partial void LogExistingRateLimit(ILogger<RdrService> logger, string feedName, string feedLink, string timeRemaining);
 		
 		[LoggerMessage(LastModifiedUnchangedId, LogLevel.Debug, "LastModified unchanged - '{FeedName}' ('{FeedLink}') - {LastModified}")]
