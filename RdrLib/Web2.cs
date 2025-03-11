@@ -45,7 +45,10 @@ namespace RdrLib
 
 				HttpResponseMessage response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
 
+#pragma warning disable CA2000 // Dispose objects before losing scope
+// disposing 'ResponseSet' disposes each 'ResponseSetItem's
 				responseSet.Responses.Add(new ResponseSetItem(uri, response));
+#pragma warning restore CA2000 // Dispose objects before losing scope
 
 				if (!response.IsSuccessStatusCode && response.Headers.Location is Uri nextUri)
 				{
