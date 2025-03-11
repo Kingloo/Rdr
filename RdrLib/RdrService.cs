@@ -293,7 +293,10 @@ namespace RdrLib
 					}
 					else
 					{
-						feed.Status = FeedStatus.Ok;
+						if (feed.Status == FeedStatus.Updating)
+						{
+							feed.Status = FeedStatus.Ok;
+						}
 
 						return;
 					}
@@ -523,7 +526,7 @@ namespace RdrLib
 		[LoggerMessage(NewRateLimitId, LogLevel.Warning, "new rate limit - '{FeedName}' ('{FeedLink}') - {TimeRemaining} remaining")]
 		internal static partial void LogNewRateLimit(ILogger<RdrService> logger, string feedName, string feedLink, string timeRemaining);
 		
-		[LoggerMessage(ExistingRateLimitId, LogLevel.Information, "update skipped under existing rate limit - '{FeedName}' ('{FeedLink}') - {timeRemaining} remaining")]
+		[LoggerMessage(ExistingRateLimitId, LogLevel.Debug, "update skipped under existing rate limit - '{FeedName}' ('{FeedLink}') - {timeRemaining} remaining")]
 		internal static partial void LogExistingRateLimit(ILogger<RdrService> logger, string feedName, string feedLink, string timeRemaining);
 		
 		[LoggerMessage(LastModifiedUnchangedId, LogLevel.Debug, "LastModified unchanged - '{FeedName}' ('{FeedLink}') - {LastModified}")]
