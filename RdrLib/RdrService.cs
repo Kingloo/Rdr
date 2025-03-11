@@ -5,11 +5,8 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -18,7 +15,6 @@ using Microsoft.Extensions.Options;
 using RdrLib.Helpers;
 using RdrLib.Model;
 using static RdrLib.EventIds.RdrService;
-using static RdrLib.Helpers.HttpStatusCodeHelpers;
 using static RdrLib.RdrServiceLoggerMessages;
 
 namespace RdrLib
@@ -433,13 +429,18 @@ namespace RdrLib
 		{
 			if (response.Headers.RetryAfter is RetryConditionHeaderValue newRetryHeader)
 			{
-				updates.AddOrUpdate(
-					feed.Link,
-					(Uri _) => new RetryHeaderWithTimestamp(now, newRetryHeader),
-					(Uri _, RetryHeaderWithTimestamp _) => new RetryHeaderWithTimestamp(now, newRetryHeader)
-				);
+				// if we had an existing rate limit header and we got another on this request
+				// make the rate limit even longer than the new header requires
 
-				TimeSpan timeLeft = Web2.GetAmountOfTimeLeftOnRateLimit(newRetryHeader, now);
+				TimeSpan timeLeft = updates.TryGetValue(feed.Link, out RetryHeaderWithTimestamp? _)
+					? GetRateLimitWithOptionalMinimum(newRetryHeader, now, rdrOptionsMonitor.CurrentValue.RateLimitRepeatMinimum)
+					: Web2.GetAmountOfTimeLeftOnRateLimit(newRetryHeader, now);
+
+				updates.AddOrUpdate( // replacing with new header with (potentially adjusted) backoff time
+					feed.Link,
+					(Uri _) => new RetryHeaderWithTimestamp(now, new RetryConditionHeaderValue(timeLeft)),
+					(Uri _, RetryHeaderWithTimestamp _) => new RetryHeaderWithTimestamp(now, new RetryConditionHeaderValue(timeLeft))
+				);
 
 				LogNewRateLimit(logger, feed.Name, feed.Link.AbsoluteUri, timeLeft.ToString(rateLimitRemainingFormat, CultureInfo.CurrentCulture));
 
@@ -449,6 +450,18 @@ namespace RdrLib
 			}
 
 			return true;
+		}
+
+		private static TimeSpan GetRateLimitWithOptionalMinimum(RetryConditionHeaderValue retryHeaderValue, DateTimeOffset now, TimeSpan minimumRateLimit)
+		{
+			TimeSpan rateLimitFromHeader = Web2.GetAmountOfTimeLeftOnRateLimit(retryHeaderValue, now);
+
+			if (minimumRateLimit == TimeSpan.Zero)
+			{
+				return rateLimitFromHeader;
+			}
+
+			return minimumRateLimit > rateLimitFromHeader ? minimumRateLimit : rateLimitFromHeader;
 		}
 
 		[System.Diagnostics.DebuggerStepThrough]

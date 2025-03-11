@@ -1,6 +1,5 @@
 using System;
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
 
 namespace RdrLib
 {
@@ -9,7 +8,6 @@ namespace RdrLib
 		public const string DefaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:134.0) Gecko/20100101 Firefox/134.0";
 		public const int DefaultUpdateConcurrency = 4;
 		public static readonly TimeSpan DefaultUpdateInterval = TimeSpan.FromMinutes(15d);
-		public static readonly TimeSpan DefaultHttp429BackOffInterval = TimeSpan.FromHours(6d);
 
 		public string CustomUserAgent { get; init; } = DefaultUserAgent;
 
@@ -22,7 +20,7 @@ namespace RdrLib
 
 		public TimeSpan UpdateInterval { get; init; } = DefaultUpdateInterval;
 
-		public TimeSpan Http429BackOffInterval { get; init; } = DefaultHttp429BackOffInterval;
+		public TimeSpan RateLimitRepeatMinimum { get; init; } = TimeSpan.Zero;
 
 		public RdrOptions() { }
 	}
