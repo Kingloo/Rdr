@@ -518,14 +518,20 @@ namespace Rdr.Gui
 			catch (HttpIOException ex)
 			{
 				enclosure.Message = $"{ex.HttpRequestError}";
+
+				LogDownloadFailed(logger, ex.HttpRequestError.ToString(), enclosure.FeedName, enclosure.Link.AbsoluteUri);
 			}
 			catch (HttpRequestException ex)
 			{
 				enclosure.Message = $"{ex.StatusCode}";
+
+				LogDownloadFailed(logger, ex.HttpRequestError.ToString(), enclosure.FeedName, enclosure.Link.AbsoluteUri);
 			}
-			catch (IOException)
+			catch (IOException ex)
 			{
 				enclosure.Message = "i/o error";
+
+				LogDownloadFailed(logger, ex.Message, enclosure.FeedName, enclosure.Link.AbsoluteUri);
 			}
 
 			enclosure.IsDownloading = false;
@@ -741,8 +747,8 @@ namespace Rdr.Gui
 		[LoggerMessage(DownloadFinishedDifferentPathId, LogLevel.Warning, "downloaded '{FeedName}' from '{Link}' to '{DifferentLocalPath}'")]
 		internal static partial void LogDownloadFinishedDifferentPath(ILogger<MainWindowViewModel> logger, string feedName, string link, string differentlocalPath);
 
-		[LoggerMessage(DownloadFailedId, LogLevel.Error, "download failed: {Reason} - {StatusCode} for '{FeedName}' from '{Link}'")]
-		internal static partial void LogDownloadFailed(ILogger<MainWindowViewModel> logger, Reason reason, HttpStatusCode? statusCode, string feedName, string link);
+		[LoggerMessage(DownloadFailedId, LogLevel.Error, "download failed: '{Reason}' - for '{FeedName}' from '{Link}'")]
+		internal static partial void LogDownloadFailed(ILogger<MainWindowViewModel> logger, string reason, string feedName, string link);
 
 		[LoggerMessage(FileExistsId, LogLevel.Error, "file already exists - {FullPath}'")]
 		internal static partial void LogFileExists(ILogger<MainWindowViewModel> logger, string fullPath);
