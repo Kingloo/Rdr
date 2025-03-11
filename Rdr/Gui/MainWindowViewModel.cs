@@ -487,7 +487,7 @@ namespace Rdr.Gui
 			if (file.Exists)
 			{
 				LogFileExists(logger, file.FullName);
-				
+
 				return;
 			}
 
@@ -496,7 +496,7 @@ namespace Rdr.Gui
 			Progress<FileDownloadProgress> progress = new Progress<FileDownloadProgress>((FileDownloadProgress e) =>
 			{
 				string message = CreateEnclosureMessage(e);
-				
+
 				enclosure.Message = message;
 
 				LogDownloadProgress(logger, enclosure.Link.AbsoluteUri, fullPath, message);
@@ -743,7 +743,7 @@ namespace Rdr.Gui
 
 		[LoggerMessage(DownloadFailedId, LogLevel.Error, "download failed: {Reason} - {StatusCode} for '{FeedName}' from '{Link}'")]
 		internal static partial void LogDownloadFailed(ILogger<MainWindowViewModel> logger, Reason reason, HttpStatusCode? statusCode, string feedName, string link);
-		
+
 		[LoggerMessage(FileExistsId, LogLevel.Error, "file already exists - {FullPath}'")]
 		internal static partial void LogFileExists(ILogger<MainWindowViewModel> logger, string fullPath);
 

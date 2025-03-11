@@ -262,7 +262,7 @@ namespace RdrLib
 			using (HttpClient client = httpClientFactory.CreateClient("RdrService"))
 			{
 				bool shouldProceedWithBody = false;
-				
+
 				try
 				{
 					using ResponseSet responseSet = await Web2.PerformHeaderRequest(client, feed.Link, cancellationToken).ConfigureAwait(false);
@@ -284,7 +284,7 @@ namespace RdrLib
 							(Uri _) => new RetryHeaderWithTimestamp(now, null),
 							(Uri _, RetryHeaderWithTimestamp _) => new RetryHeaderWithTimestamp(now, null)
 						);
-						
+
 						responseText = await Web2.PerformBodyRequestToString(lastResponse, cancellationToken).ConfigureAwait(false);
 					}
 					else
@@ -535,13 +535,13 @@ namespace RdrLib
 
 		[LoggerMessage(ClearFeedsId, LogLevel.Debug, "cleared ALL feeds")]
 		internal static partial void LogClearFeeds(ILogger<RdrService> logger);
-		
+
 		[LoggerMessage(NewRateLimitId, LogLevel.Warning, "new rate limit - '{FeedName}' ('{FeedLink}') - {TimeRemaining} remaining")]
 		internal static partial void LogNewRateLimit(ILogger<RdrService> logger, string feedName, string feedLink, string timeRemaining);
-		
+
 		[LoggerMessage(ExistingRateLimitId, LogLevel.Debug, "update skipped under existing rate limit - '{FeedName}' ('{FeedLink}') - {timeRemaining} remaining")]
 		internal static partial void LogExistingRateLimit(ILogger<RdrService> logger, string feedName, string feedLink, string timeRemaining);
-		
+
 		[LoggerMessage(LastModifiedUnchangedId, LogLevel.Debug, "LastModified unchanged - '{FeedName}' ('{FeedLink}') - {LastModified}")]
 		internal static partial void LogLastModifiedUnchanged(ILogger<RdrService> logger, string feedName, string feedLink, string lastModified);
 	}
