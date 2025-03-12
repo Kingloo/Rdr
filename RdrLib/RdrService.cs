@@ -242,13 +242,15 @@ namespace RdrLib
 		{
 			LogFeedUpdateStarted(logger, feed.Name, feed.Link.AbsoluteUri);
 
+			RdrOptions currentRdrOptions = rdrOptionsMonitor.CurrentValue;
+
 			DateTimeOffset now = DateTimeOffset.Now;
 
 			feed.Status = FeedStatus.Updating;
 
 			TimeSpan rateLimitTimeRemaining = IsFeedUnderRateLimit(feed, now);
 
-			if (rateLimitTimeRemaining > TimeSpan.Zero)
+			if (rateLimitTimeRemaining > TimeSpan.Zero) // feed is under rate limit conditions
 			{
 				LogExistingRateLimit(logger, feed.Name, feed.Link.AbsoluteUri, rateLimitTimeRemaining.ToString(rateLimitRemainingFormat, CultureInfo.CurrentCulture));
 
@@ -271,7 +273,7 @@ namespace RdrLib
 
 					bool areETagsDifferent = AreETagsDifferent(lastResponse, feed);
 					bool isLastModifiedHeaderDifferent = IsLastModifiedHeaderDifferent(lastResponse, feed);
-					bool responseContainsNoRateLimitHeader = ResponseContainsNoRateLimitHeader(lastResponse, feed, now);
+					bool responseContainsNoRateLimitHeader = ResponseContainsNoRateLimitHeader(lastResponse, feed, now, currentRdrOptions);
 
 					shouldProceedWithBody = areETagsDifferent
 						&& isLastModifiedHeaderDifferent
@@ -299,7 +301,7 @@ namespace RdrLib
 				}
 				catch (OperationCanceledException ex) when (ex.InnerException is TimeoutException te)
 				{
-					TimeSpan timeoutRetry = TimeSpan.FromHours(1d);
+					TimeSpan timeoutRetry = currentRdrOptions.RateLimitRepeatMinimum;
 
 					LogTimeout(logger, feed.Name, feed.Link.AbsoluteUri, timeoutRetry.ToString(rateLimitRemainingFormat, CultureInfo.CurrentCulture));
 
@@ -425,7 +427,7 @@ namespace RdrLib
 			return true;
 		}
 
-		private bool ResponseContainsNoRateLimitHeader(HttpResponseMessage response, Feed feed, DateTimeOffset now)
+		private bool ResponseContainsNoRateLimitHeader(HttpResponseMessage response, Feed feed, DateTimeOffset now, RdrOptions rdrOptions)
 		{
 			if (response.Headers.RetryAfter is RetryConditionHeaderValue newRetryHeader)
 			{
@@ -433,7 +435,7 @@ namespace RdrLib
 				// make the rate limit even longer than the new header requires
 
 				TimeSpan timeLeft = updates.TryGetValue(feed.Link, out RetryHeaderWithTimestamp? _)
-					? GetRateLimitWithOptionalMinimum(newRetryHeader, now, rdrOptionsMonitor.CurrentValue.RateLimitRepeatMinimum)
+					? GetRateLimitWithOptionalMinimum(newRetryHeader, now, rdrOptions.RateLimitRepeatMinimum)
 					: Web2.GetAmountOfTimeLeftOnRateLimit(newRetryHeader, now);
 
 				updates.AddOrUpdate( // replacing with new header with (potentially adjusted) backoff time
@@ -524,7 +526,7 @@ namespace RdrLib
 		[LoggerMessage(ETagMatchId, LogLevel.Debug, "etag match for '{FeedName}' ('{FeedLink}')")]
 		internal static partial void LogETagMatch(ILogger<RdrService> logger, string feedName, string feedLink);
 
-		[LoggerMessage(TimeoutId, LogLevel.Debug, "timeout for '{FeedName}' ('{FeedLink}') - will retry in {RetryTimeout}")]
+		[LoggerMessage(TimeoutId, LogLevel.Warning, "timeout for '{FeedName}' ('{FeedLink}') - will retry in {RetryTimeout}")]
 		internal static partial void LogTimeout(ILogger<RdrService> logger, string feedName, string feedLink, string retryTimeout);
 
 		[LoggerMessage(MarkAsReadId, LogLevel.Trace, "marked item as read: '{FeedName}'->'{ItemName}'")]
