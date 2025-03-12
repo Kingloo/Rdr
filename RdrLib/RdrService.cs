@@ -301,7 +301,10 @@ namespace RdrLib
 				}
 				catch (OperationCanceledException ex) when (ex.InnerException is TimeoutException te)
 				{
-					TimeSpan timeoutRetry = currentRdrOptions.RateLimitRepeatMinimum;
+					TimeSpan timeoutRetry = updates.TryGetValue(feed.Link, out RetryHeaderWithTimestamp? retryHeaderWithTimestamp)
+						&& retryHeaderWithTimestamp.RetryHeader is RetryConditionHeaderValue retryConditionHeaderValue
+							? ApplyRateLimitChangeStrategy(retryConditionHeaderValue, now, currentRdrOptions.RateLimitChangeStrategy)
+							: currentRdrOptions.RateLimitOnHttpTimeout;
 
 					LogTimeout(logger, feed.Name, feed.Link.AbsoluteUri, timeoutRetry.ToString(rateLimitRemainingFormat, CultureInfo.CurrentCulture));
 
@@ -434,9 +437,10 @@ namespace RdrLib
 				// if we had an existing rate limit header and we got another on this request
 				// make the rate limit even longer than the new header requires
 
-				TimeSpan timeLeft = updates.TryGetValue(feed.Link, out RetryHeaderWithTimestamp? _)
-					? GetRateLimitWithOptionalMinimum(newRetryHeader, now, rdrOptions.RateLimitRepeatMinimum)
-					: Web2.GetAmountOfTimeLeftOnRateLimit(newRetryHeader, now);
+				TimeSpan timeLeft = updates.TryGetValue(feed.Link, out RetryHeaderWithTimestamp? existingRetryHeaderWithTimestamp)
+					&& existingRetryHeaderWithTimestamp.RetryHeader is RetryConditionHeaderValue existingRetryHeaderValue
+						? ApplyRateLimitChangeStrategy(existingRetryHeaderValue, now, rdrOptions.RateLimitChangeStrategy)
+						: Web2.GetAmountOfTimeLeftOnRateLimit(newRetryHeader, now);
 
 				updates.AddOrUpdate( // replacing with new header with (potentially adjusted) backoff time
 					feed.Link,
@@ -454,16 +458,18 @@ namespace RdrLib
 			return true;
 		}
 
-		private static TimeSpan GetRateLimitWithOptionalMinimum(RetryConditionHeaderValue retryHeaderValue, DateTimeOffset now, TimeSpan minimumRateLimit)
+		private static TimeSpan ApplyRateLimitChangeStrategy(RetryConditionHeaderValue existingRetryHeaderValue, DateTimeOffset now, RateLimitChangeStrategy rateLimitChangeStrategy)
 		{
-			TimeSpan rateLimitFromHeader = Web2.GetAmountOfTimeLeftOnRateLimit(retryHeaderValue, now);
+			TimeSpan existingHeaderRateLimit = Web2.GetAmountOfTimeLeftOnRateLimit(existingRetryHeaderValue, now);
 
-			if (minimumRateLimit == TimeSpan.Zero)
+			return rateLimitChangeStrategy switch
 			{
-				return rateLimitFromHeader;
-			}
-
-			return minimumRateLimit > rateLimitFromHeader ? minimumRateLimit : rateLimitFromHeader;
+				RateLimitChangeStrategy.Double => existingHeaderRateLimit * 2,
+				RateLimitChangeStrategy.Triple => existingHeaderRateLimit * 3,
+				RateLimitChangeStrategy.AddHour => existingHeaderRateLimit.Add(TimeSpan.FromHours(1d)),
+				RateLimitChangeStrategy.AddDay => existingHeaderRateLimit.Add(TimeSpan.FromDays(1d)),
+				_ => throw new ArgumentException($"invalid value: '{rateLimitChangeStrategy.ToString()}'", nameof(rateLimitChangeStrategy))
+			};
 		}
 
 		[System.Diagnostics.DebuggerStepThrough]
