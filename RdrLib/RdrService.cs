@@ -268,7 +268,28 @@ namespace RdrLib
 
 				try
 				{
-					using ResponseSet responseSet = await Web2.PerformHeaderRequest(client, feed.Link, cancellationToken).ConfigureAwait(false);
+					ETag2? existingETag = etags.TryGetValue(feed.Link, out ETag2? etag) ? etag : null;
+					DateTimeOffset? lastModified = updates.TryGetValue(feed.Link, out RetryHeaderWithTimestamp? rhwts) ? rhwts.Time : null;
+					
+					// don't condense the .TryGetValue calls into makeRequestConditional with '||' - doesn't work
+					bool makeRequestConditional = existingETag is not null || lastModified is not null;
+
+					void configureRequest(HttpRequestMessage request)
+					{
+						if (existingETag is not null)
+						{
+							request.Headers.IfNoneMatch.Add(new EntityTagHeaderValue(existingETag.Value));
+						}
+
+						if (rhwts is not null)
+						{
+							request.Headers.IfModifiedSince = rhwts.Time;
+						}
+					}
+
+					using ResponseSet responseSet = makeRequestConditional
+						? await Web2.PerformHeaderRequest(client, feed.Link, configureRequest, cancellationToken).ConfigureAwait(false)
+						: await Web2.PerformHeaderRequest(client, feed.Link, cancellationToken).ConfigureAwait(false);
 
 					HttpResponseMessage lastResponse = responseSet.Responses.Last().Response;
 
@@ -475,9 +496,12 @@ namespace RdrLib
 
 		private static string FormatTimeSpan(TimeSpan ts)
 		{
-			return ts.TotalSeconds >= 86400
-				? ts.ToString(rateLimitRemainingWithDaysFormat, CultureInfo.CurrentCulture)
-				: ts.ToString(rateLimitRemainingFormat, CultureInfo.CurrentCulture);
+			return ts switch
+			{
+				{ TotalSeconds: >= 86400 } => ts.ToString(rateLimitRemainingWithDaysFormat, CultureInfo.CurrentCulture),
+				{ Ticks: 0 } => "zero",
+				_ => ts.ToString(rateLimitRemainingFormat, CultureInfo.CurrentCulture)
+			};
 		}
 
 		[System.Diagnostics.DebuggerStepThrough]
