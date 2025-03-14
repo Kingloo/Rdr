@@ -293,11 +293,13 @@ namespace RdrLib
 
 					HttpResponseMessage lastResponse = responseSet.Responses.Last().Response;
 
+					bool statusOk = lastResponse.StatusCode == System.Net.HttpStatusCode.OK;
 					bool areETagsDifferent = AreETagsDifferent(lastResponse, feed);
 					bool isLastModifiedHeaderDifferent = IsLastModifiedHeaderDifferent(lastResponse, feed);
 					bool responseContainsNoRateLimitHeader = ResponseContainsNoRateLimitHeader(lastResponse, feed, now, currentRdrOptions);
 
-					shouldProceedWithBody = areETagsDifferent
+					shouldProceedWithBody = statusOk
+						&& areETagsDifferent
 						&& isLastModifiedHeaderDifferent
 						&& responseContainsNoRateLimitHeader;
 
