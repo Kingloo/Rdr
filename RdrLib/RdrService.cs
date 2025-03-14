@@ -22,6 +22,7 @@ namespace RdrLib
 	public partial class RdrService : IRdrService
 	{
 		private const string rateLimitRemainingFormat = @"hh\:mm\:ss";
+		private const string rateLimitRemainingWithDaysFormat = @"d\.hh\:mm\:ss";
 
 		private readonly ConcurrentDictionary<Uri, ETag2> etags = new ConcurrentDictionary<Uri, ETag2>();
 		private readonly ConcurrentDictionary<Uri, RetryHeaderWithTimestamp> updates = new ConcurrentDictionary<Uri, RetryHeaderWithTimestamp>();
@@ -252,7 +253,7 @@ namespace RdrLib
 
 			if (rateLimitTimeRemaining > TimeSpan.Zero) // feed is under rate limit conditions
 			{
-				LogExistingRateLimit(logger, feed.Name, feed.Link.AbsoluteUri, rateLimitTimeRemaining.ToString(rateLimitRemainingFormat, CultureInfo.CurrentCulture));
+				LogExistingRateLimit(logger, feed.Name, feed.Link.AbsoluteUri, FormatTimeSpan(rateLimitTimeRemaining));
 
 				feed.Status = FeedStatus.RateLimited;
 
@@ -306,7 +307,7 @@ namespace RdrLib
 							? ApplyRateLimitChangeStrategy(retryConditionHeaderValue, now, currentRdrOptions.RateLimitChangeStrategy)
 							: currentRdrOptions.RateLimitOnHttpTimeout;
 
-					LogTimeout(logger, feed.Name, feed.Link.AbsoluteUri, timeoutRetry.ToString(rateLimitRemainingFormat, CultureInfo.CurrentCulture));
+					LogTimeout(logger, feed.Name, feed.Link.AbsoluteUri, FormatTimeSpan(timeoutRetry));
 
 					RetryHeaderWithTimestamp timeoutRetryHeader = new RetryHeaderWithTimestamp(now, new RetryConditionHeaderValue(timeoutRetry));
 
@@ -448,7 +449,7 @@ namespace RdrLib
 					(Uri _, RetryHeaderWithTimestamp _) => new RetryHeaderWithTimestamp(now, new RetryConditionHeaderValue(timeLeft))
 				);
 
-				LogNewRateLimit(logger, feed.Name, feed.Link.AbsoluteUri, timeLeft.ToString(rateLimitRemainingFormat, CultureInfo.CurrentCulture));
+				LogNewRateLimit(logger, feed.Name, feed.Link.AbsoluteUri, FormatTimeSpan(timeLeft));
 
 				feed.Status = FeedStatus.RateLimited;
 
@@ -468,8 +469,15 @@ namespace RdrLib
 				RateLimitChangeStrategy.Triple => existingHeaderRateLimit * 3,
 				RateLimitChangeStrategy.AddHour => existingHeaderRateLimit.Add(TimeSpan.FromHours(1d)),
 				RateLimitChangeStrategy.AddDay => existingHeaderRateLimit.Add(TimeSpan.FromDays(1d)),
-				_ => throw new ArgumentException($"invalid value: '{rateLimitChangeStrategy.ToString()}'", nameof(rateLimitChangeStrategy))
+				_ => throw new ArgumentException($"invalid value: '{rateLimitChangeStrategy}'", nameof(rateLimitChangeStrategy))
 			};
+		}
+
+		private static string FormatTimeSpan(TimeSpan ts)
+		{
+			return ts.TotalSeconds >= 86400
+				? ts.ToString(rateLimitRemainingWithDaysFormat, CultureInfo.CurrentCulture)
+				: ts.ToString(rateLimitRemainingFormat, CultureInfo.CurrentCulture);
 		}
 
 		[System.Diagnostics.DebuggerStepThrough]
