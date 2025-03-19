@@ -500,7 +500,7 @@ namespace RdrLib
 		{
 			return ts switch
 			{
-				{ Ticks: >= TimeSpan.TicksPerHour } => ts.ToString(rateLimitRemainingWithDaysFormat, CultureInfo.CurrentCulture),
+				{ Ticks: >= TimeSpan.TicksPerDay } => ts.ToString(rateLimitRemainingWithDaysFormat, CultureInfo.CurrentCulture),
 				{ Ticks: 0 } => "zero",
 				{ Ticks: < 0 } => throw new ArgumentException("timespan cannot be negative", nameof(ts)),
 				_ => ts.ToString(rateLimitRemainingFormat, CultureInfo.CurrentCulture)
