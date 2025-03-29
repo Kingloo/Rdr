@@ -1,4 +1,4 @@
-namespace RdrLib
+namespace RdrLib.Model
 {
 	public enum FeedStatus
 	{
@@ -10,6 +10,7 @@ namespace RdrLib
 		ParseFailed,
 		MovedCannotFollow,
 		Timeout,
+		Dns,
 		RateLimited,
 		InternetError,
 		Broken

@@ -2,7 +2,7 @@ using System;
 using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
-using RdrLib;
+using RdrLib.Model;
 
 namespace Rdr.Gui.Converters
 {
@@ -17,6 +17,7 @@ namespace Rdr.Gui.Converters
 		public Brush ParseFailed { get; set; } = Brushes.White;
 		public Brush MovedCannotFollow { get; set; } = Brushes.White;
 		public Brush Timeout { get; set; } = Brushes.White;
+		public Brush Dns { get; set; } = Brushes.White;
 		public Brush RateLimited { get; set; } = Brushes.White;
 		public Brush InternetError { get; set; } = Brushes.White;
 		public Brush Broken { get; set; } = Brushes.White;
@@ -31,6 +32,7 @@ namespace Rdr.Gui.Converters
 				FeedStatus.Forbidden => Forbidden,
 				FeedStatus.ParseFailed => ParseFailed,
 				FeedStatus.Timeout => Timeout,
+				FeedStatus.Dns => Dns,
 				FeedStatus.RateLimited => RateLimited,
 				FeedStatus.MovedCannotFollow => MovedCannotFollow,
 				FeedStatus.InternetError => InternetError,

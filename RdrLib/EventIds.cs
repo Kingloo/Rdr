@@ -18,6 +18,7 @@ namespace RdrLib.EventIds
 		internal const int NewRateLimitId = 111;
 		internal const int ExistingRateLimitId = 112;
 		internal const int LastModifiedUnchangedId = 113;
+		internal const int RequestIsConditionalId = 114;
 
 		internal static readonly EventId FeedUpdateStarted = new EventId(FeedUpdateStartedId, nameof(FeedUpdateStarted));
 		internal static readonly EventId FeedUpdateSucceeded = new EventId(FeedUpdateSucceededId, nameof(FeedUpdateSucceeded));
@@ -33,5 +34,6 @@ namespace RdrLib.EventIds
 		internal static readonly EventId NewRateLimit = new EventId(NewRateLimitId, nameof(NewRateLimit));
 		internal static readonly EventId ExistingRateLimit = new EventId(ExistingRateLimitId, nameof(ExistingRateLimit));
 		internal static readonly EventId LastModifiedUnchanged = new EventId(LastModifiedUnchangedId, nameof(LastModifiedUnchanged));
+		internal static readonly EventId RequestIsConditional = new EventId(LastModifiedUnchangedId, nameof(RequestIsConditional));
 	}
 }

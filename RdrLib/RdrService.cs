@@ -274,6 +274,11 @@ namespace RdrLib
 					// don't condense the .TryGetValue calls into makeRequestConditional with '||' - doesn't work
 					bool makeRequestConditional = existingETag is not null || lastModified is not null;
 
+					if (makeRequestConditional)
+					{
+						LogRequestIsConditional(logger, feed.Name);
+					}
+
 					void configureRequest(HttpRequestMessage request)
 					{
 						if (existingETag is not null)
@@ -281,10 +286,7 @@ namespace RdrLib
 							request.Headers.IfNoneMatch.Add(new EntityTagHeaderValue(existingETag.Value));
 						}
 
-						if (rhwts is not null)
-						{
-							request.Headers.IfModifiedSince = rhwts.Time;
-						}
+						request.Headers.IfModifiedSince = rhwts is not null ? rhwts.Time : DateTimeOffset.Now.AddDays(-2d);
 					}
 
 					using ResponseSet responseSet = makeRequestConditional
@@ -344,9 +346,13 @@ namespace RdrLib
 
 					return;
 				}
-				catch (HttpIOException)
+				catch (HttpIOException ex)
 				{
-					feed.Status = FeedStatus.InternetError;
+					feed.Status = ex.HttpRequestError switch
+					{
+						HttpRequestError.NameResolutionError => FeedStatus.Dns,
+						_ => FeedStatus.InternetError
+					};
 
 					return;
 				}
@@ -564,7 +570,7 @@ namespace RdrLib
 		[LoggerMessage(FeedUpdateSucceededId, LogLevel.Debug, "updated '{FeedName}' ({FeedLink})")]
 		internal static partial void LogFeedUpdateSucceeded(ILogger<RdrService> logger, string feedName, string feedLink);
 
-		[LoggerMessage(ETagMatchId, LogLevel.Debug, "etag match for '{FeedName}' ('{FeedLink}')")]
+		[LoggerMessage(ETagMatchId, LogLevel.Trace, "etag match for '{FeedName}' ('{FeedLink}')")]
 		internal static partial void LogETagMatch(ILogger<RdrService> logger, string feedName, string feedLink);
 
 		[LoggerMessage(TimeoutId, LogLevel.Warning, "timeout for '{FeedName}' ('{FeedLink}') - will retry in {RetryTimeout}")]
@@ -585,7 +591,10 @@ namespace RdrLib
 		[LoggerMessage(ExistingRateLimitId, LogLevel.Debug, "update skipped under existing rate limit - '{FeedName}' ('{FeedLink}') - {timeRemaining} remaining")]
 		internal static partial void LogExistingRateLimit(ILogger<RdrService> logger, string feedName, string feedLink, string timeRemaining);
 
-		[LoggerMessage(LastModifiedUnchangedId, LogLevel.Debug, "LastModified unchanged - '{FeedName}' ('{FeedLink}') - {LastModified}")]
+		[LoggerMessage(LastModifiedUnchangedId, LogLevel.Trace, "LastModified unchanged - '{FeedName}' ('{FeedLink}') - {LastModified}")]
 		internal static partial void LogLastModifiedUnchanged(ILogger<RdrService> logger, string feedName, string feedLink, string lastModified);
+		
+		[LoggerMessage(RequestIsConditionalId, LogLevel.Debug, "conditional request for '{FeedName}'")]
+		internal static partial void LogRequestIsConditional(ILogger<RdrService> logger, string feedName);
 	}
 }
