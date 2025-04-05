@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 namespace RdrLib
 {
 	public record class FileDownloadProgress(int BytesRead, long TotalBytesWritten, long? ContentLength);
-	public record class ETag2(string Value);
 	public record class RetryHeaderWithTimestamp(DateTimeOffset Time, RetryConditionHeaderValue? RetryHeader);
 
 	public static class Web2
@@ -139,12 +138,16 @@ namespace RdrLib
 			return Path.ChangeExtension(file.FullName, tempExtension);
 		}
 
-		public static bool HasETagMatch(HttpResponseMessage response, ETag2 previousETag)
+		public static bool HasETagMatch(HttpResponseMessage response, EntityTagHeaderValue previousETag)
 		{
 			ArgumentNullException.ThrowIfNull(response);
 			ArgumentNullException.ThrowIfNull(previousETag);
 
-			return response.Headers?.ETag?.Tag is string currentETag && currentETag == previousETag.Value;
+			return response.Headers.ETag switch
+			{
+				EntityTagHeaderValue newValue => newValue == previousETag,
+				_ => false
+			};
 		}
 
 		public static TimeSpan GetAmountOfTimeLeftOnRateLimit(RetryConditionHeaderValue retryHeader, DateTimeOffset now)

@@ -24,7 +24,7 @@ namespace RdrLib
 		private const string rateLimitRemainingFormat = @"hh\:mm\:ss";
 		private const string rateLimitRemainingWithDaysFormat = @"d\.hh\:mm\:ss";
 
-		private readonly ConcurrentDictionary<Uri, ETag2> etags = new ConcurrentDictionary<Uri, ETag2>();
+		private readonly ConcurrentDictionary<Uri, EntityTagHeaderValue> etags = new ConcurrentDictionary<Uri, EntityTagHeaderValue>();
 		private readonly ConcurrentDictionary<Uri, RetryHeaderWithTimestamp> updates = new ConcurrentDictionary<Uri, RetryHeaderWithTimestamp>();
 		private readonly ConcurrentDictionary<Uri, DateTimeOffset> lastModifiedHeaders = new ConcurrentDictionary<Uri, DateTimeOffset>();
 
@@ -268,8 +268,8 @@ namespace RdrLib
 
 				try
 				{
-					ETag2? existingETag = etags.TryGetValue(feed.Link, out ETag2? etag) ? etag : null;
-					DateTimeOffset? lastModified = updates.TryGetValue(feed.Link, out RetryHeaderWithTimestamp? rhwts) ? rhwts.Time : null;
+					EntityTagHeaderValue? existingETag = etags.TryGetValue(feed.Link, out EntityTagHeaderValue? etag) ? etag : null;
+					DateTimeOffset? lastModified = updates.TryGetValue(feed.Link, out RetryHeaderWithTimestamp? retryHeader) ? retryHeader.Time : null;
 					
 					// don't condense the .TryGetValue calls into makeRequestConditional with '||' - doesn't work
 					bool makeRequestConditional = existingETag is not null || lastModified is not null;
@@ -283,10 +283,13 @@ namespace RdrLib
 					{
 						if (existingETag is not null)
 						{
-							request.Headers.IfNoneMatch.Add(new EntityTagHeaderValue(existingETag.Value));
+							request.Headers.IfNoneMatch.Add(existingETag);
 						}
 
-						request.Headers.IfModifiedSince = rhwts is not null ? rhwts.Time : DateTimeOffset.Now.AddDays(-2d);
+						if (retryHeader is not null)
+						{
+							request.Headers.IfModifiedSince = retryHeader.Time;
+						}
 					}
 
 					using ResponseSet responseSet = makeRequestConditional
@@ -415,7 +418,7 @@ namespace RdrLib
 
 		private bool AreETagsDifferent(HttpResponseMessage response, Feed feed)
 		{
-			if (etags.TryGetValue(feed.Link, out ETag2? previousETag))
+			if (etags.TryGetValue(feed.Link, out EntityTagHeaderValue? previousETag))
 			{
 				if (Web2.HasETagMatch(response, previousETag))
 				{
@@ -427,9 +430,9 @@ namespace RdrLib
 				}
 			}
 
-			if (response.Headers.ETag?.Tag is string currentETag)
+			if (response.Headers.ETag is EntityTagHeaderValue currentETag)
 			{
-				etags.AddOrUpdate(feed.Link, (_) => new ETag2(currentETag), (_, _) => new ETag2(currentETag));
+				etags.AddOrUpdate(feed.Link, (_) => currentETag, (_, _) => currentETag);
 			}
 
 			return true;
