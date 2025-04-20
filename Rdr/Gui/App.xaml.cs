@@ -111,7 +111,7 @@ namespace Rdr.Gui
 				{
 					client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:134.0) Gecko/20100101 Firefox/135.0");
 					client.DefaultRequestVersion = HttpVersion.Version20;
-					client.Timeout = TimeSpan.FromSeconds(10d);
+					client.Timeout = TimeSpan.FromSeconds(30d);
 				})
 				.ConfigurePrimaryHttpMessageHandler(static () =>
 				{
@@ -119,7 +119,7 @@ namespace Rdr.Gui
 					{
 						AllowAutoRedirect = true,
 						AutomaticDecompression = System.Net.DecompressionMethods.All,
-						ConnectTimeout = TimeSpan.FromSeconds(10d),
+						ConnectTimeout = TimeSpan.FromSeconds(30d),
 						MaxAutomaticRedirections = 5,
 						SslOptions = new SslClientAuthenticationOptions
 						{
