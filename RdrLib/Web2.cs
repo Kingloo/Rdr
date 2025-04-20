@@ -49,7 +49,11 @@ namespace RdrLib
 				responseSet.Responses.Add(new ResponseSetItem(uri, response));
 #pragma warning restore CA2000 // Dispose objects before losing scope
 
-				if (!response.IsSuccessStatusCode && response.Headers.Location is Uri nextUri)
+				if (response.StatusCode == System.Net.HttpStatusCode.NotModified)
+				{
+					shouldContinue = false;
+				}
+				else if (!response.IsSuccessStatusCode && response.Headers.Location is Uri nextUri)
 				{
 					uriToVisit = nextUri;
 
@@ -145,7 +149,7 @@ namespace RdrLib
 
 			return response.Headers.ETag switch
 			{
-				EntityTagHeaderValue newValue => newValue == previousETag,
+				EntityTagHeaderValue newValue => newValue.Equals(previousETag),
 				_ => false
 			};
 		}
