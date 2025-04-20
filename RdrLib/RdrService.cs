@@ -269,10 +269,10 @@ namespace RdrLib
 				try
 				{
 					EntityTagHeaderValue? existingETag = etags.TryGetValue(feed.Link, out EntityTagHeaderValue? etag) ? etag : null;
-					DateTimeOffset? lastModified = updates.TryGetValue(feed.Link, out RetryHeaderWithTimestamp? retryHeader) ? retryHeader.Time : null;
+					DateTimeOffset? existingLastModified = lastModifiedHeaders.TryGetValue(feed.Link, out DateTimeOffset lastModified) ? lastModified : null;
 					
 					// don't condense the .TryGetValue calls into makeRequestConditional with '||' - doesn't work
-					bool makeRequestConditional = existingETag is not null || lastModified is not null;
+					bool makeRequestConditional = existingETag is not null || existingLastModified is not null;
 
 					if (makeRequestConditional)
 					{
@@ -285,10 +285,10 @@ namespace RdrLib
 						{
 							request.Headers.IfNoneMatch.Add(existingETag);
 						}
-
-						if (retryHeader is not null)
+						
+						if (existingLastModified is not null)
 						{
-							request.Headers.IfModifiedSince = retryHeader.Time;
+							request.Headers.IfModifiedSince = existingLastModified;
 						}
 					}
 
