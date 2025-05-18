@@ -1,37 +1,25 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using RdrLib.Model;
+using RdrLib.Services.Updater;
 
 namespace RdrLib
 {
 	public interface IRdrService
 	{
-		public IReadOnlyCollection<Feed> Feeds { get; }
+		bool IsUpdating { get; }
+		bool IsDownloading { get; }
 
-		bool Add(Feed feed);
-		int Add(IEnumerable<Feed> feeds);
+		Task<IList<Feed>> LoadAsync(Stream stream, CancellationToken cancellationToken);
+		Task<IList<Feed>> LoadAsync(Stream stream, Encoding encoding, CancellationToken cancellationToken);
 
-		bool Remove(Feed feed);
-		int Remove(IEnumerable<Feed> feeds);
+		Task<FeedUpdateContext> UpdateAsync(Feed feed, RdrOptions rdrOptions, bool beConditional, CancellationToken cancellationToken);
+		Task<IList<FeedUpdateContext>> UpdateAsync(IList<Feed> feeds, RdrOptions rdrOptions, bool beConditional, CancellationToken cancellationToken);
 
-		void MarkAsRead(Item item);
-		void MarkAsRead(Feed feed);
-		void MarkAllAsRead();
-
-		void ClearFeeds();
-
-		Task UpdateAsync(Feed feed);
-		Task UpdateAsync(Feed feed, CancellationToken cancellationToken);
-		Task UpdateAsync(IEnumerable<Feed> feeds);
-		Task UpdateAsync(IEnumerable<Feed> feeds, BatchOptions batchOptions);
-		Task UpdateAsync(IEnumerable<Feed> feeds, CancellationToken cancellationToken);
-		Task UpdateAsync(IEnumerable<Feed> feeds, BatchOptions batchOptions, CancellationToken cancellationToken);
-
-		Task<long> DownloadEnclosureAsync(Enclosure enclosure, FileInfo file);
-		Task<long> DownloadEnclosureAsync(Enclosure enclosure, FileInfo file, IProgress<FileDownloadProgress> progress);
 		Task<long> DownloadEnclosureAsync(Enclosure enclosure, FileInfo file, CancellationToken cancellationToken);
 		Task<long> DownloadEnclosureAsync(Enclosure enclosure, FileInfo file, IProgress<FileDownloadProgress> progress, CancellationToken cancellationToken);
 	}

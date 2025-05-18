@@ -13,6 +13,8 @@ namespace RdrLib.Model
 		Dns,
 		RateLimited,
 		InternetError,
-		Broken
+		Broken,
+		CertificateRevocationCheckFailed,
+		Other
 	}
 }

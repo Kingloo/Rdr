@@ -154,9 +154,12 @@ namespace RdrLib
 			};
 		}
 
-		public static TimeSpan GetAmountOfTimeLeftOnRateLimit(RetryConditionHeaderValue retryHeader, DateTimeOffset now)
+		public static TimeSpan GetTimeLeftOnRateLimit(RetryConditionHeaderValue? retryHeader, DateTimeOffset now)
 		{
-			ArgumentNullException.ThrowIfNull(retryHeader);
+			if (retryHeader is null)
+			{
+				return TimeSpan.Zero;
+			}
 
 			DateTimeOffset expiration = DateTimeOffset.MinValue;
 
@@ -173,9 +176,12 @@ namespace RdrLib
 			return TimeSpan.Zero;
 		}
 
-		public static TimeSpan GetAmountOfTimeLeftOnRateLimit(RetryConditionHeaderValue retryHeader, DateTimeOffset now, DateTimeOffset before)
+		public static TimeSpan GetTimeLeftOnRateLimit(RetryConditionHeaderValue? retryHeader, DateTimeOffset now, DateTimeOffset before)
 		{
-			ArgumentNullException.ThrowIfNull(retryHeader);
+			if (retryHeader is null)
+			{
+				return TimeSpan.Zero;
+			}
 
 			DateTimeOffset expiration = DateTimeOffset.MinValue;
 
@@ -184,9 +190,9 @@ namespace RdrLib
 				expiration = before + delta;
 			}
 
-			if (retryHeader.Date is DateTimeOffset)
+			if (retryHeader.Date is DateTimeOffset date)
 			{
-				expiration = retryHeader.Date.Value;
+				expiration = date;
 			}
 
 			return expiration > now

@@ -1,18 +1,19 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
-using System.Net.Security;
-using System.Security.Authentication;
 using System.Windows;
 using System.Windows.Threading;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.Metrics;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using FileLogger;
 using RdrLib;
+using RdrLib.Services.Loader;
+using RdrLib.Services.Updater;
+using RdrLib.Services.Downloader;
 using static Rdr.EventIds.App;
 using static Rdr.Gui.AppLoggerMessages;
 
@@ -97,46 +98,36 @@ namespace Rdr.Gui
 
 			services.Configure<RdrOptions>(context.Configuration.GetRequiredSection("RdrOptions"));
 
-			AddAndConfigureHttpClient(services);
+			AddAndConfigureHttpClients(services, context.Configuration);
+
+			services.AddTransient<FeedLoader>();
+			services.AddTransient<FeedUpdater>();
+			services.AddTransient<FeedUpdateHistory>();
+			services.AddTransient<FileDownloader>();
 
 			services.AddTransient<IRdrService, RdrService>();
+
 			services.AddTransient<IMainWindowViewModel, MainWindowViewModel>();
 			services.AddTransient<MainWindow>();
 		}
 
-		private static void AddAndConfigureHttpClient(IServiceCollection services)
+		private static void AddAndConfigureHttpClients(IServiceCollection services, IConfiguration configuration)
 		{
-			services.AddHttpClient("RdrService")
-				.ConfigureHttpClient(static (HttpClient client) =>
-				{
-					client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:134.0) Gecko/20100101 Firefox/135.0");
-					client.DefaultRequestVersion = HttpVersion.Version20;
-					client.Timeout = TimeSpan.FromSeconds(30d);
-				})
-				.ConfigurePrimaryHttpMessageHandler(static () =>
-				{
-					return new SocketsHttpHandler
-					{
-						AllowAutoRedirect = true,
-						AutomaticDecompression = System.Net.DecompressionMethods.All,
-						ConnectTimeout = TimeSpan.FromSeconds(30d),
-						MaxAutomaticRedirections = 5,
-						SslOptions = new SslClientAuthenticationOptions
-						{
-							AllowRenegotiation = false,
-							ApplicationProtocols = new List<SslApplicationProtocol>
-							{
-								SslApplicationProtocol.Http11,
-								SslApplicationProtocol.Http2
-							},
-							CertificateRevocationCheckMode = System.Security.Cryptography.X509Certificates.X509RevocationMode.Online,
-#pragma warning disable CA5398 // these two choices are never wrong
-							EnabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13,
-#pragma warning restore CA5398
-							EncryptionPolicy = EncryptionPolicy.RequireEncryption
-						}
-					};
-				});
+			RdrOptions rdrOptions = configuration
+				.GetSection("RdrOptions")
+				.Get<RdrOptions>()
+			?? RdrOptions.Default;
+
+			services.AddDefaultHttpClient(configureHttpClient);
+			services.AddNoCrlCheckHttpClient(configureHttpClient);
+
+			void configureHttpClient(HttpClient client)
+			{
+				client.DefaultRequestHeaders.UserAgent.ParseAdd(rdrOptions.CustomUserAgent);
+				client.DefaultRequestVersion = HttpVersion.Version20;
+				client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrHigher;
+				client.Timeout = TimeSpan.FromSeconds(30d);
+			}
 		}
 
 		private void Application_Startup(object sender, StartupEventArgs e)
@@ -174,9 +165,11 @@ namespace Rdr.Gui
 
 				string innerExceptionType = ex.InnerException is Exception innerEx
 					? innerEx.GetType()?.FullName ?? "unknown inner exception type"
-					: "none";
+					: "no inner exception";
 
-				LogDispatcherUnhandledException(logger, exceptionType, innerExceptionType);
+				string stackTrace = ex.StackTrace?[..Math.Min(ex.StackTrace.Length, 500)] ?? string.Empty;
+
+				LogDispatcherUnhandledException(logger, exceptionType, innerExceptionType, stackTrace);
 			}
 			else
 			{
@@ -215,8 +208,8 @@ namespace Rdr.Gui
 		[LoggerMessage(StartupFinishedId, LogLevel.Information, "started")]
 		internal static partial void LogStartupFinished(ILogger<App> logger);
 
-		[LoggerMessage(DispatcherUnhandledExceptionId, LogLevel.Error, "dispatcher unhandled exception {ExceptionType} ({InnerExceptionType})")]
-		internal static partial void LogDispatcherUnhandledException(ILogger<App> logger, string ExceptionType, string innerExceptionType);
+		[LoggerMessage(DispatcherUnhandledExceptionId, LogLevel.Error, "dispatcher unhandled exception {ExceptionType} ({InnerExceptionType}) - {StackTrace}")]
+		internal static partial void LogDispatcherUnhandledException(ILogger<App> logger, string ExceptionType, string innerExceptionType, string stackTrace);
 
 		[LoggerMessage(DispatcherUnhandledExceptionEmptyId, LogLevel.Critical, "dispatcher unhandled exception: inner exception was null")]
 		internal static partial void LogDispatcherUnhandledExceptionEmpty(ILogger<App> logger);

@@ -13,6 +13,10 @@ dotnet_diagnostic.IDE0028.severity = none
 # IDE0059: Unnecessary assignment of a value
 dotnet_diagnostic.IDE0059.severity = none
 
+# collection initialization can be simplified
+dotnet_diagnostic.IDE0301.severity = none
+dotnet_diagnostic.IDE0305.severity = none
+
 # IDE0090: Use 'new(...)'
 csharp_style_implicit_object_creation_when_type_is_apparent = false
 

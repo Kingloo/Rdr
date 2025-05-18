@@ -1,14 +1,15 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
 
 namespace RdrLib
 {
 	public class RdrOptions
 	{
-		public const string DefaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:134.0) Gecko/20100101 Firefox/136.0";
+		public const string DefaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:134.0) Gecko/20100101 Firefox/138.0";
 		public const int DefaultUpdateConcurrency = 4;
 		public static readonly TimeSpan DefaultUpdateInterval = TimeSpan.FromMinutes(15d);
+		public static readonly TimeSpan DefaultBatchUpdateDelay = TimeSpan.FromSeconds(0.5d);
 
 		public string CustomUserAgent { get; init; } = DefaultUserAgent;
 
@@ -21,11 +22,16 @@ namespace RdrLib
 
 		public TimeSpan UpdateInterval { get; init; } = DefaultUpdateInterval;
 
-		public TimeSpan RateLimitOnHttpTimeout { get; init; } = TimeSpan.Zero;
+		public TimeSpan BatchUpdateDelay { get; init; } = DefaultBatchUpdateDelay;
 
-		[JsonConverter(typeof(JsonStringEnumConverter))]
-		public RateLimitChangeStrategy RateLimitChangeStrategy { get; init; } = RateLimitChangeStrategy.Double;
+		public TimeSpan RateLimitOnHttpTimeout { get; init; } = TimeSpan.FromHours(1d);
+
+#pragma warning disable CA1002 // Do not expose generic lists - System.Text.Json cannot deserialize to IList<T>
+		public List<string> SkipCrlCheckFor { get; init; } = new List<string>();
+#pragma warning restore CA1002 // Do not expose generic lists
 
 		public RdrOptions() { }
+
+		public static readonly RdrOptions Default = new RdrOptions();
 	}
 }

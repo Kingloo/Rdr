@@ -30,7 +30,7 @@
 
 	<Window.Resources>
 		<CollectionViewSource x:Key="sortedFeeds"
-                              Source="{Binding Path=RdrService.Feeds, Mode=OneTime}"
+                              Source="{Binding Path=Feeds, Mode=OneTime}"
                               IsLiveSortingRequested="True">
 			<CollectionViewSource.SortDescriptions>
 				<scm:SortDescription PropertyName="Name" Direction="Ascending" />
@@ -47,25 +47,30 @@
 
 		<DataTemplate DataType="{x:Type rdrModel:Feed}">
 			<DataTemplate.Resources>
-				<converters:FeedStatusColorConverter x:Key="feedStatusToColorConverter"
-                                                     None="White"
-                                                     Ok="#FF313131"
-                                                     Updating="LightGray"
-                                                     DoesNotExist="LightGoldenrodYellow"
-                                                     Forbidden="Red"
-                                                     ParseFailed="LightPink"
-                                                     MovedCannotFollow="Red"
-													 Timeout="Yellow"
-													 Dns="Brown"
-													 RateLimited="Orange"
-                                                     InternetError="LightBlue"
-                                                     Broken="Blue" />
+				<converters:FeedStatusBackgroundColorConverter x:Key="feedStatusBackgroundColorConverter"
+                                                               None="White"
+                                                               Ok="#FF313131"
+                                                               Updating="LightGray"
+                                                               DoesNotExist="LightGoldenrodYellow"
+                                                               Forbidden="Red"
+                                                               ParseFailed="LightPink"
+                                                               MovedCannotFollow="Red"
+													           Timeout="Yellow"
+													           Dns="Brown"
+													           RateLimited="Orange"
+                                                               InternetError="LightBlue"
+                                                               CertificateRevocationCheckFailed="MediumPurple"
+                                                               Broken="Blue"
+													           Other="#010101" />
+				
+				<converters:FeedStatusForegroundColorConverter x:Key="feedStatusForegroundColorConverter"
+                                                               CertificateRevocationCheckFailed="White" />
 			</DataTemplate.Resources>
 
 			<Label Margin="0,0,0,5"
-                   Foreground="#FF7A7A7A"
+                   Foreground="{Binding Status, Converter={StaticResource feedStatusForegroundColorConverter}}"
                    FontSize="15"
-                   Background="{Binding Status, Converter={StaticResource feedStatusToColorConverter}}"
+                   Background="{Binding Status, Converter={StaticResource feedStatusBackgroundColorConverter}}"
                    MouseLeftButtonUp="Label_MouseLeftButtonUp"
                    Tag="{Binding Path=DataContext, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type gui:MainWindow}}}">
 				<Label.Content>
@@ -80,6 +85,9 @@
 					<ContextMenu>
 						<MenuItem Header="Refresh"
                                   Command="{Binding PlacementTarget.Tag.RefreshCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}"
+                                  CommandParameter="{Binding}" />
+						<MenuItem Header="Refresh (force)"
+                                  Command="{Binding PlacementTarget.Tag.RefreshForceCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}"
                                   CommandParameter="{Binding}" />
 						<MenuItem Header="Go To Feed"
                                   Command="{Binding PlacementTarget.Tag.GoToFeedCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}"
@@ -256,18 +264,6 @@
 				<Button Grid.Row="0"
                         Content="Unread"
                         Command="{Binding Path=SeeUnreadCommand}" />
-
-				<!-- <Button Grid.Row="1"
-						Content="Recent"
-						Command="{Binding Path=SeeRecentCommand}">
-					<Button.CommandParameter>
-						<gui:SeeRecentAmount>
-							<gui:SeeRecentAmount.Amount>
-								<sys:Int32>100</sys:Int32>
-							</gui:SeeRecentAmount.Amount>
-						</gui:SeeRecentAmount>
-					</Button.CommandParameter>
-				</Button> -->
 
 				<Button Grid.Row="1"
 						Content="Recent"

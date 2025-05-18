@@ -40,6 +40,7 @@ namespace Rdr.EventIds
 		internal const int DownloadLocalFilePathId = 244;
 		internal const int DownloadProgressId = 245;
 		internal const int FileExistsId = 246;
+		internal const int FeedRateLimitedId = 247;
 		internal const int WindowExitId = 250;
 
 		internal static readonly EventId FeedsFileOpened = new EventId(FeedsFileOpenedId, nameof(FeedsFileOpened));
@@ -60,6 +61,7 @@ namespace Rdr.EventIds
 		internal static readonly EventId DownloadProgress = new EventId(DownloadProgressId, nameof(DownloadProgress));
 		internal static readonly EventId DownloadLocalFilePath = new EventId(DownloadLocalFilePathId, nameof(DownloadLocalFilePath));
 		internal static readonly EventId FileExists = new EventId(FileExistsId, nameof(FileExists));
+		internal static readonly EventId FeedRateLimited = new EventId(FeedRateLimitedId, nameof(FeedRateLimited));
 		internal static readonly EventId WindowExit = new EventId(WindowExitId, nameof(WindowExit));
 	}
 }

@@ -24,7 +24,7 @@ namespace Rdr.Gui
 		{
 			vm.ReloadCommand.Execute();
 
-			vm.StartTimer();
+			vm.StartRefreshTimer();
 		}
 
 		private void Window_KeyDown(object sender, KeyEventArgs e)
@@ -45,9 +45,13 @@ namespace Rdr.Gui
 
 		private void Window_Closing(object sender, CancelEventArgs e)
 		{
-			if (vm.Activity || vm.HasActiveDownloads)
+			if (vm.Activity)
 			{
-				MessageBoxResult result = MessageBox.Show("I am doing something. Do you really want to quit?", "Activity!", MessageBoxButton.YesNo, MessageBoxImage.Exclamation);
+				MessageBoxResult result = MessageBox.Show(
+					"I am doing something. Do you really want to quit?",
+					"Activity!",
+					MessageBoxButton.YesNo,
+					MessageBoxImage.Exclamation);
 
 				if (result == MessageBoxResult.No)
 				{
@@ -58,7 +62,7 @@ namespace Rdr.Gui
 
 		private void Window_Closed(object sender, EventArgs e)
 		{
-			vm.StopTimer();
+			vm.StopRefreshTimer();
 		}
 	}
 }
