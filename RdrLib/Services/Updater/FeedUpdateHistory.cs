@@ -55,7 +55,11 @@ namespace RdrLib.Services.Updater
 
 		private void UpdateRateLimit(FeedUpdateContext existingContext, FeedUpdateContext newContext)
 		{
-			if (newContext.RateLimit > existingContext.RateLimit)
+			// we only want to learn a new minimum rate limit from an HTTP 429 Too Many Requests
+			// and not from a TimeoutException
+
+			if (newContext.StatusCode == System.Net.HttpStatusCode.TooManyRequests
+				&& newContext.RateLimit > existingContext.RateLimit)
 			{
 				existingContext.RateLimit = newContext.RateLimit;
 			}
