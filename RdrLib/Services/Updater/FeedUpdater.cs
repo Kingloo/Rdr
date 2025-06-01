@@ -145,6 +145,8 @@ namespace RdrLib.Services.Updater
 			try
 			{
 				context = await UpdateFeedAsyncUncaught(client, feed, rdrOptions, beConditional, cancellationToken).ConfigureAwait(false);
+
+				context.Exception = null;
 			}
 			catch (Exception ex) when (
 				ex is HttpRequestException
