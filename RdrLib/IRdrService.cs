@@ -14,11 +14,11 @@ namespace RdrLib
 		bool IsUpdating { get; }
 		bool IsDownloading { get; }
 
-		Task<IList<Feed>> LoadAsync(Stream stream, CancellationToken cancellationToken);
-		Task<IList<Feed>> LoadAsync(Stream stream, Encoding encoding, CancellationToken cancellationToken);
+		Task<IReadOnlyList<Feed>> LoadAsync(Stream stream, CancellationToken cancellationToken);
+		Task<IReadOnlyList<Feed>> LoadAsync(Stream stream, Encoding encoding, CancellationToken cancellationToken);
 
 		Task<FeedUpdateContext> UpdateAsync(Feed feed, RdrOptions rdrOptions, bool beConditional, CancellationToken cancellationToken);
-		Task<IList<FeedUpdateContext>> UpdateAsync(IList<Feed> feeds, RdrOptions rdrOptions, bool beConditional, CancellationToken cancellationToken);
+		Task<IReadOnlyList<FeedUpdateContext>> UpdateAsync(IList<Feed> feeds, RdrOptions rdrOptions, bool beConditional, CancellationToken cancellationToken);
 
 		Task<long> DownloadEnclosureAsync(Enclosure enclosure, FileInfo file, CancellationToken cancellationToken);
 		Task<long> DownloadEnclosureAsync(Enclosure enclosure, FileInfo file, IProgress<FileDownloadProgress> progress, CancellationToken cancellationToken);

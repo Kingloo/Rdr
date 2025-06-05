@@ -17,6 +17,7 @@ using RdrLib.Model;
 using RdrLib.Services.Updater;
 using static Rdr.EventIds.MainWindowViewModel;
 using static Rdr.Gui.MainWindowViewModelLoggerMessages;
+using static RdrLib.Helpers.HttpStatusCodeHelpers;
 
 namespace Rdr.Gui
 {
@@ -267,13 +268,13 @@ namespace Rdr.Gui
 		private Task RefreshAllAsync()
 			=> RefreshAsync(Feeds.ToList());
 
-		private async Task RefreshAsync(IList<Feed> feeds)
+		private async Task RefreshAsync(List<Feed> feeds)
 		{
 			Activity = true;
 
 			StatusMessage = "updating ...";
 
-			IList<FeedUpdateContext> contexts = await rdrService.UpdateAsync(
+			IReadOnlyList<FeedUpdateContext> contexts = await rdrService.UpdateAsync(
 				feeds,
 				rdrOptionsMonitor.CurrentValue,
 				beConditional: true,
@@ -281,6 +282,7 @@ namespace Rdr.Gui
 			.ConfigureAwait(true);
 
 			LogRateLimits(contexts);
+			LogFeedStatusOther(contexts);
 
 			if (selectedFeed is null)
 			{
@@ -314,6 +316,7 @@ namespace Rdr.Gui
 			.ConfigureAwait(true);
 
 			LogRateLimit(context);
+			LogFeedStatusOther(context);
 
 			if (selectedFeed is not null && selectedFeed == feed)
 			{
@@ -338,11 +341,37 @@ namespace Rdr.Gui
 			}
 		}
 
-		private void LogRateLimits(IList<FeedUpdateContext> contexts)
+		private void LogRateLimits(IReadOnlyList<FeedUpdateContext> contexts)
 		{
 			foreach (FeedUpdateContext each in contexts)
 			{
 				LogRateLimit(each);
+			}
+		}
+
+		private void LogFeedStatusOther(FeedUpdateContext context)
+			=> LogFeedStatusOther(new List<FeedUpdateContext>(capacity: 1) { context }.AsReadOnly());
+
+		private void LogFeedStatusOther(IReadOnlyList<FeedUpdateContext> contexts)
+		{
+			var anonFeedAndContextStatusOther = Feeds
+				.Join(
+					contexts,
+					feed => feed.Link,
+					context => context.Uri,
+					(feed, context) => new
+					{
+						Uri = feed.Link,
+						Name = feed.Name,
+						Status = feed.Status,
+						StatusCode = context.StatusCode
+					}
+				)
+				.Where(anon => anon.Status == FeedStatus.Other);
+
+			foreach (var each in anonFeedAndContextStatusOther)
+			{
+				MainWindowViewModelLoggerMessages.LogFeedStatusOther(logger, each.Name, FormatStatusCode(each.StatusCode));
 			}
 		}
 
@@ -447,7 +476,7 @@ namespace Rdr.Gui
 		{
 			FileInfo file = new FileInfo(rdrOptionsMonitor.CurrentValue.FeedsFilePath);
 
-			IList<Feed> loadedFeeds;
+			IReadOnlyList<Feed> loadedFeeds;
 
 			using (
 				FileStream fileStream = new FileStream(
@@ -464,7 +493,7 @@ namespace Rdr.Gui
 
 			RemoveOldFeeds(loadedFeeds);
 
-			IList<Feed> feedsToRefresh = await AddNewFeeds(loadedFeeds).ConfigureAwait(true);
+			List<Feed> feedsToRefresh = await AddNewFeeds(loadedFeeds).ConfigureAwait(true);
 
 			if (Feeds.Count > 0)
 			{
@@ -472,7 +501,7 @@ namespace Rdr.Gui
 			}
 		}
 
-		private void RemoveOldFeeds(IList<Feed> loadedFeeds)
+		private void RemoveOldFeeds(IReadOnlyList<Feed> loadedFeeds)
 		{
 			if (loadedFeeds.Count == 0)
 			{
@@ -487,7 +516,7 @@ namespace Rdr.Gui
 			}
 		}
 
-		private async Task<IList<Feed>> AddNewFeeds(IList<Feed> loadedFeeds)
+		private async Task<List<Feed>> AddNewFeeds(IReadOnlyList<Feed> loadedFeeds)
 		{
 			List<Feed> toRefresh = new List<Feed>(capacity: loadedFeeds.Count);
 
@@ -721,6 +750,9 @@ namespace Rdr.Gui
 	{
 		[LoggerMessage(GoToFeedLinkNullId, LogLevel.Warning, "feed link was null ({FeedName})")]
 		internal static partial void LogGoToFeedLinkNull(ILogger<MainWindowViewModel> logger, string feedName);
+
+		[LoggerMessage(FeedStatusOtherId, LogLevel.Warning, "{StatusCode} for feed '{FeedName}'")]
+		internal static partial void LogFeedStatusOther(ILogger<MainWindowViewModel> logger, string feedName, string statusCode);
 
 		[LoggerMessage(GoToFeedFailedId, LogLevel.Warning, "feed link launch failed ({FeedName})")]
 		internal static partial void LogGoToFeedFailed(ILogger<MainWindowViewModel> logger, string feedName);

@@ -17,7 +17,7 @@ namespace RdrLib.Services.Loader
 
 		public FeedLoader() { }
 
-		public async Task<IList<Feed>> LoadAsync(Stream stream, Encoding encoding, CancellationToken cancellationToken)
+		public async Task<IReadOnlyList<Feed>> LoadAsync(Stream stream, Encoding encoding, CancellationToken cancellationToken)
 		{
 			using StreamReader sr = new StreamReader(stream, encoding);
 

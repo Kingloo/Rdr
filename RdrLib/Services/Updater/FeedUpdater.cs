@@ -17,7 +17,7 @@ namespace RdrLib.Services.Updater
 {
 	public class FeedUpdater
 	{
-		private static readonly IList<FeedUpdateContext> emptyList = new List<FeedUpdateContext>(capacity: 0);
+		private static readonly IReadOnlyList<FeedUpdateContext> emptyList = new List<FeedUpdateContext>(capacity: 0).AsReadOnly();
 
 		private readonly IHttpClientFactory httpClientFactory;
 		private readonly FeedUpdateHistory feedUpdateHistory;
@@ -33,7 +33,7 @@ namespace RdrLib.Services.Updater
 			this.feedUpdateHistory = feedUpdateHistory;
 		}
 
-		public async Task<IList<FeedUpdateContext>> UpdateAsync(IList<Feed> feeds, RdrOptions rdrOptions, bool beConditional, CancellationToken cancellationToken)
+		public async Task<IReadOnlyList<FeedUpdateContext>> UpdateAsync(IList<Feed> feeds, RdrOptions rdrOptions, bool beConditional, CancellationToken cancellationToken)
 		{
 			ArgumentNullException.ThrowIfNull(feeds);
 			ArgumentNullException.ThrowIfNull(rdrOptions);
@@ -51,11 +51,11 @@ namespace RdrLib.Services.Updater
 
 			IEnumerable<IGrouping<string, Feed>> feedGroups = feeds.GroupBy(feed => feed.Link.DnsSafeHost);
 
-			List<Task<IList<FeedUpdateContext>>> updateTasks = new List<Task<IList<FeedUpdateContext>>>();
+			List<Task<IReadOnlyList<FeedUpdateContext>>> updateTasks = new List<Task<IReadOnlyList<FeedUpdateContext>>>();
 
 			foreach (IGrouping<string, Feed> group in feedGroups)
 			{
-				Task<IList<FeedUpdateContext>> groupTask = UpdateManyAsync(group.ToList(), rdrOptions, beConditional, cancellationToken);
+				Task<IReadOnlyList<FeedUpdateContext>> groupTask = UpdateManyAsync(group.ToList(), rdrOptions, beConditional, cancellationToken);
 
 				updateTasks.Add(groupTask);
 			}
@@ -68,9 +68,9 @@ namespace RdrLib.Services.Updater
 				MaxDegreeOfParallelism = rdrOptions.UpdateConcurrency
 			};
 
-			await Parallel.ForEachAsync(updateTasks, parallelOptions, async (Task<IList<FeedUpdateContext>> task, CancellationToken token) =>
+			await Parallel.ForEachAsync(updateTasks, parallelOptions, async (Task<IReadOnlyList<FeedUpdateContext>> task, CancellationToken token) =>
 			{
-				IList<FeedUpdateContext> ret = await task.ConfigureAwait(false);
+				IReadOnlyList<FeedUpdateContext> ret = await task.ConfigureAwait(false);
 
 				foreach (var each in ret)
 				{
@@ -79,10 +79,10 @@ namespace RdrLib.Services.Updater
 			})
 			.ConfigureAwait(false);
 
-			return contexts;
+			return contexts.AsReadOnly();
 		}
 
-		private async Task<IList<FeedUpdateContext>> UpdateSingleAsync(Feed feed, RdrOptions rdrOptions, bool beConditional, CancellationToken cancellationToken)
+		private async Task<IReadOnlyList<FeedUpdateContext>> UpdateSingleAsync(Feed feed, RdrOptions rdrOptions, bool beConditional, CancellationToken cancellationToken)
 		{
 			IsUpdating = true;
 
@@ -100,7 +100,7 @@ namespace RdrLib.Services.Updater
 			}
 		}
 
-		private async Task<IList<FeedUpdateContext>> UpdateManyAsync(List<Feed> feeds, RdrOptions rdrOptions, bool beConditional, CancellationToken cancellationToken)
+		private async Task<IReadOnlyList<FeedUpdateContext>> UpdateManyAsync(List<Feed> feeds, RdrOptions rdrOptions, bool beConditional, CancellationToken cancellationToken)
 		{
 			if (feeds.Count == 0)
 			{

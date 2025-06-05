@@ -23,6 +23,7 @@ namespace Rdr.EventIds
 	{
 		internal const int FeedsFileOpenedId = 210;
 		internal const int FeedsFileErrorId = 211;
+		internal const int FeedStatusOtherId = 212;
 		internal const int GoToFeedId = 220;
 		internal const int GoToFeedFailedId = 221;
 		internal const int GoToFeedLinkNullId = 222;
@@ -45,6 +46,7 @@ namespace Rdr.EventIds
 
 		internal static readonly EventId FeedsFileOpened = new EventId(FeedsFileOpenedId, nameof(FeedsFileOpened));
 		internal static readonly EventId FeedsFileError = new EventId(FeedsFileErrorId, nameof(FeedsFileError));
+		internal static readonly EventId FeedStatusOther = new EventId(FeedStatusOtherId, nameof(FeedStatusOther));
 		internal static readonly EventId GoToFeed = new EventId(GoToFeedId, nameof(GoToFeed));
 		internal static readonly EventId GoToFeedFailed = new EventId(GoToFeedFailedId, nameof(GoToFeedFailed));
 		internal static readonly EventId GoToFeedLinkNull = new EventId(GoToFeedLinkNullId, nameof(GoToFeedLinkNull));

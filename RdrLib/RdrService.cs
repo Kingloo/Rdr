@@ -35,20 +35,20 @@ namespace RdrLib
 			this.fileDownloader = fileDownloader;
 		}
 
-		public Task<IList<Feed>> LoadAsync(Stream stream, CancellationToken cancellationToken)
+		public Task<IReadOnlyList<Feed>> LoadAsync(Stream stream, CancellationToken cancellationToken)
 			=> LoadAsyncInternal(stream, FeedLoader.DefaultEncoding, cancellationToken);
 
-		public Task<IList<Feed>> LoadAsync(Stream stream, Encoding encoding, CancellationToken cancellationToken)
+		public Task<IReadOnlyList<Feed>> LoadAsync(Stream stream, Encoding encoding, CancellationToken cancellationToken)
 			=> LoadAsyncInternal(stream, encoding, cancellationToken);
 
-		private Task<IList<Feed>> LoadAsyncInternal(Stream stream, Encoding encoding, CancellationToken cancellationToken)
+		private Task<IReadOnlyList<Feed>> LoadAsyncInternal(Stream stream, Encoding encoding, CancellationToken cancellationToken)
 		{
 			return feedLoader.LoadAsync(stream, encoding, cancellationToken);
 		}
 
 		public async Task<FeedUpdateContext> UpdateAsync(Feed feed, RdrOptions rdrOptions, bool beConditional, CancellationToken cancellationToken)
 		{
-			IList<FeedUpdateContext> feedUpdateContext = await UpdateAsyncInternal(
+			IReadOnlyList<FeedUpdateContext> feedUpdateContext = await UpdateAsyncInternal(
 				new List<Feed>(capacity: 1) { feed },
 				rdrOptions,
 				beConditional,
@@ -58,10 +58,10 @@ namespace RdrLib
 			return feedUpdateContext[0];
 		}
 
-		public Task<IList<FeedUpdateContext>> UpdateAsync(IList<Feed> feeds, RdrOptions rdrOptions, bool beConditional, CancellationToken cancellationToken)
+		public Task<IReadOnlyList<FeedUpdateContext>> UpdateAsync(IList<Feed> feeds, RdrOptions rdrOptions, bool beConditional, CancellationToken cancellationToken)
 			=> UpdateAsyncInternal(feeds, rdrOptions, beConditional, cancellationToken);
 
-		private Task<IList<FeedUpdateContext>> UpdateAsyncInternal(IList<Feed> feeds, RdrOptions rdrOptions, bool beConditional, CancellationToken cancellationToken)
+		private Task<IReadOnlyList<FeedUpdateContext>> UpdateAsyncInternal(IList<Feed> feeds, RdrOptions rdrOptions, bool beConditional, CancellationToken cancellationToken)
 		{
 			return feedUpdater.UpdateAsync(feeds, rdrOptions, beConditional, cancellationToken);
 		}
