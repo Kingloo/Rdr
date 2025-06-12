@@ -33,6 +33,7 @@
                               Source="{Binding Path=Feeds, Mode=OneTime}"
                               IsLiveSortingRequested="True">
 			<CollectionViewSource.SortDescriptions>
+				<scm:SortDescription PropertyName="Status" Direction="Descending" />
 				<scm:SortDescription PropertyName="Name" Direction="Ascending" />
 			</CollectionViewSource.SortDescriptions>
 		</CollectionViewSource>
