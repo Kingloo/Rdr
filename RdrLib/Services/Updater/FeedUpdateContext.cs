@@ -27,7 +27,7 @@ namespace RdrLib.Services.Updater
 		public FeedUpdateContext(Feed feed)
 		{
 			ArgumentNullException.ThrowIfNull(feed);
-			
+
 			if (!feed.Link.IsAbsoluteUri)
 			{
 				throw new ArgumentException($"feed's link was not absolute ('{feed.Link}')", nameof(feed));
@@ -39,7 +39,7 @@ namespace RdrLib.Services.Updater
 		public override string ToString()
 		{
 			CultureInfo ci = CultureInfo.CurrentCulture;
-			
+
 			return new StringBuilder()
 				.AppendLine(Uri.AbsoluteUri)
 				.AppendLine(ci, $"Start '{Start}'")

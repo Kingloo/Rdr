@@ -180,7 +180,7 @@ namespace RdrLib.Services.Updater
 		private async Task<FeedUpdateContext> UpdateFeedAsyncUncaught(HttpClient client, Feed feed, RdrOptions rdrOptions, bool beConditional, CancellationToken cancellationToken)
 		{
 			TimeSpan rateLimitPadding = TimeSpan.FromMinutes(1d);
-			
+
 			feed.Status = FeedStatus.Updating;
 
 			DateTimeOffset start = DateTimeOffset.Now;
@@ -234,7 +234,7 @@ namespace RdrLib.Services.Updater
 					context.StatusCode = responseSetItem.Response.StatusCode;
 					context.ETag = responseSetItem.Response.Headers.ETag;
 					context.RateLimit = SetRateLimit(context.RateLimit, responseSetItem.Response.Headers.RetryAfter, start);
-					
+
 					switch (responseSetItem.Response.StatusCode)
 					{
 						case HttpStatusCode.OK:
@@ -243,7 +243,7 @@ namespace RdrLib.Services.Updater
 
 								responseData = await Web2.PerformBodyRequestToString(responseSetItem.Response, cancellationToken).ConfigureAwait(false);
 
-								feed.Status = ParseFeed(feed, responseData)
+								feed.Status = ParseFeed(feed, WebUtility.HtmlDecode(responseData))
 									? FeedStatus.Ok
 									: FeedStatus.ParseFailed;
 
@@ -266,7 +266,7 @@ namespace RdrLib.Services.Updater
 				else
 				{
 					feed.Status = FeedStatus.Broken;
-					
+
 					context.StatusCode = null;
 				}
 

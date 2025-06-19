@@ -332,7 +332,7 @@ namespace Rdr.Gui
 			{
 				DateTimeOffset now = DateTimeOffset.Now;
 				DateTimeOffset rateLimitExpiration = context.Finish + context.RateLimit;
-				
+
 				TimeSpan rateLimitRemaining = rateLimitExpiration > now
 					? rateLimitExpiration - now
 					: TimeSpan.Zero;
@@ -354,22 +354,20 @@ namespace Rdr.Gui
 
 		private void LogFeedStatusOther(IReadOnlyList<FeedUpdateContext> contexts)
 		{
-			var anonFeedAndContextStatusOther = Feeds
+			var nameAndStatusCodeOfFeedsWithStatusOther = Feeds
+				.Where(feed => feed.Status == FeedStatus.Other)
 				.Join(
 					contexts,
 					feed => feed.Link,
 					context => context.Uri,
 					(feed, context) => new
 					{
-						Uri = feed.Link,
 						Name = feed.Name,
-						Status = feed.Status,
 						StatusCode = context.StatusCode
 					}
-				)
-				.Where(anon => anon.Status == FeedStatus.Other);
+				);
 
-			foreach (var each in anonFeedAndContextStatusOther)
+			foreach (var each in nameAndStatusCodeOfFeedsWithStatusOther)
 			{
 				MainWindowViewModelLoggerMessages.LogFeedStatusOther(logger, each.Name, FormatStatusCode(each.StatusCode));
 			}
@@ -810,7 +808,7 @@ namespace Rdr.Gui
 
 		[LoggerMessage(FeedRateLimitedId, LogLevel.Warning, "rate limited for '{Uri}' for {RateLimit}, {RateLimitRemaining} remaining")]
 		internal static partial void LogFeedRateLimited(ILogger<MainWindowViewModel> logger, string Uri, string RateLimit, string RateLimitRemaining);
-		
+
 		[LoggerMessage(WindowExitId, LogLevel.Debug, "window exit ('{WindowName}')")]
 		internal static partial void LogWindowExit(ILogger<MainWindowViewModel> logger, string windowName);
 	}
