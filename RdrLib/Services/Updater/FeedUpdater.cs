@@ -243,7 +243,7 @@ namespace RdrLib.Services.Updater
 
 								responseData = await Web2.PerformBodyRequestToString(responseSetItem.Response, cancellationToken).ConfigureAwait(false);
 
-								feed.Status = ParseFeed(feed, WebUtility.HtmlDecode(responseData))
+								feed.Status = ParseFeed(feed, responseData)
 									? FeedStatus.Ok
 									: FeedStatus.ParseFailed;
 
@@ -287,7 +287,7 @@ namespace RdrLib.Services.Updater
 
 			if (!String.Equals(feed.Name, feedName, StringComparison.Ordinal))
 			{
-				feed.Name = feedName;
+				feed.Name = WebUtility.HtmlDecode(feedName);
 			}
 
 			feed.AddMany(FeedHelpers.GetItems(document, feed.Name));
