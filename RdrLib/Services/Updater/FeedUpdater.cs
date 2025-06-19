@@ -179,7 +179,7 @@ namespace RdrLib.Services.Updater
 
 		private async Task<FeedUpdateContext> UpdateFeedAsyncUncaught(HttpClient client, Feed feed, RdrOptions rdrOptions, bool beConditional, CancellationToken cancellationToken)
 		{
-			TimeSpan rateLimitPadding = TimeSpan.FromMinutes(1d);
+			TimeSpan rateLimitPadding = TimeSpan.FromSeconds(10d);
 
 			feed.Status = FeedStatus.Updating;
 
@@ -287,7 +287,7 @@ namespace RdrLib.Services.Updater
 
 			if (!String.Equals(feed.Name, feedName, StringComparison.Ordinal))
 			{
-				feed.Name = WebUtility.HtmlDecode(feedName);
+				feed.Name = feedName;
 			}
 
 			feed.AddMany(FeedHelpers.GetItems(document, feed.Name));

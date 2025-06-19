@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using RdrLib.Model;
 
@@ -22,9 +23,22 @@ namespace Rdr.Gui
 
 		private void Window_Loaded(object sender, RoutedEventArgs e)
 		{
+			ConfigureFeedSorting(Resources["sortedFeeds"]);
+
 			vm.ReloadCommand.Execute();
 
 			vm.StartRefreshTimer();
+		}
+
+		private static void ConfigureFeedSorting(object sortedFeeds)
+		{
+			CollectionViewSource cvs = (CollectionViewSource)sortedFeeds;
+			ListCollectionView lcv = (ListCollectionView)cvs.View;
+
+			lcv.CustomSort = new FeedSorter();
+
+			lcv.LiveSortingProperties.Add(nameof(Feed.Name));
+			lcv.LiveSortingProperties.Add(nameof(Feed.Status));
 		}
 
 		private void Window_KeyDown(object sender, KeyEventArgs e)
