@@ -4,6 +4,9 @@ using RdrLib.Model;
 
 namespace Rdr.Gui
 {
+	/// <summary>
+	/// Sort by name if FeedStatus is either Ok or Updating. Sorts feeds earlier when FeedStatus is anything else. Earlier is expressed by -1.
+	/// </summary>
 	internal sealed class FeedSorter : IComparer
 	{
 		internal FeedSorter() { }
@@ -43,7 +46,7 @@ namespace Rdr.Gui
 
 			if (sortXByName && !sortYByName) { return 1; }
 			if (!sortXByName && sortYByName) { return -1; }
-			
+
 			return String.CompareOrdinal(x.Name, y.Name);
 		}
 
