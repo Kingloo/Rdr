@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Runtime.CompilerServices;
 using RdrLib.Model;
 
 namespace Rdr.Gui
@@ -38,7 +39,7 @@ namespace Rdr.Gui
 		{
 			if (x.Status == y.Status)
 			{
-				return String.CompareOrdinal(x.Name, y.Name);
+				return CompareByName(x, y);
 			}
 
 			bool sortXByName = ShouldSortByName(x.Status);
@@ -47,12 +48,19 @@ namespace Rdr.Gui
 			if (sortXByName && !sortYByName) { return 1; }
 			if (!sortXByName && sortYByName) { return -1; }
 
-			return String.CompareOrdinal(x.Name, y.Name);
+			return CompareByName(x, y);
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private static bool ShouldSortByName(FeedStatus feedStatus)
 		{
 			return feedStatus == FeedStatus.Ok || feedStatus == FeedStatus.Updating;
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private static int CompareByName(Feed x, Feed y)
+		{
+			return String.Compare(x.Name, y.Name, StringComparison.OrdinalIgnoreCase);
 		}
 	}
 }
