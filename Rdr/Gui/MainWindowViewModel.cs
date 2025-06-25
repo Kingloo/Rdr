@@ -219,6 +219,7 @@ namespace Rdr.Gui
 		private readonly ILogger<MainWindowViewModel> logger;
 
 		private Feed? selectedFeed = null;
+		private ViewMode _viewMode = ViewMode.Empty;
 		private DispatcherTimer? refreshTimer = null;
 
 		public MainWindowViewModel(
@@ -233,6 +234,8 @@ namespace Rdr.Gui
 			this.rdrService = rdrService;
 			this.rdrOptionsMonitor = rdrOptionsMonitor;
 			this.logger = logger;
+
+			_viewMode = ViewMode.Unread;
 		}
 
 		public void StartRefreshTimer()
@@ -284,13 +287,20 @@ namespace Rdr.Gui
 			LogRateLimits(contexts);
 			LogFeedStatusOther(contexts);
 
-			if (selectedFeed is null)
+			switch (_viewMode)
 			{
-				await MoveUnreadItemsAsync(clearFirst: false).ConfigureAwait(true);
-			}
-			else
-			{
-				await MoveItemsAsync(selectedFeed).ConfigureAwait(true);
+				case ViewMode.Feed:
+					if (selectedFeed is not null)
+					{
+						await MoveItemsAsync(selectedFeed).ConfigureAwait(true);
+					}
+					break;
+				case ViewMode.Recent:
+				case ViewMode.Unread:
+					await MoveUnreadItemsAsync(clearFirst: false).ConfigureAwait(true);
+					break;
+				default:
+					break;
 			}
 
 			ShowLastUpdatedMessage();
@@ -318,7 +328,9 @@ namespace Rdr.Gui
 			LogRateLimit(context);
 			LogFeedStatusOther(context);
 
-			if (selectedFeed is not null && selectedFeed == feed)
+			if (_viewMode == ViewMode.Feed
+				&& selectedFeed is not null
+				&& selectedFeed == feed)
 			{
 				await MoveItemsAsync(feed).ConfigureAwait(true);
 			}
@@ -410,13 +422,12 @@ namespace Rdr.Gui
 
 			MarkAsRead(item);
 
-			// we only want to remove the item if we are looking at unread items and items contains it
-			if (selectedFeed is null && viewedItems.Contains(item))
+			if (_viewMode == ViewMode.Unread)
 			{
 				viewedItems.Remove(item);
 			}
 
-			LogGoToItem(logger, item.Name);
+			LogGoToItem(logger, item.FeedName, item.Name);
 		}
 
 		public void MarkAsRead(Item item)
@@ -438,21 +449,32 @@ namespace Rdr.Gui
 
 		private void MarkAllAsRead()
 		{
-			if (selectedFeed is not null)
+			switch (_viewMode)
 			{
-				MarkAsRead(selectedFeed);
-			}
-			else // selectedFeed is null means unread-view
-			{
-				foreach (Feed feed in Feeds)
-				{
-					foreach (Item item in feed.Items)
+				case ViewMode.Feed:
+				case ViewMode.Recent:
 					{
-						MarkAsRead(item);
+						foreach (Item each in viewedItems)
+						{
+							MarkAsRead(each);
+						}
 					}
-				}
+					break;
+				case ViewMode.Unread:
+					{
+						foreach (Feed feed in Feeds)
+						{
+							foreach (Item item in feed.Items)
+							{
+								MarkAsRead(item);
+							}
+						}
 
-				viewedItems.Clear();
+						viewedItems.Clear();
+					}
+					break;
+				default:
+					break;
 			}
 		}
 
@@ -634,30 +656,21 @@ namespace Rdr.Gui
 		{
 			if (feed is null)
 			{
-				selectedFeed = null;
+				SetViewMode(ViewMode.Unread);
 
 				await MoveUnreadItemsAsync(clearFirst: true).ConfigureAwait(true);
 			}
-			else if (selectedFeed is null)
-			{
-				selectedFeed = feed;
-
-				await MoveItemsAsync(feed.Items, clearFirst: true).ConfigureAwait(true);
-			}
 			else
 			{
-				if (feed != selectedFeed)
-				{
-					selectedFeed = feed;
+				SetViewMode(ViewMode.Feed, feed);
 
-					await MoveItemsAsync(feed.Items, clearFirst: true).ConfigureAwait(true);
-				}
+				await MoveItemsAsync(feed.Items, clearFirst: true).ConfigureAwait(true);
 			}
 		}
 
 		private Task SeeUnreadAsync()
 		{
-			selectedFeed = null;
+			SetViewMode(ViewMode.Unread);
 
 			return MoveUnreadItemsAsync(clearFirst: true);
 		}
@@ -668,7 +681,7 @@ namespace Rdr.Gui
 
 		private Task SeeSomeAsync(int count)
 		{
-			selectedFeed = null;
+			SetViewMode(ViewMode.Recent);
 
 			IEnumerable<Item> countOfItems = Feeds
 				.SelectMany(static feed => feed.Items)
@@ -711,6 +724,28 @@ namespace Rdr.Gui
 			}
 
 			Activity = false;
+		}
+
+		private void SetViewMode(ViewMode viewMode)
+			=> SetViewMode(viewMode, null);
+
+		private void SetViewMode(ViewMode viewMode, Feed? feed)
+		{
+			switch (viewMode)
+			{
+				case ViewMode.Empty:
+				case ViewMode.Recent:
+				case ViewMode.Unread:
+					selectedFeed = null;
+					break;
+				case ViewMode.Feed:
+					selectedFeed = feed ?? throw new ArgumentNullException(nameof(feed), "tried to set ViewMode to Feed with a feed that was null");
+					break;
+				default:
+					break;
+			}
+
+			_viewMode = viewMode;
 		}
 
 		private void ShowLastUpdatedMessage()
@@ -764,8 +799,8 @@ namespace Rdr.Gui
 		[LoggerMessage(GoToItemFailedId, LogLevel.Warning, "failed to launch item URI: {Link}")]
 		internal static partial void LogGoToItemFailed(ILogger<MainWindowViewModel> logger, string link);
 
-		[LoggerMessage(GoToItemId, LogLevel.Debug, "opened in browser ('{ItemName}')")]
-		internal static partial void LogGoToItem(ILogger<MainWindowViewModel> logger, string itemName);
+		[LoggerMessage(GoToItemId, LogLevel.Debug, "opened in browser ('{FeedName}'->'{ItemName}')")]
+		internal static partial void LogGoToItem(ILogger<MainWindowViewModel> logger, string feedName, string itemName);
 
 		[LoggerMessage(FeedsFileOpenedId, LogLevel.Debug, "opened feeds file ('{Path}')")]
 		internal static partial void LogFeedsFileOpened(ILogger<MainWindowViewModel> logger, string path);
