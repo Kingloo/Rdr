@@ -43,24 +43,25 @@
 
 		<DataTemplate DataType="{x:Type rdrModel:Feed}">
 			<DataTemplate.Resources>
-				<converters:FeedStatusBackgroundColorConverter x:Key="feedStatusBackgroundColorConverter"
-                                                               None="White"
-                                                               Ok="#FF313131"
-                                                               Updating="LightGray"
-                                                               DoesNotExist="LightGoldenrodYellow"
-                                                               Forbidden="Red"
-                                                               ParseFailed="LightPink"
-                                                               MovedCannotFollow="Red"
-													           Timeout="Yellow"
-													           Dns="Brown"
-													           RateLimited="Orange"
-                                                               InternetError="LightBlue"
-                                                               CertificateRevocationCheckFailed="MediumPurple"
-                                                               Broken="Blue"
-													           Other="#010101" />
+				<converters:FeedStatusColorConverter x:Key="feedStatusBackgroundColorConverter"
+                                                     None="White"
+                                                     Ok="#FF313131"
+                                                     Updating="LightGray"
+                                                     DoesNotExist="LightGoldenrodYellow"
+                                                     Forbidden="Red"
+                                                     ParseFailed="LightPink"
+                                                     MovedCannotFollow="Red"
+                                                     Timeout="Yellow"
+                                                     Dns="Brown"
+                                                     RateLimited="Orange"
+                                                     InternetError="LightBlue"
+                                                     CertificateRevocationCheckFailed="MediumPurple"
+                                                     Broken="Blue"
+                                                     Other="#010101" />
 				
-				<converters:FeedStatusForegroundColorConverter x:Key="feedStatusForegroundColorConverter"
-                                                               CertificateRevocationCheckFailed="White" />
+				<converters:FeedStatusColorConverter x:Key="feedStatusForegroundColorConverter"
+                                                     Ok="#FF7A7A7A"
+                                                     CertificateRevocationCheckFailed="White" />
 			</DataTemplate.Resources>
 
 			<Label Margin="0,0,0,5"

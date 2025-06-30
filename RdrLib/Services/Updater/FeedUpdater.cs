@@ -258,6 +258,12 @@ namespace RdrLib.Services.Updater
 						case HttpStatusCode.Forbidden:
 							feed.Status = FeedStatus.Forbidden;
 							break;
+						case HttpStatusCode.NotFound:
+							feed.Status = FeedStatus.DoesNotExist;
+							break;
+						case HttpStatusCode.InternalServerError:
+							feed.Status = FeedStatus.InternetError;
+							break;
 						default:
 							feed.Status = FeedStatus.Other;
 							break;

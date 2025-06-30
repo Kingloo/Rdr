@@ -7,24 +7,24 @@ using RdrLib.Model;
 namespace Rdr.Gui.Converters
 {
 	[ValueConversion(typeof(FeedStatus), typeof(Brush))]
-	public class FeedStatusForegroundColorConverter : IValueConverter
+	public class FeedStatusColorConverter : IValueConverter
 	{
-		private static readonly Brush defaultForegroundColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF7A7A7A"));
+		private static readonly Brush defaultColor = Brushes.White;
 
-		public Brush None { get; set; } = defaultForegroundColor;
-		public Brush Ok { get; set; } = defaultForegroundColor;
-		public Brush Updating { get; set; } = defaultForegroundColor;
-		public Brush DoesNotExist { get; set; } = defaultForegroundColor;
-		public Brush Forbidden { get; set; } = defaultForegroundColor;
-		public Brush ParseFailed { get; set; } = defaultForegroundColor;
-		public Brush MovedCannotFollow { get; set; } = defaultForegroundColor;
-		public Brush Timeout { get; set; } = defaultForegroundColor;
-		public Brush Dns { get; set; } = defaultForegroundColor;
-		public Brush RateLimited { get; set; } = defaultForegroundColor;
-		public Brush InternetError { get; set; } = defaultForegroundColor;
-		public Brush CertificateRevocationCheckFailed { get; set; } = defaultForegroundColor;
-		public Brush Broken { get; set; } = defaultForegroundColor;
-		public Brush Other { get; set; } = defaultForegroundColor;
+		public Brush None { get; set; } = defaultColor;
+		public Brush Ok { get; set; } = defaultColor;
+		public Brush Updating { get; set; } = defaultColor;
+		public Brush DoesNotExist { get; set; } = defaultColor;
+		public Brush Forbidden { get; set; } = defaultColor;
+		public Brush ParseFailed { get; set; } = defaultColor;
+		public Brush MovedCannotFollow { get; set; } = defaultColor;
+		public Brush Timeout { get; set; } = defaultColor;
+		public Brush Dns { get; set; } = defaultColor;
+		public Brush RateLimited { get; set; } = defaultColor;
+		public Brush InternetError { get; set; } = defaultColor;
+		public Brush CertificateRevocationCheckFailed { get; set; } = defaultColor;
+		public Brush Broken { get; set; } = defaultColor;
+		public Brush Other { get; set; } = defaultColor;
 
 		public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
 		{
@@ -52,10 +52,10 @@ namespace Rdr.Gui.Converters
 				FeedStatus.DoesNotExist => DoesNotExist,
 				FeedStatus.Forbidden => Forbidden,
 				FeedStatus.ParseFailed => ParseFailed,
-				FeedStatus.MovedCannotFollow => MovedCannotFollow,
 				FeedStatus.Timeout => Timeout,
 				FeedStatus.Dns => Dns,
 				FeedStatus.RateLimited => RateLimited,
+				FeedStatus.MovedCannotFollow => MovedCannotFollow,
 				FeedStatus.InternetError => InternetError,
 				FeedStatus.CertificateRevocationCheckFailed => CertificateRevocationCheckFailed,
 				FeedStatus.Broken => Broken,
@@ -66,7 +66,7 @@ namespace Rdr.Gui.Converters
 
 		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
 		{
-			throw new NotSupportedException("converting from Brush to FeedStatus is not supported");
+			throw new NotSupportedException("converting from Brush to FeedStatus is not supported!");
 		}
 	}
 }
