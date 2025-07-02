@@ -73,6 +73,9 @@
 				<Label.Content>
 					<TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
 				</Label.Content>
+				<Label.ToolTip>
+					<TextBlock Text="{Binding Path=Status}" />
+				</Label.ToolTip>
 				<Label.ContextMenu>
 					<!--
                         Label's tag has MainWindow's datacontext, aka a MainWindowViewModel
