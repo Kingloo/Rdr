@@ -207,27 +207,26 @@ namespace RdrLib.Services.Updater
 			}
 			else
 			{
-				void configureRequest(HttpRequestMessage requestMessage)
+				void makeRequestConditional(HttpRequestMessage requestMessage)
 				{
 					requestMessage.Method = HttpMethod.Get;
 
-					if (beConditional)
+					if (context?.ETag is EntityTagHeaderValue etag)
 					{
-						if (context?.ETag is EntityTagHeaderValue etag)
-						{
-							requestMessage.Headers.IfNoneMatch.Add(etag);
-						}
+						requestMessage.Headers.IfNoneMatch.Add(etag);
+					}
 
-						if (context?.LastModified is DateTimeOffset lastModified)
-						{
-							requestMessage.Headers.IfModifiedSince = lastModified;
-						}
+					if (context?.LastModified is DateTimeOffset lastModified)
+					{
+						requestMessage.Headers.IfModifiedSince = lastModified;
 					}
 				}
 
 				context.Start = start;
 
-				using ResponseSet responseSet = await Web2.PerformHeaderRequest(client, feed.Link, configureRequest, cancellationToken).ConfigureAwait(false);
+				using ResponseSet responseSet = beConditional
+					? await Web2.PerformHeaderRequest(client, feed.Link, makeRequestConditional, cancellationToken).ConfigureAwait(false)
+					: await Web2.PerformHeaderRequest(client, feed.Link, cancellationToken).ConfigureAwait(false);
 
 				if (responseSet.Responses.LastOrDefault() is ResponseSetItem responseSetItem)
 				{
