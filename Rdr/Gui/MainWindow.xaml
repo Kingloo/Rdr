@@ -60,6 +60,7 @@
                                                      Other="#010101" />
 				
 				<converters:FeedStatusColorConverter x:Key="feedStatusForegroundColorConverter"
+                                                     None="Black"
                                                      Ok="#FF7A7A7A"
                                                      CertificateRevocationCheckFailed="White" />
 			</DataTemplate.Resources>
