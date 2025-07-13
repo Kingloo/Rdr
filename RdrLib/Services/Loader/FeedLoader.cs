@@ -39,7 +39,7 @@ namespace RdrLib.Services.Loader
 				}
 			}
 
-			return feeds;
+			return feeds.AsReadOnly();
 		}
 	}
 }
