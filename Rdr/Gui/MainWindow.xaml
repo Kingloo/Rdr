@@ -70,6 +70,8 @@
                    FontSize="15"
                    Background="{Binding Status, Converter={StaticResource feedStatusBackgroundColorConverter}}"
                    MouseLeftButtonUp="Label_MouseLeftButtonUp"
+                   ToolTipService.InitialShowDelay="250"
+                   ToolTipService.BetweenShowDelay="150"
                    Tag="{Binding Path=DataContext, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type gui:MainWindow}}}">
 				<Label.Content>
 					<TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
