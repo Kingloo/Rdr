@@ -22,7 +22,7 @@ namespace Rdr.Gui.Converters
 		public Brush Dns { get; set; } = defaultColor;
 		public Brush RateLimited { get; set; } = defaultColor;
 		public Brush InternetError { get; set; } = defaultColor;
-		public Brush CertificateRevocationCheckFailed { get; set; } = defaultColor;
+		public Brush ConnectionError { get; set; } = defaultColor;
 		public Brush Broken { get; set; } = defaultColor;
 		public Brush Other { get; set; } = defaultColor;
 
@@ -57,7 +57,7 @@ namespace Rdr.Gui.Converters
 				FeedStatus.RateLimited => RateLimited,
 				FeedStatus.MovedCannotFollow => MovedCannotFollow,
 				FeedStatus.InternetError => InternetError,
-				FeedStatus.CertificateRevocationCheckFailed => CertificateRevocationCheckFailed,
+				FeedStatus.ConnectionError => ConnectionError,
 				FeedStatus.Broken => Broken,
 				FeedStatus.Other => Other,
 				_ => throw new ArgumentException($"unknown FeedStatus '{value}'", nameof(value))

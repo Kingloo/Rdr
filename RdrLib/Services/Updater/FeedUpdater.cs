@@ -159,16 +159,25 @@ namespace RdrLib.Services.Updater
 				context.Exception = ex;
 				context.Finish = DateTimeOffset.Now;
 
-				if (ex is HttpRequestException hre
-					&& hre.HttpRequestError == HttpRequestError.SecureConnectionError
-					&& hre.InnerException is AuthenticationException ae)
+				if (ex is HttpRequestException hre)
 				{
-					feed.Status = FeedStatus.CertificateRevocationCheckFailed;
+					if (hre.HttpRequestError == HttpRequestError.SecureConnectionError
+						&& hre.InnerException is AuthenticationException ae)
+					{
+						feed.Status = FeedStatus.ConnectionError;
+					}
+					else
+					{
+						feed.Status = FeedStatus.InternetError;
+					}
 				}
-
-				if (ex is OperationCanceledException oce && oce.InnerException is TimeoutException)
+				else if (ex is OperationCanceledException oce && oce.InnerException is TimeoutException)
 				{
 					feed.Status = FeedStatus.Timeout;
+				}
+				else
+				{
+					feed.Status = FeedStatus.Broken;
 				}
 			}
 

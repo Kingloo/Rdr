@@ -55,14 +55,14 @@
                                                      Dns="Brown"
                                                      RateLimited="Orange"
                                                      InternetError="LightBlue"
-                                                     CertificateRevocationCheckFailed="MediumPurple"
+                                                     ConnectionError="MediumPurple"
                                                      Broken="Blue"
                                                      Other="#010101" />
 				
 				<converters:FeedStatusColorConverter x:Key="feedStatusForegroundColorConverter"
                                                      None="Black"
                                                      Ok="#FF7A7A7A"
-                                                     CertificateRevocationCheckFailed="White" />
+                                                     ConnectionError="White" />
 			</DataTemplate.Resources>
 
 			<Label Margin="0,0,0,5"

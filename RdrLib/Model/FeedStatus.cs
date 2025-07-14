@@ -13,7 +13,7 @@ namespace RdrLib.Model
 		RateLimited = 8,
 		InternetError = 9,
 		Broken = 10,
-		CertificateRevocationCheckFailed = 11,
+		ConnectionError = 11,
 		Other = 12,
 		None = 13
 	}
