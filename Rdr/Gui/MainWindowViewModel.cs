@@ -277,12 +277,24 @@ namespace Rdr.Gui
 
 			StatusMessage = "updating ...";
 
-			IReadOnlyList<FeedUpdateContext> contexts = await rdrService.UpdateAsync(
-				feeds,
-				rdrOptionsMonitor.CurrentValue,
-				beConditional: true,
-				CancellationToken.None)
-			.ConfigureAwait(true);
+			IReadOnlyList<FeedUpdateContext> contexts;
+
+			using (CancellationTokenSource cts = new CancellationTokenSource(TimeSpan.FromMinutes(1d)))
+			{
+				try
+				{
+					contexts = await rdrService.UpdateAsync(
+						feeds,
+						rdrOptionsMonitor.CurrentValue,
+						beConditional: true,
+						cts.Token)
+					.ConfigureAwait(true);
+				}
+				catch (OperationCanceledException)
+				{
+					contexts = new List<FeedUpdateContext>(capacity: 0).AsReadOnly();
+				}
+			}
 
 			LogRateLimits(contexts);
 			LogFeedStatusOther(contexts);
