@@ -148,10 +148,37 @@ namespace RdrLib.Services.Updater
 
 				context.Exception = null;
 			}
+			catch (TimeoutException ex)
+			{
+				context.Exception = ex;
+				context.Finish = DateTimeOffset.Now;
+
+				feed.Status = FeedStatus.Timeout;
+			}
+			catch (HttpIOException ex)
+			{
+				context.Exception = ex;
+				context.Finish = DateTimeOffset.Now;
+
+				feed.Status = FeedStatus.InternetError;
+			}
+			catch (HttpRequestException ex)
+			{
+				context.Exception = ex;
+				context.Finish = DateTimeOffset.Now;
+
+				if (ex.HttpRequestError == HttpRequestError.SecureConnectionError
+					&& ex.InnerException is AuthenticationException ae)
+				{
+					feed.Status = FeedStatus.ConnectionError;
+				}
+				else
+				{
+					feed.Status = FeedStatus.InternetError;
+				}
+			}
 			catch (Exception ex) when (
-				ex is HttpRequestException
-				|| ex is HttpIOException
-				|| ex is IOException
+				ex is IOException
 				|| ex is SocketException
 				|| ex is OperationCanceledException
 			)
@@ -159,19 +186,7 @@ namespace RdrLib.Services.Updater
 				context.Exception = ex;
 				context.Finish = DateTimeOffset.Now;
 
-				if (ex is HttpRequestException hre)
-				{
-					if (hre.HttpRequestError == HttpRequestError.SecureConnectionError
-						&& hre.InnerException is AuthenticationException ae)
-					{
-						feed.Status = FeedStatus.ConnectionError;
-					}
-					else
-					{
-						feed.Status = FeedStatus.InternetError;
-					}
-				}
-				else if (ex is OperationCanceledException oce && oce.InnerException is TimeoutException)
+				if (ex is OperationCanceledException oce && oce.InnerException is TimeoutException)
 				{
 					feed.Status = FeedStatus.Timeout;
 				}
