@@ -279,7 +279,7 @@ namespace Rdr.Gui
 
 			IReadOnlyList<FeedUpdateContext> contexts;
 
-			using (CancellationTokenSource cts = new CancellationTokenSource(TimeSpan.FromMinutes(1d)))
+			using (CancellationTokenSource cts = new CancellationTokenSource(TimeSpan.FromMinutes(3d)))
 			{
 				try
 				{
