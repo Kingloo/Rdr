@@ -61,7 +61,8 @@
 				
 				<converters:FeedStatusColorConverter x:Key="feedStatusForegroundColorConverter"
                                                      None="Black"
-													 Timeout="Black"
+                                                     DoesNotExist="Black"
+                                                     Timeout="Black"
                                                      Ok="#FF7A7A7A"
                                                      ConnectionError="White" />
 			</DataTemplate.Resources>
