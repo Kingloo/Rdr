@@ -362,8 +362,19 @@ namespace Rdr.Gui
 					? rateLimitExpiration - now
 					: TimeSpan.Zero;
 
-				LogFeedRateLimited(logger, context.Uri.AbsoluteUri, FormatTimeSpan(context.RateLimit), FormatTimeSpan(rateLimitRemaining));
+				if (RateLimitIsNewOrAboutToExpire(context.RateLimit, rateLimitRemaining))
+				{
+					LogFeedRateLimited(logger, context.Uri.AbsoluteUri, FormatTimeSpan(context.RateLimit), FormatTimeSpan(rateLimitRemaining));
+				}	
 			}
+		}
+
+		private bool RateLimitIsNewOrAboutToExpire(TimeSpan rateLimit, TimeSpan rateLimitRemaining)
+		{
+			bool rateLimitIsNew = (rateLimit - rateLimitRemaining) < TimeSpan.FromMinutes(1d);
+			bool rateLimitAboutToExpire = rateLimitRemaining < TimeSpan.FromMinutes(1d);
+
+			return rateLimitIsNew || rateLimitAboutToExpire;
 		}
 
 		private void LogRateLimits(IReadOnlyList<FeedUpdateContext> contexts)
