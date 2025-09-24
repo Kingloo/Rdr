@@ -221,6 +221,7 @@ namespace Rdr.Gui
 		private Feed? selectedFeed = null;
 		private ViewMode _viewMode = ViewMode.Empty;
 		private DispatcherTimer? refreshTimer = null;
+		private static readonly IReadOnlyList<FeedUpdateContext> emptyContextList = new List<FeedUpdateContext>(capacity: 0).AsReadOnly();
 
 		public MainWindowViewModel(
 			IRdrService rdrService,
@@ -292,12 +293,13 @@ namespace Rdr.Gui
 				}
 				catch (OperationCanceledException)
 				{
-					contexts = new List<FeedUpdateContext>(capacity: 0).AsReadOnly();
+					contexts = emptyContextList;
 				}
 			}
 
 			LogRateLimits(contexts);
 			LogFeedStatusOther(contexts);
+			LogRedirects(contexts);
 
 			switch (_viewMode)
 			{
@@ -406,6 +408,19 @@ namespace Rdr.Gui
 			foreach (var each in nameAndStatusCodeOfFeedsWithStatusOther)
 			{
 				MainWindowViewModelLoggerMessages.LogFeedStatusOther(logger, each.Name, FormatStatusCode(each.StatusCode));
+			}
+		}
+
+		private void LogRedirects(IReadOnlyList<FeedUpdateContext> contexts)
+		{
+			List<RedirectData> feedsThatWereRedirected = contexts
+				.Where(static c => c.RedirectData is not null)
+				.Select(c => c.RedirectData!)
+				.ToList();
+
+			foreach (RedirectData each in feedsThatWereRedirected)
+			{
+				LogFeedRedirected(logger, each.From.AbsoluteUri, each.To.AbsoluteUri);
 			}
 		}
 
@@ -867,6 +882,9 @@ namespace Rdr.Gui
 
 		[LoggerMessage(FeedRateLimitedId, LogLevel.Warning, "rate limited for '{Uri}' for {RateLimit}, {RateLimitRemaining} remaining")]
 		internal static partial void LogFeedRateLimited(ILogger<MainWindowViewModel> logger, string Uri, string RateLimit, string RateLimitRemaining);
+
+		[LoggerMessage(FeedRedirectedId, LogLevel.Warning, "feed redirected '{From}' to '{To}'")]
+		internal static partial void LogFeedRedirected(ILogger<MainWindowViewModel> logger, string From, string To);
 
 		[LoggerMessage(WindowExitId, LogLevel.Debug, "window exit ('{WindowName}')")]
 		internal static partial void LogWindowExit(ILogger<MainWindowViewModel> logger, string windowName);

@@ -10,8 +10,8 @@ using System.Threading.Tasks;
 
 namespace RdrLib
 {
-	public record class FileDownloadProgress(int BytesRead, long TotalBytesWritten, long? ContentLength);
-	public record class RetryHeaderWithTimestamp(DateTimeOffset Time, RetryConditionHeaderValue? RetryHeader);
+	public readonly record struct FileDownloadProgress(int BytesRead, long TotalBytesWritten, long? ContentLength);
+	public readonly record struct RetryHeaderWithTimestamp(DateTimeOffset Time, RetryConditionHeaderValue? RetryHeader);
 
 	public static class Web2
 	{
@@ -46,7 +46,13 @@ namespace RdrLib
 
 #pragma warning disable CA2000 // Dispose objects before losing scope
 				// disposing 'ResponseSet' disposes each 'ResponseSetItem'
-				responseSet.Responses.Add(new ResponseSetItem(uri, response));
+				responseSet.Responses.Add(new ResponseSetItem(uriToVisit, response));
+				/*
+					why uriToVisit?
+					because we want the ETag from the URI at the end of all redirections
+					we still set the ETag on every request
+					https://utcc.utoronto.ca/~cks/space/blog/web/ETagsMustComeFromURL
+				*/
 #pragma warning restore CA2000 // Dispose objects before losing scope
 
 				if (response.StatusCode == System.Net.HttpStatusCode.NotModified)

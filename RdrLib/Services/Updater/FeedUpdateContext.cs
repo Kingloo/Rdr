@@ -23,6 +23,7 @@ namespace RdrLib.Services.Updater
 		public EntityTagHeaderValue? ETag { get; set; } = null;
 		public TimeSpan RateLimit { get; set; } = TimeSpan.Zero;
 		public Exception? Exception { get; set; } = null;
+		public RedirectData? RedirectData { get; set; } = null;
 
 		public FeedUpdateContext(Feed feed)
 		{

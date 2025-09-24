@@ -252,19 +252,24 @@ namespace RdrLib.Services.Updater
 					? await Web2.PerformHeaderRequest(client, feed.Link, makeRequestConditional, cancellationToken).ConfigureAwait(false)
 					: await Web2.PerformHeaderRequest(client, feed.Link, cancellationToken).ConfigureAwait(false);
 
-				if (responseSet.Responses.LastOrDefault() is ResponseSetItem responseSetItem)
+				if (responseSet.Responses.LastOrDefault() is ResponseSetItem lastResponseSetItem)
 				{
-					context.StatusCode = responseSetItem.Response.StatusCode;
-					context.ETag = responseSetItem.Response.Headers.ETag;
-					context.RateLimit = SetRateLimit(context.RateLimit, responseSetItem.Response.Headers.RetryAfter, start);
+					context.StatusCode = lastResponseSetItem.Response.StatusCode;
+					context.ETag = lastResponseSetItem.Response.Headers.ETag;
+					context.RateLimit = SetRateLimit(context.RateLimit, lastResponseSetItem.Response.Headers.RetryAfter, start);
 
-					switch (responseSetItem.Response.StatusCode)
+					if (lastResponseSetItem.Uri != feed.Link)
+					{
+						context.RedirectData = new RedirectData(From: feed.Link, To: lastResponseSetItem.Uri);
+					}
+
+					switch (lastResponseSetItem.Response.StatusCode)
 					{
 						case HttpStatusCode.OK:
 							{
-								context.LastModified = responseSetItem.Response.Content.Headers.LastModified;
+								context.LastModified = lastResponseSetItem.Response.Content.Headers.LastModified;
 
-								responseData = await Web2.PerformBodyRequestToString(responseSetItem.Response, cancellationToken).ConfigureAwait(false);
+								responseData = await Web2.PerformBodyRequestToString(lastResponseSetItem.Response, cancellationToken).ConfigureAwait(false);
 
 								feed.Status = ParseFeed(feed, responseData)
 									? FeedStatus.Ok
