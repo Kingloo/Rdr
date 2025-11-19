@@ -14,6 +14,7 @@ namespace RdrLib.Services.Updater
 		{
 			ArgumentOutOfRangeException.ThrowIfNegative(count.Value);
 			ArgumentOutOfRangeException.ThrowIfNegative(total.Value);
+			ArgumentOutOfRangeException.ThrowIfGreaterThan(count.Value, total.Value);
 
 			Count = count;
 			Total = total;
