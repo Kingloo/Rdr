@@ -330,7 +330,7 @@ namespace Rdr.Gui
 		{
 			Application.Current.Dispatcher.Invoke(() =>
 			{
-				StatusMessage = $"updated {e.Count.Value} of {e.Total.Value}";
+				StatusMessage = $"updated {e.Count.Value} of {e.Total.Value} feeds";
 			},
 			DispatcherPriority.ApplicationIdle);
 		}

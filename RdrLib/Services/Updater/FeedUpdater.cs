@@ -21,6 +21,8 @@ namespace RdrLib.Services.Updater
 
 		private readonly IHttpClientFactory httpClientFactory;
 		private readonly FeedUpdateHistory feedUpdateHistory;
+		private int countUpdated = 0;
+		private Total total = new Total(0);
 
 		public bool IsUpdating { get; private set; } = false;
 		public event EventHandler<FeedUpdatedEventArgs> FeedUpdated = delegate { };
@@ -40,6 +42,8 @@ namespace RdrLib.Services.Updater
 			ArgumentNullException.ThrowIfNull(feeds);
 			ArgumentNullException.ThrowIfNull(rdrOptions);
 			ArgumentOutOfRangeException.ThrowIfNegative(feeds.Count);
+
+			total = new Total(feeds.Count);
 
 			if (feeds.Count == 0)
 			{
@@ -70,9 +74,6 @@ namespace RdrLib.Services.Updater
 				MaxDegreeOfParallelism = rdrOptions.UpdateConcurrency
 			};
 
-			int countUpdated = 0;
-			int total = feeds.Count;
-
 			await Parallel.ForEachAsync(updateTasks, parallelOptions, async (Task<IReadOnlyList<FeedUpdateContext>> task, CancellationToken token) =>
 			{
 				IReadOnlyList<FeedUpdateContext> ret = await task.ConfigureAwait(false);
@@ -80,10 +81,6 @@ namespace RdrLib.Services.Updater
 				foreach (FeedUpdateContext context in ret)
 				{
 					contexts.Add(context);
-
-					Interlocked.Increment(ref countUpdated);
-
-					OnFeedUpdated(new Count(countUpdated), new Total(total));
 				}
 			})
 			.ConfigureAwait(false);
@@ -126,9 +123,13 @@ namespace RdrLib.Services.Updater
 
 				for (int i = 0; i < feeds.Count; i++)
 				{
-					var context = await UpdateFeedAsync(client, feeds[i], rdrOptions, beConditional, cancellationToken).ConfigureAwait(false);
+					FeedUpdateContext context = await UpdateFeedAsync(client, feeds[i], rdrOptions, beConditional, cancellationToken).ConfigureAwait(false);
 
 					contexts.Add(context);
+
+					int currentUpdated = Interlocked.Increment(ref countUpdated);
+
+					OnFeedUpdated(new Count(currentUpdated), total);
 
 					if (i + 1 < feeds.Count)
 					{
