@@ -19,6 +19,12 @@ namespace RdrLib
 
 		public bool IsUpdating { get => feedUpdater.IsUpdating; }
 		public bool IsDownloading { get => fileDownloader.IsDownloading; }
+		
+		public event EventHandler<FeedUpdatedEventArgs> FeedUpdated
+		{
+			add => feedUpdater.FeedUpdated += value;
+			remove => feedUpdater.FeedUpdated -= value;
+		}
 
 		public RdrService(
 			FeedLoader feedLoader,

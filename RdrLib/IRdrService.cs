@@ -13,6 +13,7 @@ namespace RdrLib
 	{
 		bool IsUpdating { get; }
 		bool IsDownloading { get; }
+		event EventHandler<FeedUpdatedEventArgs> FeedUpdated;
 
 		Task<IReadOnlyList<Feed>> LoadAsync(Stream stream, CancellationToken cancellationToken);
 		Task<IReadOnlyList<Feed>> LoadAsync(Stream stream, Encoding encoding, CancellationToken cancellationToken);

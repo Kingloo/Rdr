@@ -23,6 +23,8 @@ namespace RdrLib.Services.Updater
 		private readonly FeedUpdateHistory feedUpdateHistory;
 
 		public bool IsUpdating { get; private set; } = false;
+		public event EventHandler<FeedUpdatedEventArgs> FeedUpdated = delegate { };
+		private void OnFeedUpdated(Count count, Total total) => FeedUpdated.Invoke(this, new FeedUpdatedEventArgs(count, total));
 
 		public FeedUpdater(IHttpClientFactory httpClientFactory, FeedUpdateHistory feedUpdateHistory)
 		{
@@ -68,13 +70,20 @@ namespace RdrLib.Services.Updater
 				MaxDegreeOfParallelism = rdrOptions.UpdateConcurrency
 			};
 
+			int countUpdated = 0;
+			int total = feeds.Count;
+
 			await Parallel.ForEachAsync(updateTasks, parallelOptions, async (Task<IReadOnlyList<FeedUpdateContext>> task, CancellationToken token) =>
 			{
 				IReadOnlyList<FeedUpdateContext> ret = await task.ConfigureAwait(false);
 
-				foreach (var each in ret)
+				foreach (FeedUpdateContext context in ret)
 				{
-					contexts.Add(each);
+					contexts.Add(context);
+
+					Interlocked.Increment(ref countUpdated);
+
+					OnFeedUpdated(new Count(countUpdated), new Total(total));
 				}
 			})
 			.ConfigureAwait(false);

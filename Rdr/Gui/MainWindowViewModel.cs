@@ -279,6 +279,8 @@ namespace Rdr.Gui
 			StatusMessage = "updating ...";
 
 			IReadOnlyList<FeedUpdateContext> contexts;
+			
+			rdrService.FeedUpdated += OnFeedUpdated;
 
 			using (CancellationTokenSource cts = new CancellationTokenSource(TimeSpan.FromMinutes(3d)))
 			{
@@ -296,6 +298,8 @@ namespace Rdr.Gui
 					contexts = emptyContextList;
 				}
 			}
+
+			rdrService.FeedUpdated -= OnFeedUpdated;
 
 			LogRateLimits(contexts);
 			LogFeedStatusOther(contexts);
@@ -320,6 +324,15 @@ namespace Rdr.Gui
 			ShowLastUpdatedMessage();
 
 			Activity = false;
+		}
+
+		private void OnFeedUpdated(object? sender, FeedUpdatedEventArgs e)
+		{
+			Application.Current.Dispatcher.Invoke(() =>
+			{
+				StatusMessage = $"updated {e.Count.Value} of {e.Total.Value}";
+			},
+			DispatcherPriority.ApplicationIdle);
 		}
 
 		private Task RefreshAsync(Feed feed)
@@ -732,7 +745,9 @@ namespace Rdr.Gui
 
 		private Task MoveUnreadItemsAsync(bool clearFirst)
 		{
-			IEnumerable<Item> unreadItems = Feeds.SelectMany(static feed => feed.Items).Where(static item => item.Unread);
+			IEnumerable<Item> unreadItems = Feeds
+				.SelectMany(static feed => feed.Items)
+				.Where(static item => item.Unread);
 
 			return MoveItemsAsync(unreadItems, clearFirst);
 		}
