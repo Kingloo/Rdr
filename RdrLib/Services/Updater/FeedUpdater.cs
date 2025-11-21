@@ -85,6 +85,8 @@ namespace RdrLib.Services.Updater
 			})
 			.ConfigureAwait(false);
 
+			Interlocked.Exchange(ref countUpdated, 0);
+
 			return contexts.AsReadOnly();
 		}
 
