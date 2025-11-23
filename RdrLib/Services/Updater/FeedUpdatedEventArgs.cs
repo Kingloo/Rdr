@@ -7,8 +7,11 @@ namespace RdrLib.Services.Updater
 
 	public class FeedUpdatedEventArgs : EventArgs
 	{
-		public Count Count { get; } = new Count(0);
-		public Total Total { get; } = new Total(0);
+		private static readonly Count countZero = new Count(0);
+		private static readonly Total countTotal = new Total(0);
+
+		public Count Count { get; } = countZero;
+		public Total Total { get; } = countTotal;
 
 		public FeedUpdatedEventArgs(Count count, Total total)
 		{
