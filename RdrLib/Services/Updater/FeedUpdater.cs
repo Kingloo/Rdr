@@ -161,9 +161,9 @@ namespace RdrLib.Services.Updater
 						Feed = feed
 					};
 				})
-				.OrderBy(each => each.Key)
+				.OrderBy(static each => each.Key)
 				.Take(countToTake)
-				.Select(each => each.Feed)
+				.Select(static each => each.Feed)
 				.ToList();
 		}
 

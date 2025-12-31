@@ -15,10 +15,15 @@ namespace RdrLib.Services.Loader
 			encoderShouldEmitUTF8Identifier: false,
 			throwOnInvalidBytes: true);
 
+		public static readonly char CommentChar = '#';
+
 		public FeedLoader() { }
 
 		public async Task<IReadOnlyList<Feed>> LoadAsync(Stream stream, Encoding encoding, CancellationToken cancellationToken)
 		{
+			ArgumentNullException.ThrowIfNull(stream);
+			ArgumentNullException.ThrowIfNull(encoding);
+
 			using StreamReader sr = new StreamReader(stream, encoding);
 
 			List<Feed> feeds = new List<Feed>(capacity: 100);
@@ -27,7 +32,7 @@ namespace RdrLib.Services.Loader
 
 			while ((line = await sr.ReadLineAsync(cancellationToken).ConfigureAwait(false)) != null)
 			{
-				if (line.StartsWith('#') == false)
+				if (line.StartsWith(CommentChar) == false)
 				{
 					if (Uri.TryCreate(line, UriKind.Absolute, out Uri? uri))
 					{

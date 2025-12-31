@@ -61,7 +61,7 @@ namespace Rdr.Gui
 		{
 			get
 			{
-				goToFeedCommand ??= new DelegateCommand<Feed>(GoToFeed, (_) => true);
+				goToFeedCommand ??= new DelegateCommand<Feed>(GoToFeed, static (_) => true);
 
 				return goToFeedCommand;
 			}
@@ -72,7 +72,7 @@ namespace Rdr.Gui
 		{
 			get
 			{
-				goToItemCommand ??= new DelegateCommand<Item>(GoToItem, (_) => true);
+				goToItemCommand ??= new DelegateCommand<Item>(GoToItem, static (_) => true);
 
 				return goToItemCommand;
 			}
@@ -83,7 +83,7 @@ namespace Rdr.Gui
 		{
 			get
 			{
-				markAsReadCommand ??= new DelegateCommand(MarkAllAsRead, (_) => true);
+				markAsReadCommand ??= new DelegateCommand(MarkAllAsRead, static (_) => true);
 
 				return markAsReadCommand;
 			}
@@ -94,7 +94,7 @@ namespace Rdr.Gui
 		{
 			get
 			{
-				openFeedsFileCommand ??= new DelegateCommand(OpenFeedsFile, (_) => true);
+				openFeedsFileCommand ??= new DelegateCommand(OpenFeedsFile, static (_) => true);
 
 				return openFeedsFileCommand;
 			}
@@ -406,7 +406,7 @@ namespace Rdr.Gui
 		private void LogFeedStatusOther(IReadOnlyList<FeedUpdateContext> contexts)
 		{
 			var nameAndStatusCodeOfFeedsWithStatusOther = Feeds
-				.Where(feed => feed.Status == FeedStatus.Other)
+				.Where(static feed => feed.Status == FeedStatus.Other)
 				.Join(
 					contexts,
 					feed => feed.Link,
@@ -428,7 +428,7 @@ namespace Rdr.Gui
 		{
 			List<RedirectData> feedsThatWereRedirected = contexts
 				.Where(static c => c.RedirectData is not null)
-				.Select(c => c.RedirectData!)
+				.Select(static c => c.RedirectData!)
 				.ToList();
 
 			foreach (RedirectData each in feedsThatWereRedirected)
