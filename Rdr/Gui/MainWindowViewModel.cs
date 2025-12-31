@@ -336,16 +336,21 @@ namespace Rdr.Gui
 
 			return feeds
 				.GroupBy(static (Feed feed) => feed.Link.DnsSafeHost)
-				.Select((IGrouping<string, Feed> group) => group.Select(static (Feed feed) =>
-					new
-					{
-						Key = System.Security.Cryptography.RandomNumberGenerator.GetInt32(Int32.MinValue, Int32.MaxValue),
-						Feed = feed
-					})
-					.OrderBy(static feed => feed.Key)
-					.Take(rdrOptions.RandomisePerDomainWhenMoreThan))
+				.AsParallel()
+				.WithDegreeOfParallelism(Math.Min(Environment.ProcessorCount, 12))
+				.Select((IGrouping<string, Feed> group) =>
+					group.Select(static (Feed feed) =>
+						new // anon
+						{
+							Key = System.Security.Cryptography.RandomNumberGenerator.GetInt32(Int32.MinValue, Int32.MaxValue),
+							Feed = feed
+						})
+					.OrderByDescending(static anon => anon.Feed.Status) // chooses all feeds with FeedStatus.None first no matter what
+					.ThenBy(static anon => anon.Key)
+					.Take(rdrOptions.RandomisePerDomainWhenMoreThan)
+					.Select(static anon => anon.Feed)
+				)
 				.SelectMany(static each => each)
-				.Select(static each => each.Feed)
 				.ToList();
 		}
 
