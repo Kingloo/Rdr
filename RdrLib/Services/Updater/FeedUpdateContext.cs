@@ -10,14 +10,17 @@ namespace RdrLib.Services.Updater
 	public class FeedUpdateContext
 	{
 		public Uri Uri { get; }
+		
 		/// <summary>
 		/// Start timestamp of web request. Updates that do not lead to an actual web request, such as when under a rate limit, do not update this.
 		/// </summary>
 		public DateTimeOffset Start { get; set; } = DateTimeOffset.MinValue;
+
 		/// <summary>
 		/// End timestamp of web request. Updates that do not lead to an actual web request, such as when under a rate limit, do not update this.
 		/// </summary>
 		public DateTimeOffset Finish { get; set; } = DateTimeOffset.MinValue;
+
 		public HttpStatusCode? StatusCode { get; set; } = null;
 		public DateTimeOffset? LastModified { get; set; } = null;
 		public EntityTagHeaderValue? ETag { get; set; } = null;
