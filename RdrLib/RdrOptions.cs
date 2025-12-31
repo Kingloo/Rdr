@@ -25,9 +25,9 @@ namespace RdrLib
 
 		public TimeSpan BatchUpdateDelay { get; init; } = DefaultBatchUpdateDelay;
 
-		public bool Randomise { get; init; } = false;
+		public bool ShouldUpdateRandomSubsetPerDomain { get; init; } = false;
 
-		public int RandomiseTake { get; init; } = DefaultRandomiseTake;
+		public int RandomisePerDomainWhenMoreThan { get; init; } = DefaultRandomiseTake;
 
 		public TimeSpan RateLimitOnHttpTimeout { get; init; } = TimeSpan.FromHours(1d);
 

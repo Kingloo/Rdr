@@ -279,6 +279,7 @@ namespace Rdr.Gui
 			StatusMessage = "updating ...";
 
 			IReadOnlyList<FeedUpdateContext> contexts;
+			List<Feed> feedsToUpdate = GetFeedsToUpdate(feeds, rdrOptionsMonitor.CurrentValue);
 			
 			rdrService.FeedUpdated += OnFeedUpdated;
 
@@ -287,7 +288,7 @@ namespace Rdr.Gui
 				try
 				{
 					contexts = await rdrService.UpdateAsync(
-						feeds,
+						feedsToUpdate,
 						rdrOptionsMonitor.CurrentValue,
 						beConditional: true,
 						cts.Token)
@@ -326,6 +327,28 @@ namespace Rdr.Gui
 			Activity = false;
 		}
 
+		private static List<Feed> GetFeedsToUpdate(List<Feed> feeds, RdrOptions rdrOptions)
+		{
+			if (!rdrOptions.ShouldUpdateRandomSubsetPerDomain)
+			{
+				return feeds;
+			}
+
+			return feeds
+				.GroupBy(static (Feed feed) => feed.Link.DnsSafeHost)
+				.Select((IGrouping<string, Feed> group) => group.Select(static (Feed feed) =>
+					new
+					{
+						Key = System.Security.Cryptography.RandomNumberGenerator.GetInt32(Int32.MinValue, Int32.MaxValue),
+						Feed = feed
+					})
+					.OrderBy(static feed => feed.Key)
+					.Take(rdrOptions.RandomisePerDomainWhenMoreThan))
+				.SelectMany(static each => each)
+				.Select(static each => each.Feed)
+				.ToList();
+		}
+
 		private void OnFeedUpdated(object? sender, FeedUpdatedEventArgs e)
 		{
 			Application.Current.Dispatcher.Invoke(() =>
@@ -344,7 +367,7 @@ namespace Rdr.Gui
 		private async Task RefreshAsync(Feed feed, bool force)
 		{
 			Activity = rdrService.IsUpdating;
-
+			
 			FeedUpdateContext context = await rdrService.UpdateAsync(
 				feed,
 				rdrOptionsMonitor.CurrentValue,

@@ -117,19 +117,15 @@ namespace RdrLib.Services.Updater
 
 			IsUpdating = true;
 
-			List<Feed> feedsToUpdate = rdrOptions.Randomise
-				? RandomiseFeedOrder(feeds, rdrOptions.RandomiseTake)
-				: feeds;
-
-			List<FeedUpdateContext> contexts = new List<FeedUpdateContext>(capacity: feedsToUpdate.Count);
+			List<FeedUpdateContext> contexts = new List<FeedUpdateContext>(capacity: feeds.Count);
 
 			try
 			{
-				using HttpClient client = SelectHttpClient(feedsToUpdate[0], rdrOptions);
+				using HttpClient client = SelectHttpClient(feeds[0], rdrOptions);
 
-				for (int i = 0; i < feedsToUpdate.Count; i++)
+				for (int i = 0; i < feeds.Count; i++)
 				{
-					FeedUpdateContext context = await UpdateFeedAsync(client, feedsToUpdate[i], rdrOptions, beConditional, cancellationToken).ConfigureAwait(false);
+					FeedUpdateContext context = await UpdateFeedAsync(client, feeds[i], rdrOptions, beConditional, cancellationToken).ConfigureAwait(false);
 
 					contexts.Add(context);
 
@@ -137,7 +133,7 @@ namespace RdrLib.Services.Updater
 
 					OnFeedUpdated(new Count(currentUpdated), total);
 
-					if (i + 1 < feedsToUpdate.Count)
+					if (i + 1 < feeds.Count)
 					{
 						await Task.Delay(rdrOptions.BatchUpdateDelay, cancellationToken).ConfigureAwait(false);
 					}
@@ -149,22 +145,6 @@ namespace RdrLib.Services.Updater
 			}
 
 			return contexts.AsReadOnly();
-		}
-
-		private static List<Feed> RandomiseFeedOrder(List<Feed> feeds, int countToTake)
-		{
-			return feeds.Select(static feed =>
-				{
-					return new
-					{
-						Key = System.Security.Cryptography.RandomNumberGenerator.GetInt32(Int32.MinValue, Int32.MaxValue),
-						Feed = feed
-					};
-				})
-				.OrderBy(static each => each.Key)
-				.Take(countToTake)
-				.Select(static each => each.Feed)
-				.ToList();
 		}
 
 		private async Task<FeedUpdateContext> UpdateFeedAsync(HttpClient client, Feed feed, RdrOptions rdrOptions, bool beConditional, CancellationToken cancellationToken)
