@@ -56,7 +56,7 @@ namespace RdrLib.Helpers
 			{
 				FeedType.Atom => ItemHelpers.CreateItems(document.Root?.Elements(XName.Get("entry", "http://www.w3.org/2005/Atom")) ?? Enumerable.Empty<XElement>(), feedName),
 				FeedType.RSS => ItemHelpers.CreateItems(document.Root?.Element("channel")?.Elements("item") ?? Enumerable.Empty<XElement>(), feedName),
-				_ => new List<Item>(0).AsReadOnly()
+				_ => new List<Item>(capacity: 0).AsReadOnly()
 			};
 		}
 	}
