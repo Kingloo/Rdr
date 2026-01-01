@@ -350,7 +350,7 @@ namespace Rdr.Gui
 					.Take(rdrOptions.RandomisePerDomainWhenMoreThan)
 					.Select(static anon => anon.Feed)
 				)
-				.SelectMany(static each => each)
+				.SelectMany(static (IEnumerable<Feed> each) => each)
 				.ToList();
 		}
 
