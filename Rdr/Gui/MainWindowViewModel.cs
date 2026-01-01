@@ -395,8 +395,8 @@ namespace Rdr.Gui
 
 		private void LogRateLimit(FeedUpdateContext context)
 		{
-			if (context.StatusCode.HasValue
-				&& context.StatusCode.Value == System.Net.HttpStatusCode.TooManyRequests)
+			if (context.StatusCode is System.Net.HttpStatusCode statusCode
+				&& statusCode == System.Net.HttpStatusCode.TooManyRequests)
 			{
 				DateTimeOffset now = DateTimeOffset.Now;
 				DateTimeOffset rateLimitExpiration = context.Finish + context.RateLimit;

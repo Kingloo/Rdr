@@ -169,7 +169,7 @@ namespace Rdr.Gui
 
 				string stackTrace = ex.StackTrace?[..Math.Min(ex.StackTrace.Length, 500)] ?? string.Empty;
 
-				LogDispatcherUnhandledException(logger, exceptionType, innerExceptionType, stackTrace);
+				LogDispatcherUnhandledException(logger, exceptionType, ex.Message, innerExceptionType, stackTrace);
 			}
 			else
 			{
@@ -208,8 +208,8 @@ namespace Rdr.Gui
 		[LoggerMessage(StartupFinishedId, LogLevel.Information, "started")]
 		internal static partial void LogStartupFinished(ILogger<App> logger);
 
-		[LoggerMessage(DispatcherUnhandledExceptionId, LogLevel.Error, "dispatcher unhandled exception {ExceptionType} ({InnerExceptionType}) - {StackTrace}")]
-		internal static partial void LogDispatcherUnhandledException(ILogger<App> logger, string ExceptionType, string innerExceptionType, string stackTrace);
+		[LoggerMessage(DispatcherUnhandledExceptionId, LogLevel.Error, "dispatcher unhandled exception {ExceptionType} - '{Message}' - ({InnerExceptionType}) - {StackTrace}")]
+		internal static partial void LogDispatcherUnhandledException(ILogger<App> logger, string ExceptionType, string message, string innerExceptionType, string stackTrace);
 
 		[LoggerMessage(DispatcherUnhandledExceptionEmptyId, LogLevel.Critical, "dispatcher unhandled exception: inner exception was null")]
 		internal static partial void LogDispatcherUnhandledExceptionEmpty(ILogger<App> logger);
