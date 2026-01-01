@@ -422,7 +422,7 @@ namespace Rdr.Gui
 
 		private void LogRateLimits(IReadOnlyList<FeedUpdateContext> contexts)
 		{
-			foreach (FeedUpdateContext each in contexts)
+			foreach (FeedUpdateContext each in contexts.Where(static each => each is not null))
 			{
 				LogRateLimit(each);
 			}
