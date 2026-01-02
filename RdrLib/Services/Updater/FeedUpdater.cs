@@ -66,7 +66,7 @@ namespace RdrLib.Services.Updater
 				updateTasks.Add(groupTask);
 			}
 
-			List<FeedUpdateContext> contexts = new List<FeedUpdateContext>();
+			List<FeedUpdateContext> contexts = new List<FeedUpdateContext>(capacity: feeds.Count);
 
 			ParallelOptions parallelOptions = new ParallelOptions
 			{
@@ -78,9 +78,12 @@ namespace RdrLib.Services.Updater
 			{
 				IReadOnlyList<FeedUpdateContext> ret = await task.ConfigureAwait(false);
 
-				foreach (FeedUpdateContext context in ret)
+				if (ret.Count > 0)
 				{
-					contexts.Add(context);
+					foreach (FeedUpdateContext context in ret.Where(each => each is not null))
+					{
+						contexts.Add(context);
+					}
 				}
 			})
 			.ConfigureAwait(false);
@@ -94,18 +97,25 @@ namespace RdrLib.Services.Updater
 		{
 			IsUpdating = true;
 
+			List<FeedUpdateContext> ret = new List<FeedUpdateContext>(capacity: 1);
+
 			try
 			{
 				using HttpClient client = SelectHttpClient(feed, rdrOptions);
 
 				FeedUpdateContext singleUpdateContext = await UpdateFeedAsync(client, feed, rdrOptions, beConditional, cancellationToken).ConfigureAwait(false);
 
-				return new List<FeedUpdateContext>(capacity: 1) { singleUpdateContext }.AsReadOnly();
+				if (singleUpdateContext is not null)
+				{
+					ret.Add(singleUpdateContext);
+				}
 			}
 			finally
 			{
 				IsUpdating = false;
 			}
+
+			return ret.AsReadOnly();
 		}
 
 		private async Task<IReadOnlyList<FeedUpdateContext>> UpdateManyAsync(List<Feed> feeds, RdrOptions rdrOptions, bool beConditional, CancellationToken cancellationToken)
@@ -127,7 +137,10 @@ namespace RdrLib.Services.Updater
 				{
 					FeedUpdateContext context = await UpdateFeedAsync(client, feeds[i], rdrOptions, beConditional, cancellationToken).ConfigureAwait(false);
 
-					contexts.Add(context);
+					if (context is not null)
+					{
+						contexts.Add(context);
+					}
 
 					int currentUpdated = Interlocked.Increment(ref countUpdated);
 
@@ -156,9 +169,13 @@ namespace RdrLib.Services.Updater
 
 			try
 			{
-				context = await UpdateFeedAsyncUncaught(client, feed, rdrOptions, beConditional, cancellationToken).ConfigureAwait(false);
+				FeedUpdateContext? newContext = await UpdateFeedAsyncUncaught(client, feed, rdrOptions, beConditional, cancellationToken).ConfigureAwait(false);
 
-				context.Exception = null;
+				if (newContext is not null)
+				{
+					context = newContext;
+					context.Exception = null;
+				}
 			}
 			catch (TimeoutException ex)
 			{
