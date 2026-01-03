@@ -80,7 +80,7 @@ namespace RdrLib.Services.Updater
 
 				if (ret.Count > 0)
 				{
-					foreach (FeedUpdateContext context in ret.Where(each => each is not null))
+					foreach (FeedUpdateContext context in ret.Where(static each => each is not null))
 					{
 						contexts.Add(context);
 					}
