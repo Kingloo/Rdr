@@ -44,6 +44,7 @@ namespace Rdr.EventIds
 		internal const int FeedRateLimitedId = 247;
 		internal const int FeedRedirectedId = 248;
 		internal const int WindowExitId = 250;
+		internal const int RefreshAllCancelledId = 260;
 
 		internal static readonly EventId FeedsFileOpened = new EventId(FeedsFileOpenedId, nameof(FeedsFileOpened));
 		internal static readonly EventId FeedsFileError = new EventId(FeedsFileErrorId, nameof(FeedsFileError));
@@ -67,5 +68,6 @@ namespace Rdr.EventIds
 		internal static readonly EventId FeedRateLimited = new EventId(FeedRateLimitedId, nameof(FeedRateLimited));
 		internal static readonly EventId FeedRedirected = new EventId(FeedRedirectedId, nameof(FeedRedirected));
 		internal static readonly EventId WindowExit = new EventId(WindowExitId, nameof(WindowExit));
+		internal static readonly EventId RefreshAllCancelled = new EventId(RefreshAllCancelledId, nameof(RefreshAllCancelled));
 	}
 }

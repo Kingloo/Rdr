@@ -294,8 +294,10 @@ namespace Rdr.Gui
 						cts.Token)
 					.ConfigureAwait(true);
 				}
-				catch (OperationCanceledException)
+				catch (OperationCanceledException ex)
 				{
+					LogRefreshAllCancelled(logger, ex.InnerException?.GetType().Name ?? "null", ex.InnerException?.Message ?? "null");
+
 					contexts = emptyContextList;
 				}
 			}
@@ -934,5 +936,8 @@ namespace Rdr.Gui
 
 		[LoggerMessage(WindowExitId, LogLevel.Debug, "window exit ('{WindowName}')")]
 		internal static partial void LogWindowExit(ILogger<MainWindowViewModel> logger, string windowName);
+		
+		[LoggerMessage(RefreshAllCancelledId, LogLevel.Error, "refresh all cancelled: inner exception: '{InnerExceptionType} - {InnerExceptionMessage}'")]
+		internal static partial void LogRefreshAllCancelled(ILogger<MainWindowViewModel> logger, string innerExceptionType, string innerExceptionMessage);
 	}
 }
