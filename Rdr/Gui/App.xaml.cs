@@ -126,7 +126,7 @@ namespace Rdr.Gui
 				client.DefaultRequestHeaders.UserAgent.ParseAdd(rdrOptions.CustomUserAgent);
 				client.DefaultRequestVersion = HttpVersion.Version20;
 				client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrHigher;
-				client.Timeout = TimeSpan.FromSeconds(30d);
+				client.Timeout = TimeSpan.FromSeconds(60d);
 			}
 		}
 

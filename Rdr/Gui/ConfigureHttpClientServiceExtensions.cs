@@ -33,7 +33,7 @@ namespace Rdr.Gui
 			{
 				AllowAutoRedirect = true,
 				AutomaticDecompression = DecompressionMethods.All,
-				ConnectTimeout = TimeSpan.FromSeconds(30d),
+				ConnectTimeout = TimeSpan.FromSeconds(60d),
 				MaxAutomaticRedirections = 5,
 				SslOptions = new SslClientAuthenticationOptions
 				{
