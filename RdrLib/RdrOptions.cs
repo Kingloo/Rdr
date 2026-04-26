@@ -1,18 +1,19 @@
 using System;
-using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace RdrLib
 {
 	public class RdrOptions
 	{
-		public const string DefaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:146.0) Gecko/20100101 Firefox/146.0";
 		public const int DefaultUpdateConcurrency = 4;
 		public static readonly TimeSpan DefaultUpdateInterval = TimeSpan.FromMinutes(15d);
 		public static readonly TimeSpan DefaultBatchUpdateDelay = TimeSpan.FromSeconds(0.5d);
 		public const int DefaultRandomiseTake = 10;
 
-		public string CustomUserAgent { get; init; } = DefaultUserAgent;
+		public string DefaultUserAgent { get; init; } = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:150.0) Gecko/20100101 Firefox/150.0";
+		
+		public Collection<CustomUserAgent> DomainSpecificUserAgents { get; init; } = new Collection<CustomUserAgent>();
 
 		[Required]
 		public string FeedsFilePath { get; init; } = string.Empty;
@@ -31,9 +32,7 @@ namespace RdrLib
 
 		public TimeSpan RateLimitOnHttpTimeout { get; init; } = TimeSpan.FromHours(1d);
 
-#pragma warning disable CA1002 // Do not expose generic lists - System.Text.Json cannot deserialize to IList<T>
-		public List<string> SkipCrlCheckFor { get; init; } = new List<string>();
-#pragma warning restore CA1002 // Do not expose generic lists
+		public Collection<string> SkipCrlCheckFor { get; init; } = new Collection<string>();
 
 		public RdrOptions() { }
 

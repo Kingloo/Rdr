@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -384,6 +385,7 @@ namespace Rdr.Gui
 
 			LogRateLimit(context);
 			LogFeedStatusOther(context);
+			LogRedirect(context);
 
 			if (_viewMode == ViewMode.Feed
 				&& selectedFeed is not null
@@ -459,14 +461,20 @@ namespace Rdr.Gui
 
 		private void LogRedirects(IReadOnlyList<FeedUpdateContext> contexts)
 		{
-			List<RedirectData> feedsThatWereRedirected = contexts
-				.Where(static c => c.RedirectData is not null)
-				.Select(static c => c.RedirectData!)
-				.ToList();
-
-			foreach (RedirectData each in feedsThatWereRedirected)
+			foreach (FeedUpdateContext each in contexts)
 			{
-				LogFeedRedirected(logger, each.From.AbsoluteUri, each.To.AbsoluteUri);
+				LogRedirect(each);
+			}
+		}
+
+		private void LogRedirect(FeedUpdateContext context)
+		{
+			if (context.RedirectData is RedirectData redirectData)
+			{
+				string from = redirectData.From.IsAbsoluteUri ? redirectData.From.AbsoluteUri : redirectData.From.ToString();
+				string to = redirectData.To.IsAbsoluteUri ? redirectData.To.AbsoluteUri : redirectData.To.ToString();
+
+				LogFeedRedirected(logger, from, to);
 			}
 		}
 
@@ -697,7 +705,9 @@ namespace Rdr.Gui
 			}
 			catch (HttpRequestException ex)
 			{
-				enclosure.Message = $"{ex.StatusCode}";
+				enclosure.Message = ex.StatusCode is HttpStatusCode statusCode
+					? statusCode.ToString()
+					: "Request Error";
 
 				LogDownloadFailed(logger, ex.HttpRequestError.ToString(), enclosure.FeedName, enclosure.Link.AbsoluteUri);
 			}

@@ -24,6 +24,7 @@ namespace Rdr.Gui.Converters
 		public Brush InternetError { get; set; } = defaultColor;
 		public Brush ConnectionError { get; set; } = defaultColor;
 		public Brush Broken { get; set; } = defaultColor;
+		public Brush Redirected { get; set; } = defaultColor;
 		public Brush Other { get; set; } = defaultColor;
 
 		public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
@@ -59,6 +60,7 @@ namespace Rdr.Gui.Converters
 				FeedStatus.InternetError => InternetError,
 				FeedStatus.ConnectionError => ConnectionError,
 				FeedStatus.Broken => Broken,
+				FeedStatus.Redirected => Redirected,
 				FeedStatus.Other => Other,
 				_ => throw new ArgumentException($"unknown FeedStatus '{value}'", nameof(value))
 			};

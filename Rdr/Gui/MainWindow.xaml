@@ -57,6 +57,7 @@
                                                      InternetError="LightBlue"
                                                      ConnectionError="MediumPurple"
                                                      Broken="Blue"
+                                                     Redirected="DarkGreen"
                                                      Other="#010101" />
 				
 				<converters:FeedStatusColorConverter x:Key="feedStatusForegroundColorConverter"

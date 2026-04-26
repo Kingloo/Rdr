@@ -31,8 +31,8 @@ namespace Rdr.Gui
 		{
 			return new SocketsHttpHandler
 			{
-				AllowAutoRedirect = true,
-				AutomaticDecompression = DecompressionMethods.All,
+				AllowAutoRedirect = false,
+				AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Brotli | DecompressionMethods.Deflate,
 				ConnectTimeout = TimeSpan.FromSeconds(60d),
 				MaxAutomaticRedirections = 5,
 				SslOptions = new SslClientAuthenticationOptions

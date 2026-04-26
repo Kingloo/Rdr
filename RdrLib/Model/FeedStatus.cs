@@ -14,7 +14,8 @@ namespace RdrLib.Model
 		InternetError = 9,
 		Broken = 10,
 		ConnectionError = 11,
-		Other = 12,
-		None = 13
+		Redirected = 12,
+		Other = 13,
+		None = 14
 	}
 }

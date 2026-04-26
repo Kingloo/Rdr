@@ -260,26 +260,40 @@ namespace RdrLib.Services.Updater
 			}
 			else
 			{
-				void makeRequestConditional(HttpRequestMessage requestMessage)
+				void configureRequest(HttpRequestMessage requestMessage)
 				{
-					requestMessage.Method = HttpMethod.Get;
-
-					if (context?.ETag is EntityTagHeaderValue etag)
+					if (beConditional)
 					{
-						requestMessage.Headers.IfNoneMatch.Add(etag);
+						requestMessage.Method = HttpMethod.Get;
+
+						if (context?.ETag is EntityTagHeaderValue etag)
+						{
+							requestMessage.Headers.IfNoneMatch.Add(etag);
+						}
+
+						if (context?.LastModified is DateTimeOffset lastModified)
+						{
+							requestMessage.Headers.IfModifiedSince = lastModified;
+						}
 					}
 
-					if (context?.LastModified is DateTimeOffset lastModified)
+					if (rdrOptions
+						.DomainSpecificUserAgents
+						.FirstOrDefault(custom => feed.Link.DnsSafeHost.Contains(custom.Domain, StringComparison.OrdinalIgnoreCase))
+						is CustomUserAgent customUserAgent)
 					{
-						requestMessage.Headers.IfModifiedSince = lastModified;
+						requestMessage.Headers.UserAgent.Clear();
+						requestMessage.Headers.UserAgent.ParseAdd(customUserAgent.UserAgent);
+					}
+					else
+					{
+						requestMessage.Headers.UserAgent.ParseAdd(rdrOptions.DefaultUserAgent);
 					}
 				}
 
 				context.Start = start;
 
-				using ResponseSet responseSet = beConditional
-					? await Web2.PerformHeaderRequest(client, feed.Link, makeRequestConditional, cancellationToken).ConfigureAwait(false)
-					: await Web2.PerformHeaderRequest(client, feed.Link, cancellationToken).ConfigureAwait(false);
+				using ResponseSet responseSet = await Web2.PerformHeaderRequest(client, feed.Link, configureRequest, cancellationToken).ConfigureAwait(false);
 
 				if (responseSet.Responses.LastOrDefault() is ResponseSetItem lastResponseSetItem)
 				{
@@ -320,6 +334,11 @@ namespace RdrLib.Services.Updater
 							break;
 						case HttpStatusCode.InternalServerError:
 							feed.Status = FeedStatus.InternetError;
+							break;
+						case HttpStatusCode.TemporaryRedirect:
+						case HttpStatusCode.Redirect:
+						case HttpStatusCode.MovedPermanently:
+							feed.Status = FeedStatus.Redirected;
 							break;
 						default:
 							feed.Status = FeedStatus.Other;

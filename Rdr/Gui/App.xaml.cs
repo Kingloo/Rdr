@@ -121,9 +121,8 @@ namespace Rdr.Gui
 			services.AddDefaultHttpClient(configureHttpClient);
 			services.AddNoCrlCheckHttpClient(configureHttpClient);
 
-			void configureHttpClient(HttpClient client)
+			static void configureHttpClient(HttpClient client)
 			{
-				client.DefaultRequestHeaders.UserAgent.ParseAdd(rdrOptions.CustomUserAgent);
 				client.DefaultRequestVersion = HttpVersion.Version20;
 				client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrHigher;
 				client.Timeout = TimeSpan.FromSeconds(60d);

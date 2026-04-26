@@ -28,7 +28,9 @@ namespace RdrLib
 			ArgumentNullException.ThrowIfNull(client);
 			ArgumentNullException.ThrowIfNull(uri);
 
+#pragma warning disable CA2000 // Dispose objects before losing scope
 			ResponseSet responseSet = new ResponseSet(uri);
+#pragma warning restore CA2000 // Dispose objects before losing scope
 
 			Uri uriToVisit = uri;
 			bool shouldContinue = true;
@@ -61,6 +63,15 @@ namespace RdrLib
 				}
 				else if (!response.IsSuccessStatusCode && response.Headers.Location is Uri nextUri)
 				{
+					if (!nextUri.IsAbsoluteUri)
+					{
+#pragma warning disable CA2000 // Dispose objects before losing scope
+						responseSet.Responses.Add(new ResponseSetItem(nextUri, response));
+#pragma warning restore CA2000 // Dispose objects before losing scope
+						
+						return responseSet;
+					}
+
 					uriToVisit = nextUri;
 
 					shouldContinue = true;
@@ -153,11 +164,7 @@ namespace RdrLib
 			ArgumentNullException.ThrowIfNull(response);
 			ArgumentNullException.ThrowIfNull(previousETag);
 
-			return response.Headers.ETag switch
-			{
-				EntityTagHeaderValue newValue => newValue.Equals(previousETag),
-				_ => false
-			};
+			return (response.Headers.ETag is EntityTagHeaderValue newValue) && newValue.Equals(previousETag);
 		}
 
 		public static TimeSpan GetTimeLeftOnRateLimit(RetryConditionHeaderValue? retryHeader, DateTimeOffset now)
