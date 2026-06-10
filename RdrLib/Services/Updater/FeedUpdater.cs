@@ -22,7 +22,7 @@ namespace RdrLib.Services.Updater
 		private readonly IHttpClientFactory httpClientFactory;
 		private readonly FeedUpdateHistory feedUpdateHistory;
 		private int countUpdated = 0;
-		private Total total = new Total(0);
+		private int total = 0;
 
 		public bool IsUpdating { get; private set; } = false;
 		public event EventHandler<FeedUpdatedEventArgs> FeedUpdated = delegate { };
@@ -43,8 +43,6 @@ namespace RdrLib.Services.Updater
 			ArgumentNullException.ThrowIfNull(rdrOptions);
 			ArgumentOutOfRangeException.ThrowIfNegative(feeds.Count);
 
-			total = new Total(feeds.Count);
-
 			if (feeds.Count == 0)
 			{
 				return emptyList;
@@ -55,9 +53,12 @@ namespace RdrLib.Services.Updater
 				return await UpdateSingleAsync(feeds[0], rdrOptions, beConditional, cancellationToken).ConfigureAwait(false);
 			}
 
+			countUpdated = 0;
+			total = feeds.Count;
+
 			IEnumerable<IGrouping<string, Feed>> feedGroups = feeds.GroupBy(static feed => feed.Link.DnsSafeHost);
 
-			List<Task<IReadOnlyList<FeedUpdateContext>>> updateTasks = new List<Task<IReadOnlyList<FeedUpdateContext>>>(capacity: feeds.Count);
+			List<Task<IReadOnlyList<FeedUpdateContext>>> updateTasks = new List<Task<IReadOnlyList<FeedUpdateContext>>>(capacity: total);
 
 			foreach (IGrouping<string, Feed> group in feedGroups)
 			{
@@ -66,7 +67,7 @@ namespace RdrLib.Services.Updater
 				updateTasks.Add(groupTask);
 			}
 
-			List<FeedUpdateContext> contexts = new List<FeedUpdateContext>(capacity: feeds.Count);
+			List<FeedUpdateContext> contexts = new List<FeedUpdateContext>(capacity: total);
 
 			ParallelOptions parallelOptions = new ParallelOptions
 			{
@@ -74,21 +75,26 @@ namespace RdrLib.Services.Updater
 				MaxDegreeOfParallelism = rdrOptions.UpdateConcurrency
 			};
 
-			await Parallel.ForEachAsync(updateTasks, parallelOptions, async (Task<IReadOnlyList<FeedUpdateContext>> task, CancellationToken token) =>
+			try
 			{
-				IReadOnlyList<FeedUpdateContext> ret = await task.ConfigureAwait(false);
-
-				if (ret.Count > 0)
+				await Parallel.ForEachAsync(updateTasks, parallelOptions, async (Task<IReadOnlyList<FeedUpdateContext>> task, CancellationToken token) =>
 				{
-					foreach (FeedUpdateContext context in ret.Where(static each => each is not null))
-					{
-						contexts.Add(context);
-					}
-				}
-			})
-			.ConfigureAwait(false);
+					IReadOnlyList<FeedUpdateContext> ret = await task.ConfigureAwait(false);
 
-			Interlocked.Exchange(ref countUpdated, 0);
+					if (ret.Count > 0)
+					{
+						foreach (FeedUpdateContext context in ret.Where(static each => each is not null))
+						{
+							contexts.Add(context);
+						}
+					}
+				})
+				.ConfigureAwait(false);
+			}
+			finally
+			{
+				Interlocked.Exchange(ref countUpdated, 0);
+			}
 
 			return contexts.AsReadOnly();
 		}
@@ -144,7 +150,7 @@ namespace RdrLib.Services.Updater
 
 					int currentUpdated = Interlocked.Increment(ref countUpdated);
 
-					OnFeedUpdated(new Count(currentUpdated), total);
+					OnFeedUpdated(new Count(currentUpdated), new Total(total));
 
 					if (i + 1 < feeds.Count)
 					{

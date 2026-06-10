@@ -301,9 +301,11 @@ namespace Rdr.Gui
 
 					contexts = emptyContextList;
 				}
+				finally
+				{
+					rdrService.FeedUpdated -= OnFeedUpdated;
+				}
 			}
-
-			rdrService.FeedUpdated -= OnFeedUpdated;
 
 			LogRateLimits(contexts);
 			LogFeedStatusOther(contexts);
