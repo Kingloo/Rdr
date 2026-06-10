@@ -9,15 +9,29 @@ namespace Rdr
 		[STAThread]
 		public static int Main()
 		{
-			App app = new App();
+			int exitCode = 0;
 
-			int exitCode = app.Run();
-
-			if (exitCode != 0)
+			try
 			{
-				string message = String.Format(CultureInfo.CurrentCulture, "Rdr exited with code {0}", exitCode);
+				App app = new App();
 
-				Console.Error.WriteLine(message);
+				exitCode = app.Run();
+			}
+#pragma warning disable CA1031 // Do not catch general exception types
+			catch (Exception ex)
+#pragma warning restore CA1031 // Do not catch general exception types
+			{
+				ExceptionCrashSaverOptions options = new ExceptionCrashSaverOptions(
+					DateTimeOffset.Now,
+					ex,
+					"Rdr",
+					Environment.ProcessId,
+					CultureInfo.CurrentUICulture
+				);
+
+				ExceptionCrashSaver.SaveException(options);
+
+				exitCode = -1;
 			}
 
 			return exitCode;
