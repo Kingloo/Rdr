@@ -88,7 +88,7 @@ namespace Rdr
 			string exceptionName = options.Ex.GetType().FullName ?? "unknown exception";
 
 			return new StringBuilder()
-				.AppendLine(options.CultureInfo, $"[{formattedTimestamp}] {appName} crashed because of {exceptionName}")
+				.AppendLine(options.CultureInfo, $"[{formattedTimestamp}] {appName} (pid {options.Pid}) crashed because of {exceptionName}")
 				.AppendLine(options.Ex.Message)
 				.AppendLine(options.Ex.StackTrace)
 				.ToString();
