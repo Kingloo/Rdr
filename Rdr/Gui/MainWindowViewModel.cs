@@ -414,7 +414,7 @@ namespace Rdr.Gui
 				if (RateLimitIsNewOrAboutToExpire(context.RateLimit, rateLimitRemaining))
 				{
 					LogFeedRateLimited(logger, context.Uri.AbsoluteUri, FormatTimeSpan(context.RateLimit), FormatTimeSpan(rateLimitRemaining));
-				}	
+				}
 			}
 		}
 
