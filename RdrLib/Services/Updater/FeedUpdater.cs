@@ -305,7 +305,7 @@ namespace RdrLib.Services.Updater
 				{
 					context.StatusCode = lastResponseSetItem.Response.StatusCode;
 					context.ETag = lastResponseSetItem.Response.Headers.ETag;
-					context.RateLimit = SetRateLimit(context.RateLimit, lastResponseSetItem.Response.Headers.RetryAfter, start);
+					context.RateLimit = SetRateLimit(context.RateLimit, lastResponseSetItem, start);
 
 					if (lastResponseSetItem.Uri != feed.Link)
 					{
@@ -469,14 +469,20 @@ namespace RdrLib.Services.Updater
 			return false;
 		}
 
-		private TimeSpan SetRateLimit(TimeSpan existingRateLimit, RetryConditionHeaderValue? retryAfter, DateTimeOffset start)
+		private TimeSpan SetRateLimit(TimeSpan existingRateLimit, ResponseSetItem responseSetItem, DateTimeOffset start)
 		{
-			if (retryAfter is null)
+			if (responseSetItem.Response.StatusCode == HttpStatusCode.TooManyRequests
+				&& responseSetItem.Response.Headers.RetryAfter is null)
+			{
+				return TimeSpan.FromHours(1d); // default timeout when RetryAfter header is present but has no value
+			}
+			
+			if (responseSetItem.Response.Headers.RetryAfter is null)
 			{
 				return existingRateLimit; // retain old rate limit
 			}
 
-			TimeSpan newRateLimit = Web2.GetTimeLeftOnRateLimit(retryAfter, start);
+			TimeSpan newRateLimit = Web2.GetTimeLeftOnRateLimit(responseSetItem.Response.Headers.RetryAfter, start);
 
 			return newRateLimit > existingRateLimit
 				? newRateLimit
