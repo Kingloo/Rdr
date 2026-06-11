@@ -16,6 +16,11 @@ namespace Rdr
 
 	internal static class ExceptionCrashSaver
 	{
+		private static readonly Encoding _encoding = new UTF8Encoding(
+			encoderShouldEmitUTF8Identifier: false,
+			throwOnInvalidBytes: false
+		);
+		
 		internal static ExceptionCrashSaverOptions CreateDefaultOptions(Exception ex)
 		{
 			return new ExceptionCrashSaverOptions(
@@ -43,7 +48,7 @@ namespace Rdr
 
 			string errorMessage = BuildErrorMessage(options);
 
-			File.WriteAllText(crashFile.FullName, errorMessage);
+			File.WriteAllText(crashFile.FullName, errorMessage, _encoding);
 		}
 
 		private static string CreateFilename(ExceptionCrashSaverOptions options)
@@ -84,6 +89,7 @@ namespace Rdr
 
 			return new StringBuilder()
 				.AppendLine(options.CultureInfo, $"[{formattedTimestamp}] {appName} crashed because of {exceptionName}")
+				.AppendLine(options.Ex.Message)
 				.AppendLine(options.Ex.StackTrace)
 				.ToString();
 		}
