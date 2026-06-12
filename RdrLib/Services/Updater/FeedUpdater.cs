@@ -10,6 +10,7 @@ using System.Security.Authentication;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using RdrLib.Common;
 using RdrLib.Helpers;
 using RdrLib.Model;
 
@@ -17,8 +18,6 @@ namespace RdrLib.Services.Updater
 {
 	public class FeedUpdater
 	{
-		private static readonly IReadOnlyList<FeedUpdateContext> emptyList = new List<FeedUpdateContext>(capacity: 0).AsReadOnly();
-
 		private readonly IHttpClientFactory httpClientFactory;
 		private readonly FeedUpdateHistory feedUpdateHistory;
 		private int countUpdated = 0;
@@ -45,7 +44,7 @@ namespace RdrLib.Services.Updater
 
 			if (feeds.Count == 0)
 			{
-				return emptyList;
+				return EmptyList<FeedUpdateContext>.Empty;
 			}
 
 			if (feeds.Count == 1)
@@ -128,7 +127,7 @@ namespace RdrLib.Services.Updater
 		{
 			if (feeds.Count == 0)
 			{
-				return emptyList;
+				return EmptyList<FeedUpdateContext>.Empty;
 			}
 
 			IsUpdating = true;
@@ -474,7 +473,15 @@ namespace RdrLib.Services.Updater
 			if (responseSetItem.Response.StatusCode == HttpStatusCode.TooManyRequests
 				&& responseSetItem.Response.Headers.RetryAfter is null)
 			{
-				return TimeSpan.FromHours(1d); // default timeout when RetryAfter header is present but has no value
+				// default timeout when RetryAfter header is present but has no value
+				// randomized between 1 and 3 hours
+
+				int randomRateLimitMinutes = System.Security.Cryptography.RandomNumberGenerator.GetInt32(
+					fromInclusive: 60,
+					toExclusive: 180
+				);
+				
+				return TimeSpan.FromMinutes(randomRateLimitMinutes);
 			}
 			
 			if (responseSetItem.Response.Headers.RetryAfter is null)

@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Rdr.Common;
 using RdrLib;
+using RdrLib.Common;
 using RdrLib.Model;
 using RdrLib.Services.Updater;
 using static Rdr.EventIds.MainWindowViewModel;
@@ -222,7 +223,6 @@ namespace Rdr.Gui
 		private Feed? selectedFeed = null;
 		private ViewMode _viewMode = ViewMode.Empty;
 		private DispatcherTimer? refreshTimer = null;
-		private static readonly IReadOnlyList<FeedUpdateContext> emptyContextList = new List<FeedUpdateContext>(capacity: 0).AsReadOnly();
 
 		public MainWindowViewModel(
 			IRdrService rdrService,
@@ -299,7 +299,7 @@ namespace Rdr.Gui
 				{
 					LogRefreshAllCancelled(logger, ex.InnerException?.GetType().Name ?? "null", ex.InnerException?.Message ?? "null");
 
-					contexts = emptyContextList;
+					contexts = EmptyList<FeedUpdateContext>.Empty;
 				}
 				finally
 				{
