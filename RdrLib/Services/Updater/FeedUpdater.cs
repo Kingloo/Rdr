@@ -398,31 +398,31 @@ namespace RdrLib.Services.Updater
 			TimeSpan timeSinceLastModified = context.Finish - lastModified;
 
 			if (timeSinceLastModified > TimeSpan.FromDays(50d)
-				&& timeSinceLastUpdated < TimeSpan.FromDays(3d))
+				&& timeSinceLastUpdated < TimeSpan.FromDays(7d))
 			{
 				return true;
 			}
 
 			if (timeSinceLastModified > TimeSpan.FromDays(30d)
-				&& timeSinceLastUpdated < TimeSpan.FromDays(2d))
+				&& timeSinceLastUpdated < TimeSpan.FromDays(6d))
 			{
 				return true;
 			}
 
 			if (timeSinceLastModified > TimeSpan.FromDays(20d)
-				&& timeSinceLastUpdated < TimeSpan.FromDays(1d))
+				&& timeSinceLastUpdated < TimeSpan.FromDays(3d))
 			{
 				return true;
 			}
 
 			if (timeSinceLastModified > TimeSpan.FromDays(8d)
-				&& timeSinceLastUpdated < TimeSpan.FromHours(3d))
+				&& timeSinceLastUpdated < TimeSpan.FromHours(12d))
 			{
 				return true;
 			}
 
 			if (timeSinceLastModified > TimeSpan.FromDays(3d)
-				&& timeSinceLastUpdated < TimeSpan.FromHours(1d))
+				&& timeSinceLastUpdated < TimeSpan.FromHours(3d))
 			{
 				return true;
 			}
